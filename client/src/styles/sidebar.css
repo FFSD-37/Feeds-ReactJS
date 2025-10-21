@@ -1,0 +1,242 @@
+/* === Base Sidebar === */
+.sidebar {
+  position: fixed;
+  right: 0;
+  top: 0;
+  height: 100vh;
+  background: #333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  padding: 10px 0;
+  width: 60px;
+  z-index: 10;
+}
+
+/* === Icon Links === */
+.nav-item {
+  text-align: center;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0;
+}
+
+.icon-img {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.icon-container:hover .icon-img {
+  transform: scale(1.1);
+  opacity: 0.9;
+}
+
+/* === Tooltip === */
+.icon-container {
+  position: relative;
+  display: inline-block;
+}
+
+.sidebar_tooltip {
+  position: absolute;
+  bottom: 70%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: black;
+  color: white;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font-size: 12px;
+  white-space: nowrap;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.icon-container:hover .sidebar_tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* === Profile Section === */
+.profile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.sidebar-profile-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: gray;
+  object-fit: cover;
+  cursor: pointer;
+}
+
+.profile-pic-anchor {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* === Dropdown Menu === */
+.profile-dropdown {
+  display: none;
+  position: absolute;
+  transform: translateX(-105%);
+  background: #222;
+  color: white;
+  width: auto;
+  bottom: 7%;
+  border-radius: 8px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  padding: 6px 20px;
+}
+
+.profile-dropdown a {
+  text-decoration: none;
+  color: white;
+  display: block;
+  padding: 8px 0;
+  transition: 0.3s;
+  white-space: nowrap;
+}
+
+.profile-dropdown a:hover {
+  color: #00aaff;
+}
+
+.profile-dropdown.show {
+  display: block;
+}
+
+/* === Logout Modal === */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.logout-modal {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  width: 320px;
+  transform: translateY(-20px);
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.modal-overlay.active .logout-modal {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.logout-modal .icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 50%;
+  display: block;
+}
+
+.logout-modal h2 {
+  color: #333;
+  margin-bottom: 12px;
+  font-size: 20px;
+  text-align: center;
+}
+
+.logout-modal p {
+  color: #666;
+  margin-bottom: 24px;
+  font-size: 14px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.logout-btn,
+.cancel-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logout-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.logout-btn:hover {
+  background-color: #c82333;
+}
+
+.cancel-btn {
+  background-color: #e9ecef;
+  color: #333;
+}
+
+.cancel-btn:hover {
+  background-color: #dee2e6;
+}
+
+/* === Responsive Design === */
+@media screen and (max-width: 768px) {
+  .sidebar {
+    flex-direction: row;
+    position: fixed;
+    bottom: 0;
+    top: auto;
+    height: 60px;
+    width: 100%;
+    padding: 0 10px;
+    justify-content: space-around;
+  }
+
+  .icon-container {
+    flex: 1;
+  }
+
+  .sidebar_tooltip {
+    bottom: 120%;
+  }
+
+  .profile-dropdown {
+    width: 200px;
+    bottom: 60px;
+    left: 80px;
+  }
+
+  .profile-dropdown a {
+    padding: 6px 0;
+  }
+}
