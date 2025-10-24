@@ -1,15 +1,18 @@
-import { useState } from 'react'
-import './App.css'
-import Sidebar from './components/sidebar.jsx'
+import './App.css';
+import PaymentPage from './components/payment.jsx';
+import Sidebar from './components/sidebar.jsx';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <div>
+    <Router>
+      <Routes>
+        <Route path="/payment" element={<PaymentPage />} />
+        {/* <Route path="/games" element={<GamesPage />} /> */}
+      </Routes>
       <Sidebar />
-    </div>
-  )
+    </Router>
+  );
 }
 
-export default App
+export default App;
