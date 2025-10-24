@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
-import "./../styles/sidebar.css";
+import React, { useState, useEffect, useRef } from 'react';
+import './../styles/sidebar.css';
 
 function Sidebar() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const toggleDropdown = () => setShowDropdown((prev) => !prev);
-  const toggleLogoutModal = () => setShowLogoutModal((prev) => !prev);
+  const toggleDropdown = () => setShowDropdown(prev => !prev);
+  const toggleLogoutModal = () => setShowLogoutModal(prev => !prev);
 
   return (
     <>
@@ -169,7 +169,7 @@ function Sidebar() {
       {showLogoutModal && (
         <div
           className="modal-overlay active"
-          onClick={(e) => {
+          onClick={e => {
             if (e.target === e.currentTarget) toggleLogoutModal();
           }}
         >
@@ -177,7 +177,10 @@ function Sidebar() {
             <h2>Confirm Logout</h2>
             <p>Are you sure you want to log out from your account?</p>
             <div className="buttons">
-              <button className="logout-btn" onClick={() => console.log("Logged out")}>
+              <button
+                className="logout-btn"
+                onClick={() => console.log('Logged out')}
+              >
                 Logout
               </button>
               <button className="cancel-btn" onClick={toggleLogoutModal}>
