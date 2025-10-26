@@ -1,70 +1,154 @@
-# Getting Started with Create React App
+# FSD - Group 37
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Available Scripts
+### 🧩 Branch Commands
 
-In the project directory, you can run:
+#### 🔹 Check available branches
+```bash
+git branch
+```
+Displays all branches and highlights the one you’re currently on.
 
-### `npm start`
+#### 🔹 Create a new branch
+```bash
+git checkout -b branchname
+```
+Creates a new branch and switches to it immediately.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+#### 🔹 Switch between branches
+```bash
+git checkout branchname
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+**Tip:** You can quickly switch back to the **previous branch** using:
+```bash
+git checkout -
+```
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 🗑️ Deleting Branches
 
-### `npm run build`
+#### Delete a branch (safe mode)
+```bash
+git branch -d branchname
+```
+Only works if the branch has **no unmerged changes**.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+#### Force delete a branch
+```bash
+git branch -D branchname
+```
+Use this if you still want to delete a branch with **unmerged changes**.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### ☁️ Pushing a Branch to Remote
+```bash
+git push origin branchname
+```
 
-### `npm run eject`
+### ☁️ Pulling a Branch to Remote
+```bash
+git pull origin main
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+---
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## 🚀 Running the Project
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+To run the project locally, follow these steps:
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+1. Navigate to the **client** folder:
+   ```bash
+   cd client
+   ```
+2. Install all dependencies:
+   ```bash
+   npm i
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-## Learn More
+The project will now be running locally. Open the provided localhost link in your browser to view it.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+---
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## ⚙️ Project Component Assignment
 
-### Code Splitting
+Each member is assigned **parent components** to develop.  
+All components must be placed inside the **`components/`** folder and style should be created in **`styles/`** folder.  
+You can create **child components** freely under these parent components.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+---
 
-### Analyzing the Bundle Size
+### 🧠 Guidelines
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+- Inside every component, **variable names should start with the component name** to prevent naming conflicts.  
+  Example:  
+  If your component is named `profile_card`, your variables could be:  
+  `profile_card_name`, `profile_card_age`, `profile_card_email`, etc.
 
-### Making a Progressive Web App
+- Use **Tailwind CSS** for quick and clean structuring.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+- Ensure all **forms are validated** (all required fields).
 
-### Advanced Configuration
+- If you have **any doubts**, ask in the **WhatsApp GROUP chat**.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+- You may **exchange pages mutually** if you’re not comfortable with your current assignment.
 
-### Deployment
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## 📋 Component Distribution & Status
 
-### `npm run build` fails to minify
+### 👤 Ayush
+- [✅] Sidebar  
+- [❌] Post Overlay  
+- [❌] Edit Profile  
+- [❌] Connect  
+- [❌] Channel Profile (Self/Other)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+---
+
+### 👤 Gourav Khakse
+- [❌] Admin Portal  
+- [❌] Home (Landing Page)  
+- [❌] Create Post / Reels / Stories  
+- [❌] Notification  
+- [✅] Games
+
+---
+
+### 👤 Arnav Ranjan
+- [❌] Payment / Premium  
+- [❌] Chat  
+- [❌] Settings  
+- [❌] Daily Usage  
+- [❌] Profile (Self/Others)
+
+---
+
+### 👤 Atin Chowdhury
+- [❌] Registration Page (All Types)  
+- [❌] Login Page (All Types)  
+- [❌] Activity Log  
+- [❌] Stories  
+- [❌] Ads
+
+---
+
+### 👤 Vakadani Kavyamrutha
+- [❌] Kids Profile (Self/Other)  
+- [❌] Help / Support  
+- [❌] Reels  
+- [❌] Terms & Conditions  
+- [❌] Contact Us
+
+---
+
+### 🧾 Notes
+- Please keep all commits meaningful and well-labeled.  
+- Follow consistent component naming and folder structure.  
+- Always work on your **own branch** for each feature before working on it.
