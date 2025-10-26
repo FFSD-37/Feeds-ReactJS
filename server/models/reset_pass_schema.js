@@ -4,7 +4,7 @@ const resetPasswordSchema = new mongoose.Schema({
     _id: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
-        auto: true // Automatically generates a new ObjectId
+        auto: true
     },
     email: {
         type: String,
@@ -17,7 +17,7 @@ const resetPasswordSchema = new mongoose.Schema({
         required: true,
         trim: true
     }
-}, { timestamps: true }); // adds createdAt & updatedAt
+}, { timestamps: true });
 
 const ResetPassword = mongoose.model("ResetPassword", resetPasswordSchema);
 

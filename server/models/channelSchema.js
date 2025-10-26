@@ -30,6 +30,11 @@ const channelSchema = new mongoose.Schema({
         default: process.env.DEFAULT_USER_IMG
     },
 
+    channelPassword: {
+        type: String,
+        required: true
+    },
+
     channelAdmin: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
