@@ -75,9 +75,7 @@ const userSchema = new mongoose.Schema({
     }],
 
     blockedUsers: [{
-        username:{
-            type:String
-        }
+        type:String
     }],
 
     bio: {
@@ -121,6 +119,10 @@ const userSchema = new mongoose.Schema({
     }],
 
     likedPostsIds: [{
+        type: String
+    }],
+
+    likedStoriesIds: [{
         type: String
     }],
 

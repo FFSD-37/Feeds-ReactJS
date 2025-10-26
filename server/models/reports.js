@@ -5,10 +5,6 @@ const reportSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  post_author:{
-    type: String,
-    required: true
-  },
   report_number: {
     type: Number,
     default: 0
