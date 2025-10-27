@@ -44,7 +44,8 @@ import {
   uploadFinalPost,
   reportAccount,
   handlegetloginchannel,
-  handleloginchannel
+  handleloginchannel,
+  handlegetallnotifications
 } from "../controllers/user.js";
 import { handleimagKitauth } from "../services/imagKit.js";
 import { isAuthuser } from "../middleware/isAuthuser.js";
@@ -171,5 +172,7 @@ router.post("/report/:username", isAuthuser, reportAccount);
 router.get("/login_channel",isAuthuser, handlegetloginchannel);
 
 router.post("/postloginchannel",isAuthuser, handleloginchannel);
+
+router.get("/GetAllNotifications", isAuthuser, handlegetallnotifications);
 
 export default router;
