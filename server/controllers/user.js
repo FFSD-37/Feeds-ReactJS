@@ -837,6 +837,17 @@ const handleloginchannel = async (req, res) => {
   }
 }
 
+const handlegetallnotifications = async (req, res) => {
+  const { data } = req.userDetails;
+  if (data){
+    const allNotifications = await Notification.find({ mainUser: data[0] }).lean().sort({ createdAt: -1 });
+    return res.json({allNotifications: allNotifications})
+  }
+  else{
+    return res.json({success: false})
+  }
+}
+
 export {
   handleSignup,
   handleLogin,
@@ -883,5 +894,6 @@ export {
   uploadFinalPost,
   reportAccount,
   handlegetloginchannel,
-  handleloginchannel
+  handleloginchannel,
+  handlegetallnotifications
 };
