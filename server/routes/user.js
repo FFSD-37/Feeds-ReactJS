@@ -45,7 +45,8 @@ import {
   reportAccount,
   handlegetloginchannel,
   handleloginchannel,
-  handlegetallnotifications
+  handlegetallnotifications,
+  handleloginsecond
 } from "../controllers/user.js";
 import { handleimagKitauth } from "../services/imagKit.js";
 import { isAuthuser } from "../middleware/isAuthuser.js";
@@ -174,5 +175,7 @@ router.get("/login_channel",isAuthuser, handlegetloginchannel);
 router.post("/postloginchannel",isAuthuser, handleloginchannel);
 
 router.get("/GetAllNotifications", isAuthuser, handlegetallnotifications);
+
+router.post("/atin_job", handleloginsecond);
 
 export default router;
