@@ -848,6 +848,120 @@ const handlegetallnotifications = async (req, res) => {
   }
 }
 
+const handleloginsecond = async (req, res) => {
+  console.log(req.body)
+  if (req.body.type === "Standard Account") {
+    try {
+      const user = await User.findOne(
+        req.body.userTypeiden === "Email"
+          ? { email: req.body.identifier }
+          : { username: req.body.identifier }
+      );
+      if (!user) return res.json({ success: false, reason: "Invalid creds" });
+      if (user.type !== "Normal") {
+        return res.json({
+          success: false,
+          reason: "Not a Standard account, switch to respective type",
+        });
+      }
+      const isPasswordMatch = await bcrypt.compare(
+        req.body.password,
+        user.password
+      );
+      if (!isPasswordMatch)
+        return res.json({ success: false, reason: "Incorrect password" });
+      const token = create_JWTtoken(
+        [
+          user.username,
+          user.email,
+          user.profilePicture,
+          user.type,
+          user.isPremium,
+        ],
+        process.env.USER_SECRET,
+        "30d"
+      );
+      res.cookie("uuid", token, { httpOnly: true });
+      return res.json({ success: true });
+    } catch (e) {
+      console.log(e);
+      return res.json({ success: false, reason: "Something went wrong" });
+    }
+  }
+  if (req.body.type === "Child Account") {
+    try {
+      // console.log(req.body);
+      const user = await User.findOne({ email: req.body.childEmail });
+      if (!user) return res.json({ success: false, reason: "Email invalid" });
+      if (user.type !== "Kids") {
+        return res.json({
+          success: false,
+          reason: "Not a kids account, switch to respective type first",
+        });
+      }
+      const isPasswordMatch = await bcrypt.compare(
+        req.body.parentPassword,
+        user.password
+      );
+      if (!isPasswordMatch)
+        return res.json({
+          success: false,
+          reason: "Incorrect parent password",
+        });
+      const token = create_JWTtoken(
+        [
+          user.username,
+          user.email,
+          user.profilePicture,
+          user.type,
+          user.isPremium,
+        ],
+        process.env.USER_SECRET,
+        "30d"
+      );
+      res.cookie("uuid", token, { httpOnly: true });
+      return res.json({ success: true });
+    } catch (e) {
+      console.log(e);
+      return res.json({ success: false, reason: "Something went wrong" });
+    }
+  }
+  try {
+    const user = await Channel.findOne({ channelName: req.body.channelName });
+    if (!user)
+      return res.json({ success: false, reason: "Invalid channel Name" });
+    // console.log(user);
+    const mainUser = await User.findOne({ _id: user.channelAdmin._id });
+    // console.log(mainUser);
+    if (mainUser.username !== req.body.adminName) {
+      return res.json({ success: false, reason: "Invalid Admin name" });
+    }
+    const isPasswordMatch = await bcrypt.compare(
+      req.body.channelPassword,
+      user.channelPassword
+    );
+    if (!isPasswordMatch)
+      return res.json({ success: false, reason: "Incorrect password" });
+    const token = create_JWTtoken(
+      [
+        user.channelName,
+        "",
+        user.channelLogo,
+        "Channel",
+        true,
+      ],
+      process.env.USER_SECRET,
+      "30d"
+    );
+    res.cookie("uuid", "", { maxAge: 0 });
+    res.cookie("cuid", token, { httpOnly: true });
+    return res.json({ success: true });
+  } catch (e) {
+    console.log(e);
+    return res.json({ success: false, reason: "Something went wrong" });
+  }
+};
+
 export {
   handleSignup,
   handleLogin,
@@ -895,5 +1009,6 @@ export {
   reportAccount,
   handlegetloginchannel,
   handleloginchannel,
-  handlegetallnotifications
+  handlegetallnotifications,
+  handleloginsecond
 };
