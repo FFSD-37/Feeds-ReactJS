@@ -130,7 +130,7 @@ function Sidebar() {
         </div>
 
         <div className="icon-container" onClick={toggleDropdown}>
-          <a href="#" className="nav-item">
+          <div className="nav-item">
             <img
               src="/Images/Menu.svg"
               alt="Menu"
@@ -138,12 +138,12 @@ function Sidebar() {
               width="30"
               height="30"
             />
-          </a>
+          </div>
           <span className="sidebar_tooltip">Menu</span>
         </div>
 
         <div className="profile">
-          <a href="#" className="nav-item profile-pic-anchor">
+          <a href="/profile" className="nav-item profile-pic-anchor">
             <img
               src="/Images/default_user.jpeg"
               alt="Profile"
