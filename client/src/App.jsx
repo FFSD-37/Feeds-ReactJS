@@ -7,6 +7,7 @@ import Login from './components/login.jsx';
 import ChannelPage from './components/channel.jsx';
 import Register from './components/registration.jsx';
 import ActivityLog from './components/ActivityLog.jsx';
+import Stories from './components/stories.jsx';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route path="/channel" element={<ChannelPage />} />
         <Route path="/signup" element={<Register />} />
         <Route path="/dailyUsage" element={<ActivityLog />} />
+        <Route path="/stories" element={<Stories />} />
 
       </Routes>
     <Sidebar />

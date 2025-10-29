@@ -24,8 +24,8 @@ const handlegetstories = async(req, res) => {
     }).sort({createdAt:-1}).lean();
     
     const mapFrient_story=story.map((s)=>({...s,avatarUrl:friends.find(f=>f.username===s.username).avatarUrl}));
-    
-    return res.render("stories", { img: data[2], currUser: data[0],  stories:mapFrient_story});
+    return res.json({allStories: mapFrient_story});
+    // return res.render("stories", { img: data[2], currUser: data[0],  stories:mapFrient_story});
     }catch(err){
         console.log(err);
         return res.status(500).json({err:err.message})
