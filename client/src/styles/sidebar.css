@@ -87,30 +87,33 @@
 }
 
 /* === Dropdown Menu === */
+
 .profile-dropdown {
   display: none;
   position: absolute;
-  transform: translateX(-105%);
+  top: 50%;
+  right: 60px;
   background: #222;
   color: white;
-  width: auto;
-  bottom: 7%;
+  min-width: 160px;
   border-radius: 8px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-  padding: 6px 20px;
+  padding: 8px 0;
+  z-index: 999;
 }
 
 .profile-dropdown a {
   text-decoration: none;
   color: white;
   display: block;
-  padding: 8px 0;
-  transition: 0.3s;
+  padding: 10px 20px;
+  transition: all 0.25s ease;
   white-space: nowrap;
 }
 
 .profile-dropdown a:hover {
   color: #00aaff;
+  transform: translateX(6px); /* subtle slide to right */
 }
 
 .profile-dropdown.show {
@@ -211,7 +214,7 @@
   background-color: #dee2e6;
 }
 
-/* === Responsive Design === */
+/* === Responsive Design (Mobile) === */
 @media screen and (max-width: 768px) {
   .sidebar {
     flex-direction: row;
@@ -224,21 +227,21 @@
     justify-content: space-around;
   }
 
-  .icon-container {
-    flex: 1;
-  }
-
-  .sidebar_tooltip {
-    bottom: 120%;
+  .profile {
+    position: relative;
   }
 
   .profile-dropdown {
-    width: 200px;
-    bottom: 60px;
-    left: 80px;
+    top: auto;
+    bottom: 70px; /* appears above mobile bar */
+    right: 0;
+    left: auto;
+    transform: none;
+    width: 180px;
+    border-radius: 10px;
   }
 
   .profile-dropdown a {
-    padding: 6px 0;
+    padding: 8px 16px;
   }
 }

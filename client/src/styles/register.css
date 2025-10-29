@@ -1,0 +1,262 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: url(logo.jpg);
+  background: linear-gradient(45deg, #6b48ff, #6b48ff22);
+  padding: 2rem;
+  background-size: cover;
+  transition: background-color 1s ease-in-out;
+}
+
+.register-container {
+  padding: 2rem;
+  border-radius: 25px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 2px solid rgb(189, 31, 224);
+  width: 100%;
+  max-width: 500px;
+  background: white;
+}
+
+.register-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.register-header h1 {
+  color: #333;
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.form-group input:not([type="radio"]),
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #6b48ff;
+}
+
+.form-group textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 37px;
+  cursor: pointer;
+  color: #666;
+  user-select: none;
+}
+
+.password-toggle:hover {
+  color: #333;
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  display: none;
+}
+
+.form-group.error input,
+.form-group.error textarea,
+.form-group.error select {
+  border-color: #dc3545;
+}
+
+.form-group.error .error-message {
+  display: block;
+}
+
+.radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.checkbox-group {
+  margin-top: 1.5rem;
+}
+
+.know-about-type{
+  display: flex;
+  justify-content: center;
+}
+
+.know-about-type > button{
+  display: flex;
+  height: 1.5rem;
+  background-color: #d98abd;
+  border-radius: 5px;
+  margin: 5px 5px;
+  padding: 18px;
+  align-items: center;
+  font-size: medium;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.know-about-type > button:hover{
+  background-color: #cd3798;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #333;
+  cursor: pointer;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: #6b48ff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 1rem;
+}
+
+.submit-btn:hover {
+  background: #5a3cd9;
+}
+
+.submit-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.preview-image {
+  max-width: 150px;
+  max-height: 150px;
+  margin-top: 1rem;
+  border-radius: 5px;
+  display: none;
+}
+
+h1 {
+  text-align: center;
+}
+
+.overlay {
+  position:fixed;
+  left: 50%;
+  top: 50%;
+  transform: translateX(-50%) translateY(-50%);
+  width: 30%;
+  padding: 10px;
+  background: rgb(145, 160, 212);
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  z-index: 1000;
+  display: none;
+}
+
+.show-overlay {
+  display: block;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: red;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+
+@media (max-width: 480px) {
+  body {
+    padding: 1rem;
+  }
+
+  .register-container {
+    padding: 1.5rem;
+    max-width: 100%;
+    margin: 1rem;
+  }
+
+  .register-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    font-size: 0.9rem;
+    padding: 0.6rem;
+  }
+
+  .submit-btn {
+    font-size: 0.9rem;
+    padding: 0.6rem;
+  }
+}
+@media (max-width: 768px) {
+  .register-container {
+    max-width: 400px;
+  }
+
+  .register-header h1 {
+    font-size: 1.6rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .register-container {
+    max-width: 500px;
+  }
+}
