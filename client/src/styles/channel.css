@@ -10,8 +10,8 @@
   align-items: center;
   transition: all 0.4s ease;
   border-radius: 30px;
-  /* margin-right: 60px; */
   width: 65rem;
+  max-width: 100%;
 }
 
 /* === HEADER === */
@@ -24,13 +24,12 @@
   backdrop-filter: blur(8px);
   box-shadow: 0 3px 15px rgba(0, 0, 0, 0.4);
   margin-bottom: 1.5rem;
-  max-width: 850px;
-  width: 90%;
+  width: 100%;
 }
 
 .channel-logo {
-  width: 80px;
-  height: 80px;
+  width: 4rem;
+  height: 4rem;
   border-radius: 50%;
   border: 3px solid white;
   object-fit: cover;
@@ -42,7 +41,7 @@
 }
 
 .channel-name {
-  font-size: 1.6rem;
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
   font-weight: 700;
   margin-bottom: 0.4rem;
   display: flex;
@@ -51,7 +50,7 @@
 }
 
 .channel-description {
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 1.5vw, 1rem);
   color: #e0e0e0;
   margin-bottom: 0.6rem;
 }
@@ -88,6 +87,7 @@
   cursor: pointer;
   transition: 0.3s;
   color: #00bcd4;
+  font-size: clamp(0.85rem, 1.3vw, 1rem);
 }
 
 .channel-admin:hover,
@@ -112,6 +112,7 @@
   color: white;
   cursor: pointer;
   font-weight: 500;
+  font-size: clamp(0.8rem, 1.5vw, 1rem);
   transition: 0.3s;
 }
 
@@ -120,21 +121,20 @@
   transform: scale(1.05);
 }
 
-/* === FIXED BODY AREA === */
+/* === BODY === */
 .channel-body {
-  width: 90%;
+  width: 100%;
   max-width: 850px;
-  min-height: 500px; /* Keeps layout fixed */
+  min-height: 400px;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
 }
 
 /* === POSTS GRID === */
 .channel-posts-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* exactly 3 posts per row on large screens */
-  gap: 1.2rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
   width: 100%;
   transition: 0.3s;
 }
@@ -144,7 +144,7 @@
   border-radius: 0.8rem;
   overflow: hidden;
   transition: transform 0.3s;
-  height: 200px;
+  height: 160px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -179,7 +179,9 @@
   padding: 1.5rem;
   width: 320px;
   max-height: 80vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  position: relative;
   box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
 }
 
@@ -194,6 +196,9 @@
   list-style: none;
   padding: 0;
   margin: 0;
+  overflow-y: auto;
+  flex: 1;
+  scrollbar-width: thin;
 }
 
 .channel-member-item {
@@ -222,27 +227,29 @@
   border: none;
   width: 100%;
   padding: 0.6rem;
-  margin-top: 1rem;
   border-radius: 0.5rem;
   cursor: pointer;
   font-weight: 500;
   transition: 0.3s;
+  position: sticky;
+  bottom: 0;
+  margin-top: 0.8rem;
 }
 
 .channel-close-btn:hover {
   background: #0097a7;
 }
 
-/* === RESPONSIVE GRID === */
+/* === RESPONSIVE === */
 @media (max-width: 1024px) {
   .channel-posts-grid {
-    grid-template-columns: repeat(2, 1fr); /* 2 per row on medium screens */
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 640px) {
   .channel-posts-grid {
-    grid-template-columns: 1fr; /* 1 per row on mobile */
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .channel-header {
@@ -252,5 +259,19 @@
 
   .channel-logo {
     margin-bottom: 1rem;
+  }
+
+  .channel-name {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .channel-posts-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+  .channel-post-card {
+    height: 120px;
   }
 }

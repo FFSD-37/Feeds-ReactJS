@@ -108,31 +108,31 @@ You can create **child components** freely under these parent components.
 - [❌] Post Overlay  
 - [❌] Edit Profile  
 - [❌] Connect  
-- [❌] Channel Profile (Self/Other)
+- [✅❌] Channel Profile (Self/Other)
 
 ---
 
 ### 👤 Gourav Khakse
 - [❌] Admin Portal  
 - [❌] Home (Landing Page)  
-- [❌] Create Post / Reels / Stories  
-- [❌] Notification  
+- [❌] Profile (Self/Others) 
+- [✅] Notification  
 - [✅] Games
 
 ---
 
 ### 👤 Arnav Ranjan
-- [❌] Payment / Premium  
+- [✅] Payment / Premium  
 - [❌] Chat  
 - [❌] Settings  
 - [❌] Daily Usage  
-- [❌] Profile (Self/Others)
+- [❌] Create Post / Reels / Stories 
 
 ---
 
 ### 👤 Atin Chowdhury
 - [❌] Registration Page (All Types)  
-- [❌] Login Page (All Types)  
+- [✅] Login Page (All Types)  
 - [❌] Activity Log  
 - [❌] Stories  
 - [❌] Ads
