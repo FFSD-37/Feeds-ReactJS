@@ -131,7 +131,7 @@ You can create **child components** freely under these parent components.
 ---
 
 ### 👤 Atin Chowdhury
-- [❌] Registration Page (All Types)  
+- [✅] Registration Page (All Types)  
 - [✅] Login Page (All Types)  
 - [❌] Activity Log  
 - [❌] Stories  
