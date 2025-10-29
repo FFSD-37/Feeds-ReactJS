@@ -21,8 +21,10 @@ export const UserDataProvider = ({ children }) => {
 
         if (res.ok) {
           const data = await res.json();
+          console.log(data);
+
           setUserData(data);
-          navigate('/');
+          navigate('/home');
         } else throw new Error('Unauthorized');
         // eslint-disable-next-line no-unused-vars
       } catch (error) {
@@ -31,7 +33,7 @@ export const UserDataProvider = ({ children }) => {
       }
     };
     auth();
-  }, [pathname]);
+  }, [pathname, navigate]);
 
   return (
     <UserDatacontext.Provider

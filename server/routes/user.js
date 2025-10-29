@@ -45,6 +45,8 @@ import {
   reportAccount,
   handlegetloginchannel,
   handleloginchannel,
+  handlegetallnotifications,
+  handleloginsecond,
 } from "../controllers/user.js";
 import { handleimagKitauth } from "../services/imagKit.js";
 import { isAuthuser } from "../middleware/isAuthuser.js";
@@ -96,10 +98,10 @@ router.get("/login", isAuthuser, (req, res) => {
 
 router.get("/verify", isAuthuser, (req, res) => {
   return res.json({
-    username: req.userDetails[0],
-    email: req.userDetails[1],
-    profileUrl: req.userDetails[3],
-    isPremium: req.userDetails[4],
+    username: req.userDetails.data[0],
+    email: req.userDetails.data[1],
+    profileUrl: req.userDetails.data[3],
+    isPremium: req.userDetails.data[4],
   });
 });
 
@@ -180,5 +182,9 @@ router.post("/report/:username", isAuthuser, reportAccount);
 router.get("/login_channel", isAuthuser, handlegetloginchannel);
 
 router.post("/postloginchannel", isAuthuser, handleloginchannel);
+
+router.get("/GetAllNotifications", isAuthuser, handlegetallnotifications);
+
+router.post("/atin_job", handleloginsecond);
 
 export default router;

@@ -13,7 +13,7 @@ import { UserDataProvider, useUserData } from './providers/userData.jsx';
 const AppContent = () => {
   const { userData } = useUserData();
   return (
-    <Router>
+    <>
       <Routes>
         <Route path="/payment" element={<PaymentPage />} />
         <Route path="/games" element={<Games />} />
@@ -26,15 +26,17 @@ const AppContent = () => {
         <Route path="/dailyUsage" element={<ActivityLog />} />
       </Routes>
       {userData?.username ? <Sidebar /> : null}
-    </Router>
+    </>
   );
 };
 
 function App() {
   return (
-    <UserDataProvider>
-      <AppContent />
-    </UserDataProvider>
+    <Router>
+      <UserDataProvider>
+        <AppContent />
+      </UserDataProvider>
+    </Router>
   );
 }
 
