@@ -24,7 +24,7 @@ export const UserDataProvider = ({ children }) => {
           console.log(data);
 
           setUserData(data);
-          navigate('/home');
+          if(pathname === '/login' || pathname === '/signup') navigate('/home');
         } else throw new Error('Unauthorized');
         // eslint-disable-next-line no-unused-vars
       } catch (error) {

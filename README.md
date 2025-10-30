@@ -134,7 +134,7 @@ You can create **child components** freely under these parent components.
 - [✅] Registration Page (All Types)  
 - [✅] Login Page (All Types)  
 - [✅] Activity Log  
-- [❌] Stories  
+- [✅] Stories  
 - [❌] Ads
 
 ---
