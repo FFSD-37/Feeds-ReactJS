@@ -1,5 +1,5 @@
 import express from 'express';
-import {create_channel} from '../controllers/channel.js';
+import {create_channel} from '../controllers/Ayush/channel.js';
 
 const router=express.Router();
 
