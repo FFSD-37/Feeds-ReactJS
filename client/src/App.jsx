@@ -7,12 +7,13 @@ import Login from './components/login.jsx';
 import ChannelPage from './components/channel.jsx';
 import Register from './components/registration.jsx';
 import ActivityLog from './components/ActivityLog.jsx';
-import Stories from './components/stories.jsx';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { UserDataProvider, useUserData } from './providers/userData.jsx';
 
-function App() {
+const AppContent = () => {
+  const { userData } = useUserData();
   return (
-    <Router>
+    <>
       <Routes>
         <Route path="/payment" element={<PaymentPage />} />
         <Route path="/games" element={<Games />} />
@@ -21,10 +22,20 @@ function App() {
         <Route path="/channel" element={<ChannelPage />} />
         <Route path="/signup" element={<Register />} />
         <Route path="/dailyUsage" element={<ActivityLog />} />
-        <Route path="/stories" element={<Stories />} />
-
+        <Route path="/signup" element={<Register />} />
+        <Route path="/dailyUsage" element={<ActivityLog />} />
       </Routes>
-    <Sidebar />
+      {userData?.username ? <Sidebar /> : null}
+    </>
+  );
+};
+
+function App() {
+  return (
+    <Router>
+      <UserDataProvider>
+        <AppContent />
+      </UserDataProvider>
     </Router>
   );
 }
