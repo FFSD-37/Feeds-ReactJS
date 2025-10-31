@@ -48,6 +48,9 @@ import {
   handlegetallnotifications,
   handleloginsecond,
 } from "../controllers/user.js";
+import {
+  handlegetUserPost
+} from "../controllers/Gourav/profile.js";
 import { handleimagKitauth } from "../services/imagKit.js";
 import { isAuthuser } from "../middleware/isAuthuser.js";
 import { checkOut, verify_payment } from "../controllers/payment.js";
@@ -65,7 +68,7 @@ router.get("/home", isAuthuser, handlegetHome);
 
 router.get("/payment", isAuthuser, handlegetpayment);
 
-router.get("/profile/:username", isAuthuser, handlegetprofile);
+// router.get("/profile/:username", isAuthuser, handlegetprofile);
 
 router.get("/tandc", isAuthuser, handlegetterms);
 
@@ -100,6 +103,7 @@ router.get("/verify", isAuthuser, (req, res) => {
   return res.json({
     username: req.userDetails.data[0],
     email: req.userDetails.data[1],
+    type: req.userDetails[2],
     profileUrl: req.userDetails.data[3],
     isPremium: req.userDetails.data[4],
   });
@@ -184,6 +188,8 @@ router.get("/login_channel", isAuthuser, handlegetloginchannel);
 router.post("/postloginchannel", isAuthuser, handleloginchannel);
 
 router.get("/GetAllNotifications", isAuthuser, handlegetallnotifications);
+
+router.get("/profile:username", isAuthuser, handlegetUserPost);
 
 router.post("/atin_job", handleloginsecond);
 
