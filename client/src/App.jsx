@@ -8,6 +8,7 @@ import ChannelPage from './components/channel.jsx';
 import Register from './components/registration.jsx';
 import ActivityLog from './components/ActivityLog.jsx';
 import Stories from './components/stories.jsx';
+import ProfilePage from './components/Profile.jsx';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { UserDataProvider, useUserData } from './providers/userData.jsx';
 
@@ -24,6 +25,7 @@ const AppContent = () => {
         <Route path="/signup" element={<Register />} />
         <Route path="/dailyUsage" element={<ActivityLog />} />
         <Route path="/stories" element={<Stories />} />
+        <Route path="/profile/VoyagerX21" element={<ProfilePage />} />
       </Routes>
       {userData?.username ? <Sidebar /> : null}
     </>

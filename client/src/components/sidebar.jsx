@@ -143,7 +143,7 @@ function Sidebar() {
         </div>
 
         <div className="profile">
-          <a href="/profile" className="nav-item profile-pic-anchor">
+          <a href="/profile/VoyagerX21" className="nav-item profile-pic-anchor">
             <img
               src="/Images/default_user.jpeg"
               alt="Profile"
