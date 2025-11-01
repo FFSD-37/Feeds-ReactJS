@@ -103,8 +103,8 @@ router.get("/verify", isAuthuser, (req, res) => {
   return res.json({
     username: req.userDetails.data[0],
     email: req.userDetails.data[1],
-    type: req.userDetails[2],
-    profileUrl: req.userDetails.data[3],
+    profileUrl: req.userDetails.data[2],
+    type: req.userDetails.data[3],
     isPremium: req.userDetails.data[4],
   });
 });
