@@ -501,25 +501,21 @@ const handlegetconnect = async (req, res) => {
 
     const mutualFollowersArrays = await Promise.all(mutualFollowersPromises);
 
-    let metualFollowers = [...new Set(
+    let mutualFollowers = [...new Set(
       mutualFollowersArrays.flat().map(user => user.username)
     )];
 
-    const users = await User.find({ username: { $in: metualFollowers } });
+    const users = await User.find({ username: { $in: mutualFollowers } });
 
-    metualFollowers = users.map(user => ({
+    mutualFollowers = users.map(user => ({
       username: user.username,
       avatarUrl: user.profilePicture,
       display_name: user.display_name,
       followers: user.followers.length,
-      following: user.followings.length
+      following: user.followings.length,
+      isFollowing:currentUser.followings.some(f => f.username === user.username)
     }));
-
-    return res.render("connect", {
-      img: data[2],
-      currUser: data[0],
-      users: metualFollowers
-    });
+    return res.json({ users: mutualFollowers });
   } catch (error) {
     console.error("Error in handlegetconnect:", error);
     return res.status(500).send("Internal Server Error");

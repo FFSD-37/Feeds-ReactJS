@@ -141,12 +141,8 @@ const PaymentPage = ({ coins = 100 }) => {
             <li style={{ margin: '8px 0' }}>✔️ Ad-free experience</li>
             <li style={{ margin: '8px 0' }}>✔️ Customized Wallpapers</li>
             <li style={{ margin: '8px 0' }}>✔️ Priority customer support</li>
-            <li style={{ margin: '8px 0' }}>
-              ✔️ Notification on who searched you
-            </li>
-            <li style={{ margin: '8px 0' }}>
-              ✔️ Create unlimited channels (Free users: 3)
-            </li>
+            <li style={{ margin: '8px 0' }}>✔️ Notification on who viewed your profile</li>
+            <li style={{ margin: '8px 0' }}>✔️ Create unlimited channels (Free users: 3)</li>
           </ul>
         </div>
       </div>
