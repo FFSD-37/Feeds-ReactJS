@@ -106,7 +106,7 @@ function Sidebar() {
         )}
 
         {/* Dropdown Menu */}
-        {showDropdown && type !== 'Kids' && (
+        {showDropdown && (
           <div className="profile-dropdown show">
             <a href="/edit_profile">Edit Profile</a>
             <a href="/dailyUsage">See Daily Usage</a>
