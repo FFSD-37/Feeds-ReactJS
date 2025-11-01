@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "../styles/ProfilePage.css";
+import "../styles/profilePage.css";
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("posts");
