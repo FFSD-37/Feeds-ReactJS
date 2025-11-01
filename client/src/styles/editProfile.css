@@ -1,0 +1,330 @@
+/* ----------------------------
+   Container & Layout
+---------------------------- */
+.edit-profile_container {
+  min-height: 100vh;
+  width: 100%;
+  background: linear-gradient(135deg, #f7f3ff, #f9f9ff);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 60px 20px;
+  box-sizing: border-box;
+}
+
+.edit-profile_heading {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #3b2e8e;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+/* ----------------------------
+   Form Wrapper
+---------------------------- */
+.edit-profile_form {
+  background: #ffffff;
+  padding: 40px 45px;
+  border-radius: 20px;
+  box-shadow: 0 8px 25px rgba(107, 72, 255, 0.1);
+  width: 100%;
+  max-width: 650px;
+  transition: all 0.3s ease;
+}
+
+.edit-profile_form:hover {
+  box-shadow: 0 10px 30px rgba(107, 72, 255, 0.15);
+}
+
+/* ----------------------------
+   Profile Photo
+---------------------------- */
+.edit-profile_photo-section {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.edit-profile_photo {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #6b48ff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.edit-profile_photo:hover {
+  transform: scale(1.05);
+}
+
+.edit-profile_photo-btn {
+  background: transparent;
+  border: none;
+  color: #6b48ff;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 8px;
+  font-size: 0.95rem;
+  transition: color 0.2s ease;
+}
+
+.edit-profile_photo-btn:hover {
+  color: #5130e5;
+}
+
+/* ----------------------------
+   Input Fields
+---------------------------- */
+h4 {
+  color: #2c2c2c;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.edit-profile_field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 25px;
+  gap: 10px;
+}
+
+.edit-profile_field input,
+.edit-profile_field textarea,
+.edit-profile_field select {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1.5px solid #dcdcdc;
+  font-size: 1rem;
+  background-color: #fafafa;
+  transition: all 0.25s ease;
+}
+
+.edit-profile_field input:focus,
+.edit-profile_field textarea:focus,
+.edit-profile_field select:focus {
+  border-color: #6b48ff;
+  outline: none;
+  background-color: #fff;
+}
+
+.edit-profile_field a {
+  color: #6b48ff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.edit-profile_field a:hover {
+  color: #5130e5;
+}
+
+/* ----------------------------
+   Terms & Submit Button
+---------------------------- */
+.edit-profile_terms {
+  margin-top: 10px;
+  font-size: 0.95rem;
+  color: #333;
+  line-height: 1.4;
+}
+
+.edit-profile_terms-link {
+  color: #6b48ff;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.edit-profile_terms-link:hover {
+  color: #5130e5;
+}
+
+.edit-profile_submit-btn {
+  background: #6b48ff;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  width: 100%;
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin-top: 25px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(107, 72, 255, 0.25);
+  transition: all 0.3s ease;
+}
+
+.edit-profile_submit-btn:hover {
+  background: #5130e5;
+  box-shadow: 0 6px 18px rgba(81, 48, 229, 0.35);
+}
+
+/* ----------------------------
+   Overlay (Terms Modal)
+---------------------------- */
+.edit-profile_overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(3px);
+}
+
+.edit-profile_overlay-content {
+  background: #fff;
+  padding: 40px;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 650px;
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
+  animation: fadeIn 0.3s ease;
+}
+
+.edit-profile_close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  border: none;
+  background: #6b48ff;
+  color: white;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.edit-profile_close-btn:hover {
+  background: #5130e5;
+  transform: scale(1.1);
+}
+
+.edit-profile_overlay-text {
+  font-size: 0.95rem;
+  color: #333;
+  line-height: 1.6;
+}
+
+.edit-profile_overlay-text h2 {
+  margin-top: 20px;
+  color: #4b3dbd;
+  font-size: 1.2rem;
+}
+
+/* Subtle Success Feedback */
+.edit-profile_success-msg {
+  text-align: center;
+  color: #28a745;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-top: 14px;
+  opacity: 0;
+  animation: fadeInOut 2.5s ease forwards;
+}
+
+/* Saved button animation */
+.edit-profile_submit-btn.saved {
+  background: #34c759 !important;
+  box-shadow: 0 6px 18px rgba(52, 199, 89, 0.35);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+
+/* Fade In-Out */
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+}
+
+/* ----------------------------
+   Animation
+---------------------------- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ----------------------------
+   Responsive Design
+---------------------------- */
+@media (max-width: 768px) {
+  .edit-profile_form {
+    padding: 25px 30px;
+  }
+
+  .edit-profile_photo {
+    width: 100px;
+    height: 100px;
+  }
+
+  .edit-profile_field {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .edit-profile_field a {
+    align-self: flex-end;
+    margin-top: 5px;
+  }
+
+  .edit-profile_heading {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .edit-profile_form {
+    padding: 20px;
+    border-radius: 15px;
+  }
+
+  .edit-profile_heading {
+    font-size: 1.8rem;
+  }
+
+  .edit-profile_submit-btn {
+    font-size: 1rem;
+    padding: 12px;
+  }
+
+  .edit-profile_overlay-content {
+    padding: 25px;
+  }
+}

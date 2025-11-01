@@ -1,0 +1,313 @@
+/* Base Styles */
+.connect-body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding-bottom: 80px;
+  max-width: 1300px; /* Increased from default width */
+  margin: 0 auto; /* Center the content */
+}
+
+/* HEADER */
+.connect-header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 40px;
+  border-radius: 26px;
+  margin-bottom: 45px;
+  box-shadow: 0 14px 50px rgba(0, 0, 0, 0.1);
+}
+
+.connect-title {
+  font-size: 2.9rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.connect-subtitle {
+  color: #718096;
+  font-size: 1.2rem;
+}
+
+/* SEARCH BOX */
+.connect-search-container {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 30px;
+  border-radius: 26px;
+  margin-bottom: 40px;
+  box-shadow: 0 12px 45px rgba(0, 0, 0, 0.1);
+}
+
+.connect-search-input {
+  width: 100%;
+  padding: 22px 22px 22px 60px;
+  font-size: 1.05rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 20px;
+  outline: none;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.connect-search-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+/* CONTAINER */
+.connect-container {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 40px;
+  border-radius: 26px;
+  box-shadow: 0 14px 50px rgba(0, 0, 0, 0.1);
+}
+
+.connect-results-header {
+  color: #1a202c;
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+/* LIST ITEMS */
+.connect-people-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); /* slightly wider */
+  gap: 30px;
+}
+
+.connect-list-item {
+  background: white;
+  border-radius: 20px;
+  padding: 25px;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.connect-list-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(102, 126, 234, 0.15);
+  border-color: #667eea;
+}
+
+/* PROFILE */
+.connect-profile {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex: 1 1 auto;
+  min-width: 260px;
+}
+
+.connect-profile-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.connect-list-item:hover .connect-profile-img {
+  border-color: #667eea;
+  transform: scale(1.05);
+}
+
+.connect-info {
+  flex: 1;
+}
+
+.connect-profile-link {
+  text-decoration: none;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.connect-profile-name {
+  color: #1a202c;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 3px;
+  transition: color 0.3s ease;
+}
+
+.connect-list-item:hover .connect-profile-name {
+  color: #667eea;
+}
+
+.connect-profile-username {
+  color: #718096;
+  font-size: 1rem;
+}
+
+/* STATS */
+.connect-stats {
+  display: flex;
+  gap: 25px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.connect-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #4a5568;
+  font-size: 0.95rem;
+}
+
+.connect-stat-value {
+  font-weight: 600;
+  color: #667eea;
+}
+
+/* FOLLOW BUTTON */
+.connect-follow-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: auto;
+  min-width: 120px;
+}
+
+.connect-follow-btn:hover {
+  transform: scale(1.07);
+}
+
+.connect-follow-btn.bg-indigo-600 {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  box-shadow: 0 5px 14px rgba(102, 126, 234, 0.3);
+}
+
+.connect-follow-btn.bg-indigo-600:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+}
+
+.connect-follow-btn.bg-gray-300 {
+  background: #edf2f7;
+  color: #2d3748;
+}
+
+.connect-follow-btn.bg-gray-300:hover {
+  background: #e2e8f0;
+}
+
+/* EMPTY STATE */
+.connect-empty-state {
+  text-align: center;
+  padding: 70px 20px;
+  color: #718096;
+}
+
+.connect-empty-state-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+
+.connect-empty-state-text {
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+  .connect-body {
+    max-width: 1000px;
+  }
+
+  .connect-header,
+  .connect-search-container,
+  .connect-container {
+    padding: 30px;
+    border-radius: 22px;
+  }
+
+  .connect-title {
+    font-size: 2.4rem;
+  }
+
+  .connect-people-list {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .connect-body {
+    max-width: 90%;
+  }
+
+  .connect-title {
+    font-size: 1.9rem;
+  }
+
+  .connect-list-item {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .connect-profile {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .connect-profile-img {
+    width: 70px;
+    height: 70px;
+  }
+
+  .connect-profile-name {
+    font-size: 1.05rem;
+  }
+
+  .connect-follow-btn {
+    width: 80%;
+    margin-top: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .connect-header {
+    padding: 20px;
+  }
+
+  .connect-title {
+    font-size: 1.6rem;
+  }
+
+  .connect-container {
+    padding: 22px;
+  }
+
+  .connect-list-item {
+    padding: 18px;
+  }
+
+  .connect-people-list {
+    grid-template-columns: 1fr;
+  }
+
+  .connect-follow-btn {
+    width: 100%;
+    font-size: 0.95rem;
+    padding: 10px 0;
+  }
+}

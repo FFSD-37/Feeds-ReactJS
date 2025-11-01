@@ -335,7 +335,7 @@ const handleContact = (req, res) => {
       console.log("Error is writing file", err);
     }
     else {
-      return res.render("contact", { img: data[2], msg: "Your response is noted, we'll get back to you soon." ,currUser: data[0]})
+      return res.render("contact", { img: data[2], msg: "Your response is noted, we'll get back to you soon.", currUser: data[0] })
     }
   })
 }
@@ -351,7 +351,7 @@ const handleadminlogin = async (req, res) => {
     orders.forEach(async order => {
       if (order.status !== "Pending") {
         revenue += Number(order.amount);
-        await User.findOneAndUpdate({ username: order.username }, {$exists: false},{$set : {isPremium: true}});
+        await User.findOneAndUpdate({ username: order.username }, { $exists: false }, { $set: { isPremium: true } });
       }
     });
     return res.render("adminPortal", { total_revenue: revenue, total_users: totalUsers.length, total_posts: totalPosts.length, allUsersInOrder: totalUsers, total_tickets: tickets.length, allOrders: orders, allUsers: totalUsers, allReports: tickets, allReviews: reviews });
@@ -501,25 +501,21 @@ const handlegetconnect = async (req, res) => {
 
     const mutualFollowersArrays = await Promise.all(mutualFollowersPromises);
 
-    let metualFollowers = [...new Set(
+    let mutualFollowers = [...new Set(
       mutualFollowersArrays.flat().map(user => user.username)
     )];
 
-    const users = await User.find({ username: { $in: metualFollowers } });
+    const users = await User.find({ username: { $in: mutualFollowers } });
 
-    metualFollowers = users.map(user => ({
+    mutualFollowers = users.map(user => ({
       username: user.username,
       avatarUrl: user.profilePicture,
       display_name: user.display_name,
       followers: user.followers.length,
-      following: user.followings.length
+      following: user.followings.length,
+      isFollowing: currentUser.followings.some(f => f.username === user.username)
     }));
-
-    return res.render("connect", {
-      img: data[2],
-      currUser: data[0],
-      users: metualFollowers
-    });
+    return res.json({ users: mutualFollowers });
   } catch (error) {
     console.error("Error in handlegetconnect:", error);
     return res.status(500).send("Internal Server Error");
@@ -540,7 +536,7 @@ const handlegetadmin = (req, res) => {
   return res.render("admin", { msg: null });
 }
 
-const handlegetreels = async(req, res) => {
+const handlegetreels = async (req, res) => {
   const { data } = req.userDetails;
 
   const userType = data[3];
@@ -549,9 +545,9 @@ const handlegetreels = async(req, res) => {
   }).sort({ createdAt: -1 }).lean();
 
   if (!posts) return res.status(404).json({ err: "Post not found" });
-  posts = await Promise.all(posts.map(async(post) => {
-    const author= await User.findOne({ username: post.author }).lean();
-    const isLiked=author.likedPostsIds?.includes(post.id) || false;
+  posts = await Promise.all(posts.map(async (post) => {
+    const author = await User.findOne({ username: post.author }).lean();
+    const isLiked = author.likedPostsIds?.includes(post.id) || false;
     return { ...post, avatar: author.profilePicture, liked: isLiked };
   }))
 
@@ -574,8 +570,21 @@ const handlegetforgetpass = (req, res) => {
 const handlegeteditprofile = async (req, res) => {
   const { data } = req.userDetails;
   const user = await User.findOne({ username: data[0] });
-  return res.render("edit_profile", { img: data[2], currUser: data[0], CurrentUser: user });
-}
+  if (data[3] === "Kids") {
+    return res.json({
+      img: data[2],
+      currUser: data[0],
+      CurrentUser: user,
+      type: data[3],
+    });
+  }
+  return res.json({
+    img: data[2],
+    currUser: data[0],
+    CurrentUser: user,
+    type: data[3],
+  });
+};
 
 const updateUserProfile = async (req, res) => {
   const { data } = req.userDetails;
@@ -606,18 +615,18 @@ const handlegetcreatepost = (req, res) => {
 const handlecreatepost = async (req, res) => {
   console.log(req.body);
   const { data } = req.userDetails;
-  if (req.body.postType === "story"){
+  if (req.body.postType === "story") {
     const user = {
       username: data[0],
       url: req.body.profileImageUrl
     }
     await Story.create(user);
-    return res.render("create_post", {img: data[2], currUser: data[0], msg: "story uploaded successfully"})
+    return res.render("create_post", { img: data[2], currUser: data[0], msg: "story uploaded successfully" })
   }
-  if (req.body.postType === "reel"){
-    return res.render("create_post3", {img: data[2], currUser: data[0], post: req.body.profileImageUrl, type: req.body.postType})
+  if (req.body.postType === "reel") {
+    return res.render("create_post3", { img: data[2], currUser: data[0], post: req.body.profileImageUrl, type: req.body.postType })
   }
-  else{
+  else {
     return res.render("create_post_second", { img2: req.body.profileImageUrl, img: data[2], currUser: data[0], type: req.body.postType });
   }
 }
@@ -775,38 +784,38 @@ const registerChannel = async (req, res) => {
 }
 
 const createPostfinalize = (req, res) => {
-  try{
-  const {data} = req.userDetails
-  console.log(req.body);
-  return res.render("create_post3", {img: data[2], currUser: data[0], post: req.body.profileImageUrl, type: req.body.type});
-} catch(err){ console.log(err)}
+  try {
+    const { data } = req.userDetails
+    console.log(req.body);
+    return res.render("create_post3", { img: data[2], currUser: data[0], post: req.body.profileImageUrl, type: req.body.type });
+  } catch (err) { console.log(err) }
 }
 
 const handlegetlog = async (req, res) => {
-  const {data} = req.userDetails;
-  const allLogs = await ActivityLog.find({username: data[0]}).lean().sort({createdAt: -1});
-  return res.json({allogs: allLogs});
+  const { data } = req.userDetails;
+  const allLogs = await ActivityLog.find({ username: data[0] }).lean().sort({ createdAt: -1 });
+  return res.json({ allogs: allLogs });
 }
 
 const uploadFinalPost = async (req, res) => {
-  const {data} = req.userDetails;
+  const { data } = req.userDetails;
   const idd = `${data[0]}-${Date.now()}`;
   const postObj = {
     id: idd,
-    type: req.body.type?"Img":"Reels",
+    type: req.body.type ? "Img" : "Reels",
     url: req.body.avatar,
     content: req.body.caption,
     author: data[0],
   }
   await Post.create(postObj);
-  const post = await Post.findOne({id: idd}).lean();
-  await User.findOneAndUpdate({username: data[0]}, {$push: {postIds: post._id}}, {new: true, upsert: false});
-  return res.render("create_post", {img: data[2], currUser: data[0], msg: "post uploaded successfully"})
+  const post = await Post.findOne({ id: idd }).lean();
+  await User.findOneAndUpdate({ username: data[0] }, { $push: { postIds: post._id } }, { new: true, upsert: false });
+  return res.render("create_post", { img: data[2], currUser: data[0], msg: "post uploaded successfully" })
 }
 
 const reportAccount = async (req, res) => {
-  const {data} = req.userDetails;
-  const {username} = req.params;
+  const { data } = req.userDetails;
+  const { username } = req.params;
   const report = {
     post_id: "On account",
     post_author: username,
@@ -814,37 +823,37 @@ const reportAccount = async (req, res) => {
     user_reported: data[0],
   }
   await Report.create(report);
-  return res.json({data: true});
+  return res.json({ data: true });
 }
 
 const handlegetloginchannel = async (req, res) => {
-  const {data} = req.userDetails;
-  return res.render("channellogin", {img: data[2], currUser: data[0]});
+  const { data } = req.userDetails;
+  return res.render("channellogin", { img: data[2], currUser: data[0] });
 }
 
 const handleloginchannel = async (req, res) => {
-  const {data} = req.userDetails;
-  const {channelName, channelPassword} = req.body;
-  const channel = await Channel.findOne({channelName: channelName});
-  const user = await User.findOne({username: data[0]});
-  if(channel && channel.channelAdmin == user._id){
-    if(channel.channelPassword == channelPassword){
-      return res.render("channel", {img: data[2], currUser: data[0], channel});
+  const { data } = req.userDetails;
+  const { channelName, channelPassword } = req.body;
+  const channel = await Channel.findOne({ channelName: channelName });
+  const user = await User.findOne({ username: data[0] });
+  if (channel && channel.channelAdmin == user._id) {
+    if (channel.channelPassword == channelPassword) {
+      return res.render("channel", { img: data[2], currUser: data[0], channel });
     }
-    else{
-      return res.render("channellogin", {img: data[2], currUser: data[0], msg: "Channel do not exists."});
+    else {
+      return res.render("channellogin", { img: data[2], currUser: data[0], msg: "Channel do not exists." });
     }
   }
 }
 
 const handlegetallnotifications = async (req, res) => {
   const { data } = req.userDetails;
-  if (data){
+  if (data) {
     const allNotifications = await Notification.find({ mainUser: data[0] }).lean().sort({ createdAt: -1 });
-    return res.json({allNotifications: allNotifications})
+    return res.json({ allNotifications: allNotifications })
   }
-  else{
-    return res.json({success: false})
+  else {
+    return res.json({ success: false })
   }
 }
 
