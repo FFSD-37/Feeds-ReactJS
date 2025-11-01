@@ -1,134 +1,84 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import './../styles/sidebar.css';
+import { useUserData } from './../providers/userData.jsx';
+import { useNavigate } from 'react-router-dom';
 
 function Sidebar() {
+  const { userData, setUserData } = useUserData();
+  const navigate = useNavigate();
+
   const [showDropdown, setShowDropdown] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const toggleDropdown = () => setShowDropdown(prev => !prev);
   const toggleLogoutModal = () => setShowLogoutModal(prev => !prev);
 
+  const handleLogout = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      // If logout is successful OR even if session is already invalid
+      if (res.ok || res.status === 401) {
+        setUserData({});
+        navigate('/login', { replace: true }); // replace avoids back navigation
+      } else {
+        console.error('Logout failed');
+      }
+    } catch (err) {
+      console.error('Error logging out:', err);
+    } finally {
+      // Fallback navigation in case of network error
+      setTimeout(() => navigate('/login', { replace: true }), 300);
+    }
+  };
+
+
+  const { username, profileUrl, type } = userData || {};
+
+  // Define available sidebar items
+  const allItems = [
+    { name: 'Home', href: '/home', icon: '/Images/Home.svg' },
+    { name: 'Notifications', href: '/notifications', icon: '/Images/Notifications.svg' },
+    { name: 'Create', href: '/create_post', icon: '/Images/Create.svg' },
+    { name: 'Chat', href: '/chat', icon: '/Images/Chat.svg' },
+    { name: 'Connect', href: '/connect', icon: '/Images/Connect.svg' },
+    { name: 'Stories', href: '/stories', icon: '/Images/Stories.svg' },
+    { name: 'Reels', href: '/reels', icon: '/Images/Reels.svg' },
+    { name: 'Game', href: '/games', icon: '/Images/Game.svg' },
+    { name: 'Premium', href: '/payment', icon: '/Images/Premium.svg' },
+  ];
+
+  // Filter for kids
+  const filteredItems =
+    type === 'Kids'
+      ? allItems.filter(item =>
+          ['Home', 'Connect', 'Reels', 'Game'].includes(item.name)
+        )
+      : allItems;
+
   return (
     <>
       <div className="sidebar">
-        {/* --- Sidebar Icons --- */}
-        <div className="icon-container">
-          <a href="/home" className="nav-item">
-            <img
-              src="/Images/Home.svg"
-              alt="Home"
-              className="icon-img"
-              width="30"
-              height="30"
-            />
-          </a>
-          <span className="sidebar_tooltip">Home</span>
-        </div>
+        {/* Sidebar Items */}
+        {filteredItems.map(item => (
+          <div key={item.name} className="icon-container">
+            <a href={item.href} className="nav-item">
+              <img
+                src={item.icon}
+                alt={item.name}
+                className="icon-img"
+                width="30"
+                height="30"
+              />
+            </a>
+            <span className="sidebar_tooltip">{item.name}</span>
+          </div>
+        ))}
 
-        <div className="icon-container">
-          <a href="/notifications" className="nav-item">
-            <img
-              src="/Images/Notifications.svg"
-              alt="Notifications"
-              className="icon-img"
-              width="30"
-              height="30"
-            />
-          </a>
-          <span className="sidebar_tooltip">Notifications</span>
-        </div>
-
-        <div className="icon-container">
-          <a href="/create_post" className="nav-item">
-            <img
-              src="/Images/Create.svg"
-              alt="Create"
-              className="icon-img"
-              width="30"
-              height="30"
-            />
-          </a>
-          <span className="sidebar_tooltip">Create</span>
-        </div>
-
-        <div className="icon-container">
-          <a href="/chat" className="nav-item">
-            <img
-              src="/Images/Chat.svg"
-              alt="Chat"
-              className="icon-img"
-              width="30"
-              height="30"
-            />
-          </a>
-          <span className="sidebar_tooltip">Chat</span>
-        </div>
-
-        <div className="icon-container">
-          <a href="/connect" className="nav-item">
-            <img
-              src="/Images/Connect.svg"
-              alt="Connect"
-              className="icon-img"
-              width="30"
-              height="30"
-            />
-          </a>
-          <span className="sidebar_tooltip">Connect</span>
-        </div>
-
-        <div className="icon-container">
-          <a href="/stories" className="nav-item">
-            <img
-              src="/Images/Stories.svg"
-              alt="Stories"
-              className="icon-img"
-              width="30"
-              height="30"
-            />
-          </a>
-          <span className="sidebar_tooltip">Stories</span>
-        </div>
-
-        <div className="icon-container">
-          <a href="/reels" className="nav-item">
-            <img
-              src="/Images/Reels.svg"
-              alt="Reels"
-              className="icon-img"
-              width="30"
-              height="30"
-            />
-          </a>
-          <span className="sidebar_tooltip">Reels</span>
-        </div>
-
-        <div className="icon-container">
-          <a href="/games" className="nav-item">
-            <img
-              src="/Images/Game.svg"
-              alt="Game"
-              className="icon-img"
-              width="30"
-              height="30"
-            />
-          </a>
-          <span className="sidebar_tooltip">Game</span>
-        </div>
-
-        <div className="icon-container">
-          <a href="/payment" className="nav-item">
-            <img
-              src="/Images/Premium.svg"
-              alt="Premium"
-              className="icon-img"
-              width="30"
-              height="30"
-            />
-          </a>
-          <span className="sidebar_tooltip">Premium</span>
-        </div>
-
+        {/* Menu Icon */}
         <div className="icon-container" onClick={toggleDropdown}>
           <div className="nav-item">
             <img
@@ -142,16 +92,20 @@ function Sidebar() {
           <span className="sidebar_tooltip">Menu</span>
         </div>
 
-        <div className="profile">
-          <a href="/profile/VoyagerX21" className="nav-item profile-pic-anchor">
-            <img
-              src="/Images/default_user.jpeg"
-              alt="Profile"
-              className="sidebar-profile-pic"
-            />
-          </a>
-        </div>
+        {/* Profile Section */}
+        {username && (
+          <div className="profile">
+            <a href={`/profile/${username}`} className="nav-item profile-pic-anchor">
+              <img
+                src={profileUrl || '/Images/default_user.jpeg'}
+                alt="Profile"
+                className="sidebar-profile-pic"
+              />
+            </a>
+          </div>
+        )}
 
+        {/* Dropdown Menu */}
         {showDropdown && (
           <div className="profile-dropdown show">
             <a href="/edit_profile">Edit Profile</a>
@@ -166,6 +120,7 @@ function Sidebar() {
         )}
       </div>
 
+      {/* Logout Modal */}
       {showLogoutModal && (
         <div
           className="modal-overlay active"
@@ -177,10 +132,7 @@ function Sidebar() {
             <h2>Confirm Logout</h2>
             <p>Are you sure you want to log out from your account?</p>
             <div className="buttons">
-              <button
-                className="logout-btn"
-                onClick={() => console.log('Logged out')}
-              >
+              <button className="logout-btn" onClick={handleLogout}>
                 Logout
               </button>
               <button className="cancel-btn" onClick={toggleLogoutModal}>
