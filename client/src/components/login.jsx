@@ -94,7 +94,6 @@ export default function Login() {
     }
   };
 
-  // Inline styles (same layout as before). Move to CSS if you prefer.
   const styles = `
     :root{ --accent: #432fff; --muted:#7b7f86; }
     *{box-sizing:border-box}

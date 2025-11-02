@@ -11,7 +11,6 @@ const Connect = ({ type = "People" }) => {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
 
-  // 🔹 Verify current user
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -39,7 +38,6 @@ const Connect = ({ type = "People" }) => {
         });
         const data = await res.json();
 
-        // assume backend returns users and also whether current user already follows them
         setUsers(data.users || []);
         setFilteredUsers(data.users || []);
       } catch (err) {

@@ -20,17 +20,15 @@ function Sidebar() {
         credentials: 'include',
       });
 
-      // If logout is successful OR even if session is already invalid
       if (res.ok || res.status === 401) {
         setUserData({});
-        navigate('/login', { replace: true }); // replace avoids back navigation
+        navigate('/login', { replace: true });
       } else {
         console.error('Logout failed');
       }
     } catch (err) {
       console.error('Error logging out:', err);
     } finally {
-      // Fallback navigation in case of network error
       setTimeout(() => navigate('/login', { replace: true }), 300);
     }
   };
@@ -38,7 +36,6 @@ function Sidebar() {
 
   const { username, profileUrl, type } = userData || {};
 
-  // Define available sidebar items
   const allItems = [
     { name: 'Home', href: '/home', icon: '/Images/Home.svg' },
     { name: 'Notifications', href: '/notifications', icon: '/Images/Notifications.svg' },
@@ -62,7 +59,6 @@ function Sidebar() {
   return (
     <>
       <div className="sidebar">
-        {/* Sidebar Items */}
         {filteredItems.map(item => (
           <div key={item.name} className="icon-container">
             <a href={item.href} className="nav-item">

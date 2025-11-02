@@ -10,11 +10,9 @@ function EditProfile() {
   const overlayRef = useRef(null);
   const [editableFields, setEditableFields] = useState({});
 
-  // ✅ New states for success feedback
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // 🟢 Fetch user data on mount
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -30,7 +28,7 @@ function EditProfile() {
 
         set_edit_profile_user({
           username: CurrentUser.username,
-          fullName: CurrentUser.name || "",
+          fullName: CurrentUser.fullName || "",
           display_name: CurrentUser.display_name || "",
           bio: CurrentUser.bio || "",
           gender: CurrentUser.gender || "",
@@ -45,14 +43,12 @@ function EditProfile() {
     fetchUserData();
   }, []);
 
-  // 🖼️ ImageKit setup
   const imagekit = new ImageKit({
     publicKey: "public_HU6D7u4KBDv1yJ7t6dpVw2PVDxQ=",
     urlEndpoint: "https://ik.imagekit.io/your_imagekit_id",
     authenticationEndpoint: `${import.meta.env.VITE_SERVER_URL}/api/imagekit/auth`,
   });
 
-  // ✏️ Enable field editing
   const edit_profile_enableField = (field) => {
     setEditableFields((prev) => ({ ...prev, [field]: true }));
   };
