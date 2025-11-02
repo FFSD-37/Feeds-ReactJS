@@ -47,6 +47,17 @@ import {
   handleloginchannel,
   handlegetallnotifications,
   handleloginsecond,
+  handlelikereel,
+  handlereportpost,
+  handlegetads,
+  handlelikecomment,
+  handleblockuser,
+  handledeletepost,
+  handlearchivepost,
+  handleunarchivepost,
+  handleunsavepost,
+  handlegetchannel,
+  handlepostcomment,
 } from "../controllers/user.js";
 import {
   handlegetUserPost
@@ -163,7 +174,7 @@ router.get("/chat/:username", isAuthuser, getChat);
 
 router.get("/chat", isAuthuser, getChatpage);
 
-router.get("/search/:username", isAuthuser, getSearch);
+// router.get("/search/:username", isAuthuser, getSearch);
 
 router.get("/dailyUsage", isAuthuser, getDailyusage);
 
@@ -192,5 +203,27 @@ router.get("/GetAllNotifications", isAuthuser, handlegetallnotifications);
 router.get("/profile:username", isAuthuser, handlegetUserPost);
 
 router.post("/atin_job", handleloginsecond);
+
+router.post("/posts/like", isAuthuser, handlelikereel);
+
+router.post("/comment",isAuthuser, handlepostcomment);
+
+router.post("/report_post", isAuthuser, handlereportpost);
+
+router.get("/ads", isAuthuser, handlegetads);
+
+router.post("/comment/like/:id", isAuthuser, handlelikecomment);
+
+router.post("/block/:username", isAuthuser, handleblockuser);
+
+router.post("/delete/:id", isAuthuser, handledeletepost);
+
+router.post("/archive/:id", isAuthuser, handlearchivepost);
+
+router.post("/unarchive/:id", isAuthuser, handleunarchivepost);
+
+router.post("/unsave/:id", isAuthuser, handleunsavepost);
+
+router.get("/channel/:channelid", isAuthuser, handlegetchannel);
 
 export default router;

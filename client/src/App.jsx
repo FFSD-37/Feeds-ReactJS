@@ -31,7 +31,7 @@ const AppContent = () => {
         <Route path="/connect" element={<Connect />} />
         <Route path="/edit_profile" element={<EditProfile />} />
       </Routes>
-      {userData?.username ? <Sidebar /> : null}
+      {userData?.type ? <Sidebar /> : null}
     </>
   );
 };

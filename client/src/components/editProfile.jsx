@@ -129,7 +129,7 @@ function EditProfile() {
         {/* Profile Photo */}
         <div className="edit-profile_photo-section">
           <img
-            src={edit_profile_preview || edit_profile_user.profilePicture || "/default-avatar.png"}
+            src={edit_profile_preview || edit_profile_user.profilePicture || "./../../public/Images/default_user.jpeg"}
             alt="Profile"
             className="edit-profile_photo"
             onClick={() => document.getElementById("edit-profile_photoInput").click()}

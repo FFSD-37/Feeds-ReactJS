@@ -971,6 +971,280 @@ const handleloginsecond = async (req, res) => {
   }
 };
 
+const handlelikereel = async (req, res) => {
+  const { data } = req.userDetails;
+  const user = await User.findOne({ username: data[0] });
+  if (user.likedPostsIds.includes(req.body.reel_id)) {
+    await Post.findOneAndUpdate(
+      { _id: req.body.reel_id },
+      { $inc: { likes: -1 } }
+    );
+    await User.findOneAndUpdate(
+      { username: data[0] },
+      { $pull: { likedPostsIds: req.body.reel_id } }
+    );
+  } else {
+    await Post.findOneAndUpdate(
+      { _id: req.body.reel_id },
+      { $inc: { likes: 1 } }
+    );
+    await User.findOneAndUpdate(
+      { username: data[0] },
+      { $push: { likedPostsIds: req.body.reel_id } }
+    );
+  }
+  const post = await Post.findOne({ _id: req.body.reel_id });
+  return res.json({ likes: post.likes });
+};
+
+const handlereportpost = async (req, res) => {
+  const { data } = req.userDetails;
+  // console.log(req.body);
+  const { reason, post_id } = req.body;
+  const report = await Report.create({
+    post_id: post_id,
+    user_reported: data[0],
+    reason: reason,
+  });
+  await Report.findOneAndUpdate(
+    { _id: report._id },
+    { $inc: { report_number: 1 } }
+  );
+  return res.json({ data: true });
+};
+
+const handlegetads = async (req, res) => {
+  const ads = await Adpost.find({}).lean();
+  return res.json({ allAds: ads });
+};
+
+const handlelikecomment = async (req, res) => {
+  const { id } = req.params;
+  const { data } = req.userDetails;
+  const { post_id, commUser } = req.body;
+  const comment = await Comment.findOne({ _id: id });
+  if (comment.likes.includes(data[0])) {
+    comment.likes.filter((uname) => uname !== data[0]);
+    await comment.save();
+    if (commUser != data[0]) {
+      await Notification.create({
+        mainUser: commUser,
+        msgSerial: 9,
+        userInvolved: data[0],
+        coin: 1,
+      });
+      await User.findOneAndUpdate(
+        { username: commUser },
+        { $inc: { coins: 1 } }
+      );
+    }
+    await ActivityLog.create({
+      username: data[0],
+      id: `#${Date.now()}`,
+      message: `You liked the comment on post ${post_id}`,
+    });
+    return res.json({ data: true });
+  } else {
+    comment.likes.push(data[0]);
+    await comment.save();
+    if (commUser != data[0]) {
+      await Notification.create({
+        mainUser: commUser,
+        msgSerial: 9,
+        userInvolved: data[0],
+        coin: 1,
+      });
+      await User.findOneAndUpdate(
+        { username: commUser },
+        { $inc: { coins: -1 } }
+      );
+    }
+    await ActivityLog.create({
+      username: data[0],
+      id: `#${Date.now()}`,
+      message: `You disliked the comment on post ${post_id}`,
+    });
+    return res.json({ data: true });
+  }
+};
+
+const handleblockuser = async (req, res) => {
+  const { username } = req.params;
+  const { data } = req.userDetails;
+  const user = await User.findOne({ username: data[0] });
+
+  if (!user) {
+    return res.status(404).json({ flag: "user_not_found" });
+  }
+
+  if (user.blockedUsers.includes(username)) {
+    await User.findOneAndUpdate(
+      { username: data[0] },
+      { $pull: { blockedUsers: username } }
+    );
+    await ActivityLog.create({
+      username: data[0],
+      id: `#${Date.now()}`,
+      message: `You unblocked ${username}`,
+    });
+    return res.json({ flag: "unblocked" });
+  } else {
+    await User.findOneAndUpdate(
+      { username: data[0] },
+      { $push: { blockedUsers: username } }
+    );
+    await ActivityLog.create({
+      username: data[0],
+      id: `#${Date.now()}`,
+      message: `You blocked ${username}`,
+    });
+    return res.json({ flag: "blocked" });
+  }
+};
+
+const handledeletepost = async (req, res) => {
+  const { id } = req.params;
+  const { data } = req.userDetails;
+  const post = await Post.findOne({ id: id });
+  await User.findOneAndUpdate(
+    { username: data[0] },
+    { $pull: { postIds: post._id } }
+  );
+  for (const commentId of post.comments) {
+    const comment = await Comment.findOne({ _id: commentId });
+    if (comment) {
+      for (const replyId of comment.reply_array) {
+        await Comment.deleteOne({ _id: replyId });
+      }
+      await Comment.deleteOne({ _id: commentId });
+    }
+  }
+  await Post.deleteOne({ id: id });
+  await ActivityLog.create({
+    username: data[0],
+    id: `#${Date.now()}`,
+    message: `You deleted your own post ${id}`,
+  });
+  return res.json({ data: true });
+};
+
+const handlearchivepost = async (req, res) => {
+  const { id } = req.params;
+  const { data } = req.userDetails;
+  await User.findOneAndUpdate(
+    { username: data[0] },
+    { $push: { archivedPostsIds: id } }
+  );
+  return res.json({ data: true });
+};
+
+const handleunarchivepost = async (req, res) => {
+  const { id } = req.params;
+  const { data } = req.userDetails;
+  await User.findOneAndUpdate(
+    { username: data[0] },
+    { $pull: { archivedPostsIds: id } }
+  );
+  return res.json({ data: true });
+};
+
+const handleunsavepost = async (req, res) => {
+  const { id } = req.params;
+  const { data } = req.userDetails;
+  await User.findOneAndUpdate(
+    { username: data[0] },
+    { $pull: { savedPostsIds: id } }
+  );
+  return res.json({ data: true });
+};
+
+const handlegetchannel = async (req, res) => {
+  const { data } = req.userDetails;
+  const { channelid } = req.params;
+  const channel = await Channel.findById(channelid).lean();
+  const posts = channel.postIds;
+  const archived = channel.archivedPostIds;
+  return res.render("channel", {
+    img: data[2],
+    currUser: data[0],
+    channel,
+    type: data[3],
+    posts,
+    archived,
+  });
+};
+
+const handlepostcomment = async (req, res) => {
+  try {
+    const { data } = req.userDetails;
+    const { postID, commentText } = req.body;
+
+    if (!commentText || commentText.trim() === "") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Comment cannot be empty" });
+    }
+
+    // Find the target post
+    const post = await Post.findOne({ id: postID });
+    if (!post) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Post not found" });
+    }
+
+    // Create the new comment document
+    const newComment = await Comment.create({
+      text: commentText,
+      username: data[0],
+      avatarUrl: data[2],
+      postID: post._id,
+      reply_array: [],
+    });
+
+    // Push this comment’s ID to the post’s comment array
+    await Post.findOneAndUpdate(
+      { id: postID },
+      { $push: { comments: newComment._id } },
+      { new: true }
+    );
+
+    // Add activity log entry
+    await ActivityLog.create({
+      username: data[0],
+      id: `#${Date.now()}`,
+      message: `You commented on a post by #${post.author}!`,
+    });
+
+    // Create notification for post author
+    console.log(post.author);
+    if (data[0] !== post.author) {
+      const noti8 = await Notification.create({
+        mainUser: post.author,
+        msgSerial: 8,
+        userInvolved: data[0],
+        coin: 1,
+      });
+
+      await User.findOneAndUpdate(
+        { username: data[0] },
+        { $inc: { coins: 1 } }
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Comment added successfully",
+      comment: newComment,
+    });
+  } catch (error) {
+    console.error("❌ Error in handlepostcomment:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
 export {
   handleSignup,
   handleLogin,
@@ -1019,5 +1293,16 @@ export {
   handlegetloginchannel,
   handleloginchannel,
   handlegetallnotifications,
-  handleloginsecond
+  handleloginsecond,
+  handlelikereel,
+  handlereportpost,
+  handlegetads,
+  handlelikecomment,
+  handleblockuser,
+  handledeletepost,
+  handlearchivepost,
+  handleunarchivepost,
+  handleunsavepost,
+  handlegetchannel,
+  handlepostcomment,
 };

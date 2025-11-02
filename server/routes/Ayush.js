@@ -4,9 +4,10 @@ import{handlegetchannelobject} from "../controllers/Ayush/channel.js";
 
 const router = express.Router();
 
-router.get("/",isAuthuser, (req, res) => {
-  res.redirect("/login");
-});
+// router.get("/",isAuthuser, (req, res) => {
+//   res.redirect("/login");
+// });
+
 
 router.get("/getchannel/:channelid",isAuthuser, handlegetchannelobject);
 
