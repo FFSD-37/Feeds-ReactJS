@@ -1,39 +1,58 @@
-/* === BASE CONTAINER === */
-.channel-container {
+/* === RESET === */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* === VARIABLES === */
+:root {
+  --primary: #00bcd4;
+  --primary-hover: #0097a7;
+  --bg-dark: #0b132b;
+  --bg-mid: #1c2541;
+  --bg-light: #3a506b;
+  --text-light: #e0e0e0;
+  --text-muted: #aaa;
+  --radius: 0.7rem;
+  --transition: all 0.25s ease;
+}
+
+/* === PAGE CONTAINER === */
+.channel-page-container {
+  width:80vw;
   min-height: 100vh;
-  background: linear-gradient(135deg, #0b132b, #1c2541, #3a506b);
-  color: white;
-  padding: 2rem 5vw;
-  font-family: "Poppins", sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center;
-  transition: all 0.4s ease;
-  border-radius: 30px;
-  width: 65rem;
-  max-width: 100%;
+  background: linear-gradient(135deg, var(--bg-dark), var(--bg-mid), var(--bg-light));
+  font-family: "Poppins", sans-serif;
+  color: white;
+  padding-bottom: 6rem; /* space for footer */
+  overflow-x: hidden;
 }
 
-/* === HEADER === */
+/* === HEADER (compact + centered) === */
 .channel-header {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   background: rgba(255, 255, 255, 0.08);
-  padding: 1.2rem 2rem;
-  border-radius: 1rem;
+  border-radius: var(--radius);
+  padding: 0.8rem 1.5rem;
+  margin-top: 1.2rem;
+  width: min(85%, 1100px);
+  gap: 1.2rem;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(8px);
-  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.4);
-  margin-bottom: 1.5rem;
-  width: 100%;
 }
 
 .channel-logo {
-  width: 4rem;
-  height: 4rem;
+  width: clamp(55px, 6vw, 70px);
+  height: clamp(55px, 6vw, 70px);
   border-radius: 50%;
-  border: 3px solid white;
+  border: 2px solid var(--primary);
   object-fit: cover;
-  margin-right: 1.2rem;
 }
 
 .channel-info {
@@ -41,34 +60,35 @@
 }
 
 .channel-name {
-  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  font-size: clamp(1.2rem, 1.7vw, 1.5rem);
   font-weight: 700;
-  margin-bottom: 0.4rem;
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  flex-wrap: wrap;
 }
 
 .channel-description {
-  font-size: clamp(0.8rem, 1.5vw, 1rem);
-  color: #e0e0e0;
-  margin-bottom: 0.6rem;
+  color: var(--text-light);
+  font-size: clamp(0.85rem, 1.3vw, 1rem);
+  margin: 0.3rem 0 0.6rem;
+  line-height: 1.4;
 }
 
-/* === CATEGORY ICONS === */
 .channel-categories-inline {
   display: flex;
-  gap: 0.4rem;
+  gap: 0.3rem;
+  flex-wrap: wrap;
 }
 
 .channel-category-icon {
-  font-size: 1.1rem;
+  font-size: clamp(1rem, 1.4vw, 1.2rem);
+  transition: var(--transition);
   cursor: pointer;
-  transition: transform 0.2s, opacity 0.2s;
 }
 
 .channel-category-icon:hover {
-  transform: scale(1.3);
+  transform: scale(1.25);
   opacity: 0.85;
 }
 
@@ -84,84 +104,118 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  color: var(--primary);
+  font-weight: 500;
+  font-size: clamp(0.85rem, 1.2vw, 0.95rem);
   cursor: pointer;
-  transition: 0.3s;
-  color: #00bcd4;
-  font-size: clamp(0.85rem, 1.3vw, 1rem);
+  transition: var(--transition);
 }
 
 .channel-admin:hover,
 .channel-members:hover {
-  color: #fff;
+  color: white;
   transform: translateY(-2px);
 }
 
-/* === TABS === */
-.channel-tabs {
+/* === ACTION BUTTONS === */
+.channel-info-header {
   display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
 }
 
-.channel-tab-btn {
-  background: rgba(255, 255, 255, 0.15);
+.channel-info-header button {
+  background: var(--primary);
   border: none;
-  padding: 0.5rem 1.1rem;
-  border-radius: 9999px;
   color: white;
+  padding: 0.45rem 1rem;
+  border-radius: 0.5rem;
   cursor: pointer;
-  font-weight: 500;
-  font-size: clamp(0.8rem, 1.5vw, 1rem);
-  transition: 0.3s;
+  font-weight: 600;
+  font-size: clamp(0.75rem, 1.1vw, 0.9rem);
+  transition: var(--transition);
 }
 
-.channel-tab-btn.active {
-  background: #00bcd4;
-  transform: scale(1.05);
+.channel-info-header button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
 }
 
-/* === BODY === */
-.channel-body {
-  width: 100%;
-  max-width: 850px;
-  min-height: 400px;
-  display: flex;
-  justify-content: center;
-}
-
-/* === POSTS GRID === */
-.channel-posts-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  width: 100%;
-  transition: 0.3s;
-}
-
-.channel-post-card {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 0.8rem;
-  overflow: hidden;
-  transition: transform 0.3s;
-  height: 160px;
+.channel-options-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-size: 1.1rem;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.channel-post-card:hover {
-  transform: scale(1.04);
+/* === NAV === */
+.channel-posts-nav {
+  display: flex;
+  justify-content: center;
+  gap: 1.8rem;
+  margin: 1.5rem 0 1rem;
+  flex-wrap: wrap;
 }
 
-.channel-post-img,
-.channel-post-video {
+.channel-nav-item {
+  cursor: pointer;
+  font-weight: 600;
+  color: #bbb;
+  font-size: clamp(0.9rem, 1.4vw, 1.05rem);
+  padding-bottom: 0.2rem;
+  transition: var(--transition);
+}
+
+.channel-nav-item.active {
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary);
+}
+
+/* === POSTS GRID (centered, not full width) === */
+.channel-posts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.8rem;
+  width: min(85%, 1100px);
+  margin-bottom: 2rem;
+  transition: var(--transition);
+}
+
+.channel-post {
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+  aspect-ratio: 1 / 1;
+  transition: transform 0.25s ease;
+}
+
+.channel-post:hover {
+  transform: scale(1.03);
+}
+
+.channel-post img,
+.channel-post video {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: var(--radius);
 }
 
-/* === MODAL === */
+.channel-no-posts-msg {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2rem;
+  font-size: clamp(0.85rem, 1.3vw, 1rem);
+}
+
+/* === MODALS === */
 .channel-modal-overlay {
   position: fixed;
   inset: 0;
@@ -169,109 +223,115 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 50;
+  z-index: 100;
 }
 
 .channel-modal {
   background: #111827;
   color: white;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  width: 320px;
+  border-radius: 0.8rem;
+  padding: 1.2rem;
+  width: min(88%, 360px);
   max-height: 80vh;
-  display: flex;
-  flex-direction: column;
+  overflow-y: auto;
   position: relative;
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.15);
+}
+
+.channel-close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.9rem;
+  cursor: pointer;
+  font-size: 1.4rem;
 }
 
 .channel-modal-title {
   text-align: center;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: #00e5ff;
+  color: var(--primary);
+  font-size: clamp(1rem, 1.6vw, 1.2rem);
 }
 
-.channel-member-list {
+.channel-modal-list {
   list-style: none;
-  padding: 0;
-  margin: 0;
-  overflow-y: auto;
-  flex: 1;
-  scrollbar-width: thin;
-}
-
-.channel-member-item {
   display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  padding: 0.6rem;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.channel-modal-list li {
+  padding: 0.5rem;
   border-radius: 0.5rem;
-  transition: 0.3s;
+  background: rgba(255, 255, 255, 0.08);
   cursor: pointer;
+  text-align: center;
+  transition: var(--transition);
+  font-size: clamp(0.8rem, 1.3vw, 0.95rem);
 }
 
-.channel-member-item:hover {
-  background: rgba(0, 255, 255, 0.1);
+.channel-modal-list li:hover {
+  background: var(--primary-hover);
 }
 
-.channel-member-pic {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-}
-
-.channel-close-btn {
-  background: #00bcd4;
-  color: white;
-  border: none;
-  width: 100%;
-  padding: 0.6rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  font-weight: 500;
-  transition: 0.3s;
-  position: sticky;
+/* === FOOTER (fixed + clean) === */
+.channel-footer {
+  position: fixed;
   bottom: 0;
-  margin-top: 0.8rem;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: clamp(0.75rem, 1vw, 0.9rem);
+  padding: 1rem 0;
+  background: transparent;
+  backdrop-filter: none;
+  border-top: none;
+  z-index: 10;
 }
 
-.channel-close-btn:hover {
-  background: #0097a7;
+.channel-footer a {
+  color: var(--primary);
+  text-decoration: none;
+  margin: 0 0.3rem;
+  transition: 0.3s;
+}
+
+.channel-footer a:hover {
+  text-decoration: underline;
 }
 
 /* === RESPONSIVE === */
 @media (max-width: 1024px) {
   .channel-posts-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    width: 90%;
+  }
+
+  .channel-header {
+    width: 90%;
   }
 }
 
-@media (max-width: 640px) {
-  .channel-posts-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
+@media (max-width: 768px) {
   .channel-header {
     flex-direction: column;
     text-align: center;
   }
 
-  .channel-logo {
-    margin-bottom: 1rem;
+  .channel-info-header {
+    justify-content: center;
   }
 
-  .channel-name {
-    font-size: 1.2rem;
+  .channel-posts-grid {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    width: 90%;
   }
 }
 
-@media (max-width: 400px) {
+@media (max-width: 480px) {
   .channel-posts-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
-  }
-  .channel-post-card {
-    height: 120px;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   }
 }

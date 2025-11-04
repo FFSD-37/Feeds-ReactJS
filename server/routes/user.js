@@ -56,10 +56,15 @@ import {
   handlearchivepost,
   handleunarchivepost,
   handleunsavepost,
-  handlegetchannel,
   handlepostcomment,
 } from "../controllers/user.js";
-import { handlegetUserPost } from "../controllers/Gourav/profile.js";
+import {
+  handlegetUserPost
+} from "../controllers/Gourav/profile.js";
+import { 
+  handlegetchannel,
+  getChannelPosts
+} from "../controllers/Ayush/channel.js";
 import { handleimagKitauth } from "../services/imagKit.js";
 import { isAuthuser } from "../middleware/isAuthuser.js";
 import { checkOut, verify_payment } from "../controllers/payment.js";
@@ -204,7 +209,7 @@ router.post("/atin_job", handleloginsecond);
 
 router.post("/posts/like", isAuthuser, handlelikereel);
 
-router.post("/comment", isAuthuser, handlepostcomment);
+router.post("/comment",isAuthuser, handlepostcomment);
 
 router.post("/report_post", isAuthuser, handlereportpost);
 
@@ -222,6 +227,8 @@ router.post("/unarchive/:id", isAuthuser, handleunarchivepost);
 
 router.post("/unsave/:id", isAuthuser, handleunsavepost);
 
-router.get("/channel/:channelid", isAuthuser, handlegetchannel);
+router.get("/getchannel/:channelName", isAuthuser, handlegetchannel);
+
+router.post("/getchannelposts", getChannelPosts);
 
 export default router;

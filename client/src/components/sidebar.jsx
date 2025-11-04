@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import './../styles/sidebar.css';
-import { useUserData } from './../providers/userData.jsx';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import "./../styles/sidebar.css";
+import { useUserData } from "./../providers/userData.jsx";
+import { useNavigate } from "react-router-dom";
 
 function Sidebar() {
   const { userData, setUserData } = useUserData();
@@ -16,57 +16,66 @@ function Sidebar() {
   const handleLogout = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/logout`, {
-        method: 'POST',
-        credentials: 'include',
+        method: "POST",
+        credentials: "include",
       });
 
       if (res.ok || res.status === 401) {
         setUserData({});
-        navigate('/login', { replace: true });
+        navigate("/login", { replace: true });
       } else {
-        console.error('Logout failed');
+        console.error("Logout failed");
       }
     } catch (err) {
-      console.error('Error logging out:', err);
+      console.error("Error logging out:", err);
     } finally {
-      setTimeout(() => navigate('/login', { replace: true }), 300);
+      setTimeout(() => navigate("/login", { replace: true }), 300);
     }
   };
 
-  const { username, profileUrl, type, userTypeiden, channelName } = userData || {};
-
+  const { username, channelName, profileUrl, type, isPremium } = userData || {};
+  
+  // Sidebar items
   const allItems = [
-    { name: 'Home', href: '/home', icon: '/Images/Home.svg' },
-    { name: 'Notifications', href: '/notifications', icon: '/Images/Notifications.svg' },
-    { name: 'Create', href: '/create_post', icon: '/Images/Create.svg' },
-    { name: 'Chat', href: '/chat', icon: '/Images/Chat.svg' },
-    { name: 'Connect', href: '/connect', icon: '/Images/Connect.svg' },
-    { name: 'Stories', href: '/stories', icon: '/Images/Stories.svg' },
-    { name: 'Reels', href: '/reels', icon: '/Images/Reels.svg' },
-    { name: 'Game', href: '/games', icon: '/Images/Game.svg' },
-    { name: 'Premium', href: '/payment', icon: '/Images/Premium.svg' },
+    { name: "Home", href: "/home", icon: "/Images/Home.svg" },
+    { name: "Notifications", href: "/notifications", icon: "/Images/Notifications.svg" },
+    { name: "Create", href: "/create_post", icon: "/Images/Create.svg" },
+    { name: "Chat", href: "/chat", icon: "/Images/Chat.svg" },
+    { name: "Connect", href: "/connect", icon: "/Images/Connect.svg" },
+    { name: "Stories", href: "/stories", icon: "/Images/Stories.svg" },
+    { name: "Reels", href: "/reels", icon: "/Images/Reels.svg" },
+    { name: "Game", href: "/games", icon: "/Images/Game.svg" },
+    { name: "Premium", href: "/payment", icon: "/Images/Premium.svg" },
   ];
 
   const channelItems = [
-    { name: 'Home', href: '/home', icon: '/Images/Home.svg' },
-    { name: 'Notifications', href: '/notifications', icon: '/Images/Notifications.svg' },
-    { name: 'Create', href: '/create_post', icon: '/Images/Create.svg' },
-    { name: 'Chat', href: '/chat', icon: '/Images/Chat.svg' },
-    { name: 'Connect', href: '/connect', icon: '/Images/Connect.svg' },
-    { name: 'Stories', href: '/stories', icon: '/Images/Stories.svg' },
-    { name: 'Reels', href: '/reels', icon: '/Images/Reels.svg' },
+    { name: "Home", href: "/home", icon: "/Images/Home.svg" },
+    { name: "Notifications", href: "/notifications", icon: "/Images/Notifications.svg" },
+    { name: "Create", href: "/create_post", icon: "/Images/Create.svg" },
+    { name: "Chat", href: "/chat", icon: "/Images/Chat.svg" },
+    { name: "Connect", href: "/connect", icon: "/Images/Connect.svg" },
+    { name: "Stories", href: "/stories", icon: "/Images/Stories.svg" },
+    { name: "Reels", href: "/reels", icon: "/Images/Reels.svg" },
   ];
 
+  const kidsItems = allItems.filter(item =>
+    ["Home", "Connect", "Reels", "Game"].includes(item.name)
+  );
+
+  // Select which items to show
   const filteredItems =
-    type === 'Kids'
-      ? allItems.filter(item => ['Home', 'Connect', 'Reels', 'Game'].includes(item.name))
-      : userTypeiden === 'channel' || type === 'Channel Account'
-      ? channelItems
-      : allItems;
+    type === "Kids" ? kidsItems : type === "Channel" ? channelItems : allItems;
+
+  // Determine profile link
+  const profileLink =
+    type === "Channel"
+      ? `/channel/${channelName}`
+      : `/profile/${username}`;
 
   return (
     <>
       <div className="sidebar">
+        {/* Main Nav Icons */}
         {filteredItems.map(item => (
           <div key={item.name} className="icon-container">
             <a href={item.href} className="nav-item">
@@ -99,16 +108,9 @@ function Sidebar() {
         {/* Profile Section */}
         {(username || channelName) && (
           <div className="profile">
-            <a
-              href={
-                type === 'Channel Account'
-                  ? `/channel/${channelName}`
-                  : `/profile/${username}`
-              }
-              className="nav-item profile-pic-anchor"
-            >
+            <a href={profileLink} className="nav-item profile-pic-anchor">
               <img
-                src={profileUrl || './../../public/Images/default_user.jpeg'}
+                src={profileUrl || "/Images/default_user.jpeg"}
                 alt="Profile"
                 className="sidebar-profile-pic"
               />
@@ -119,29 +121,14 @@ function Sidebar() {
         {/* Dropdown Menu */}
         {showDropdown && (
           <div className="profile-dropdown show">
-            {userTypeiden === 'channel' || type === 'Channel Account' ? (
-              <>
-                <a href="/edit_profile">Edit Profile</a>
-                <a href="/dailyUsage">See Daily Usage</a>
-                <a href="/settings">Settings</a>
-                <a href="#" onClick={toggleLogoutModal}>
-                  Logout
-                </a>
-                <a href="/help">Help & Support</a>
-                <a href="/delacc">Delete Account</a>
-              </>
-            ) : (
-              <>
-                <a href="/edit_profile">Edit Profile</a>
-                <a href="/dailyUsage">See Daily Usage</a>
-                <a href="/settings">Settings</a>
-                <a href="#" onClick={toggleLogoutModal}>
-                  Logout
-                </a>
-                <a href="/help">Help & Support</a>
-                <a href="/delacc">Delete Account</a>
-              </>
-            )}
+            <a href="/edit_profile">Edit Profile</a>
+            <a href="/dailyUsage">See Daily Usage</a>
+            <a href="/settings">Settings</a>
+            <a href="#" onClick={toggleLogoutModal}>
+              Logout
+            </a>
+            <a href="/help">Help & Support</a>
+            <a href="/delacc">Delete Account</a>
           </div>
         )}
       </div>
@@ -150,7 +137,7 @@ function Sidebar() {
       {showLogoutModal && (
         <div
           className="modal-overlay active"
-          onClick={e => {
+          onClick={(e) => {
             if (e.target === e.currentTarget) toggleLogoutModal();
           }}
         >

@@ -1,7 +1,10 @@
-import express from 'express';
-import {create_channel} from '../controllers/Ayush/channel.js';
+import express from "express";
+import { isAuthuser } from "../middleware/isAuthuser.js";
+import{
+    create_channel
+} from "../controllers/channel.js";
 
-const router=express.Router();
+const router = express.Router();
 
 router.post('/',create_channel);
 
