@@ -20,11 +20,22 @@ export const UserDataProvider = ({ children }) => {
         });
 
         if (res.ok) {
-          const data = await res.json();
+          let data = await res.json();
+
+          if (data.type === 'Channel') {
+            data = {
+              ...data,
+              adminName: data.email,
+              channelName: data.username,
+            };
+            delete data.email;
+            delete data.username;
+          }
           console.log(data);
 
           setUserData(data);
-          if(pathname === '/login' || pathname === '/signup') navigate('/home');
+          if (pathname === '/login' || pathname === '/signup')
+            navigate('/home');
         } else throw new Error('Unauthorized');
         // eslint-disable-next-line no-unused-vars
       } catch (error) {
@@ -47,4 +58,5 @@ export const UserDataProvider = ({ children }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useUserData = () => useContext(UserDatacontext);

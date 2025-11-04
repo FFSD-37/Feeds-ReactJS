@@ -2,7 +2,10 @@ import { verify_JWTtoken } from "cookie-string-parser";
 
 const isAuthuser = (req, res, next) => {
   try {
-    const isAuth = verify_JWTtoken(req.cookies.uuid, process.env.USER_SECRET);
+    const isAuth = verify_JWTtoken(
+      req.cookies.uuid || req.cookies.cuid,
+      process.env.USER_SECRET
+    );
     if (isAuth) {
       req.userDetails = isAuth;
       next();
