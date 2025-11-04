@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaUser, FaUsers } from 'react-icons/fa';
-import { useParams } from 'react-router-dom';
 import {
   FaGlobe,
   FaBook,
@@ -45,52 +44,20 @@ function ChannelPage() {
       'Lifestyle',
     ],
     channel_members: [
-      {
-        id: 1,
-        username: 'player1',
-        profilePic: 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
-      },
-      {
-        id: 2,
-        username: 'player2',
-        profilePic: 'https://cdn-icons-png.flaticon.com/512/1946/1946429.png',
-      },
-      {
-        id: 3,
-        username: 'gamerQueen',
-        profilePic: 'https://cdn-icons-png.flaticon.com/512/219/219970.png',
-      },
-      {
-        id: 4,
-        username: 'noobMaster',
-        profilePic: 'https://cdn-icons-png.flaticon.com/512/168/168882.png',
-      },
-      {
-        id: 5,
-        username: 'eliteOne',
-        profilePic: 'https://cdn-icons-png.flaticon.com/512/1154/1154478.png',
-      },
-      {
-        id: 6,
-        username: 'ninjaPro',
-        profilePic: 'https://cdn-icons-png.flaticon.com/512/924/924874.png',
-      },
-      {
-        id: 7,
-        username: 'shadow',
-        profilePic: 'https://cdn-icons-png.flaticon.com/512/2202/2202112.png',
-      },
+      { id: 1, username: 'player1', profilePic: 'https://cdn-icons-png.flaticon.com/512/149/149071.png' },
+      { id: 2, username: 'player2', profilePic: 'https://cdn-icons-png.flaticon.com/512/1946/1946429.png' },
+      { id: 3, username: 'gamerQueen', profilePic: 'https://cdn-icons-png.flaticon.com/512/219/219970.png' },
+      { id: 4, username: 'noobMaster', profilePic: 'https://cdn-icons-png.flaticon.com/512/168/168882.png' },
+      { id: 5, username: 'eliteOne', profilePic: 'https://cdn-icons-png.flaticon.com/512/1154/1154478.png' },
+      { id: 6, username: 'ninjaPro', profilePic: 'https://cdn-icons-png.flaticon.com/512/924/924874.png' },
+      { id: 7, username: 'shadow', profilePic: 'https://cdn-icons-png.flaticon.com/512/2202/2202112.png' },
     ],
     channel_posts: [
       { id: 1, type: 'Img', url: 'https://picsum.photos/600/400?random=1' },
       { id: 2, type: 'Img', url: 'https://picsum.photos/600/400?random=2' },
       { id: 3, type: 'Img', url: 'https://picsum.photos/600/400?random=3' },
       { id: 4, type: 'Img', url: 'https://picsum.photos/600/400?random=4' },
-      {
-        id: 5,
-        type: 'Reels',
-        url: 'https://samplelib.com/lib/preview/mp4/sample-5s.mp4',
-      },
+      { id: 5, type: 'Reels', url: 'https://samplelib.com/lib/preview/mp4/sample-5s.mp4' },
     ],
     channel_archived: [
       { id: 6, type: 'Img', url: 'https://picsum.photos/600/400?random=5' },
@@ -103,7 +70,7 @@ function ChannelPage() {
 
   // Close modal with ESC key
   useEffect(() => {
-    const handleEsc = e => {
+    const handleEsc = (e) => {
       if (e.key === 'Escape') setChannelShowMembers(false);
     };
     window.addEventListener('keydown', handleEsc);
@@ -137,11 +104,7 @@ function ChannelPage() {
     <div className="channel-container">
       {/* HEADER */}
       <div className="channel-header">
-        <img
-          src={channel_data.channel_logo}
-          alt="logo"
-          className="channel-logo"
-        />
+        <img src={channel_data.channel_logo} alt="logo" className="channel-logo" />
         <div className="channel-info">
           <h1 className="channel-name">
             {channel_data.channel_name}
@@ -153,22 +116,13 @@ function ChannelPage() {
               ))}
             </span>
           </h1>
-          <p className="channel-description">
-            {channel_data.channel_description}
-          </p>
+          <p className="channel-description">{channel_data.channel_description}</p>
           <div className="channel-admin-section">
-            <div
-              className="channel-admin"
-              onClick={() => alert('View Admin Profile')}
-            >
+            <div className="channel-admin" onClick={() => alert('View Admin Profile')}>
               <FaUser /> <span>{channel_data.channel_admin}</span>
             </div>
-            <div
-              className="channel-members"
-              onClick={() => setChannelShowMembers(true)}
-            >
-              <FaUsers />{' '}
-              <span>{channel_data.channel_members.length} Members</span>
+            <div className="channel-members" onClick={() => setChannelShowMembers(true)}>
+              <FaUsers /> <span>{channel_data.channel_members.length} Members</span>
             </div>
           </div>
         </div>
@@ -193,17 +147,12 @@ function ChannelPage() {
       {/* POSTS GRID */}
       <div className="channel-body">
         <div className="channel-posts-grid">
-          {currentPosts.map(item => (
+          {currentPosts.map((item) => (
             <div key={item.id} className="channel-post-card">
               {item.type === 'Img' ? (
                 <img src={item.url} alt="post" className="channel-post-img" />
               ) : (
-                <video
-                  src={item.url}
-                  controls
-                  muted
-                  className="channel-post-video"
-                />
+                <video src={item.url} controls muted className="channel-post-video" />
               )}
             </div>
           ))}
@@ -212,32 +161,22 @@ function ChannelPage() {
 
       {/* MEMBERS MODAL */}
       {channel_show_members && (
-        <div
-          className="channel-modal-overlay"
-          onClick={() => setChannelShowMembers(false)}
-        >
-          <div className="channel-modal" onClick={e => e.stopPropagation()}>
+        <div className="channel-modal-overlay" onClick={() => setChannelShowMembers(false)}>
+          <div className="channel-modal" onClick={(e) => e.stopPropagation()}>
             <h2 className="channel-modal-title">Members</h2>
             <ul className="channel-member-list">
-              {channel_data.channel_members.map(member => (
+              {channel_data.channel_members.map((member) => (
                 <li
                   key={member.id}
                   className="channel-member-item"
                   onClick={() => alert(`View ${member.username}'s profile`)}
                 >
-                  <img
-                    src={member.profilePic}
-                    alt={member.username}
-                    className="channel-member-pic"
-                  />
+                  <img src={member.profilePic} alt={member.username} className="channel-member-pic" />
                   <span>{member.username}</span>
                 </li>
               ))}
             </ul>
-            <button
-              className="channel-close-btn"
-              onClick={() => setChannelShowMembers(false)}
-            >
+            <button className="channel-close-btn" onClick={() => setChannelShowMembers(false)}>
               Close
             </button>
           </div>

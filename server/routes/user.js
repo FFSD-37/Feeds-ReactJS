@@ -59,7 +59,9 @@ import {
   handlegetchannel,
   handlepostcomment,
 } from "../controllers/user.js";
-import { handlegetUserPost } from "../controllers/Gourav/profile.js";
+import {
+  handlegetUserPost
+} from "../controllers/Gourav/profile.js";
 import { handleimagKitauth } from "../services/imagKit.js";
 import { isAuthuser } from "../middleware/isAuthuser.js";
 import { checkOut, verify_payment } from "../controllers/payment.js";
@@ -204,7 +206,7 @@ router.post("/atin_job", handleloginsecond);
 
 router.post("/posts/like", isAuthuser, handlelikereel);
 
-router.post("/comment", isAuthuser, handlepostcomment);
+router.post("/comment",isAuthuser, handlepostcomment);
 
 router.post("/report_post", isAuthuser, handlereportpost);
 
