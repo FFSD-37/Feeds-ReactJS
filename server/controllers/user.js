@@ -1156,21 +1156,21 @@ const handleunsavepost = async (req, res) => {
   return res.json({ data: true });
 };
 
-const handlegetchannel = async (req, res) => {
-  const { data } = req.userDetails;
-  const { channelid } = req.params;
-  const channel = await Channel.findById(channelid).lean();
-  const posts = channel.postIds;
-  const archived = channel.archivedPostIds;
-  return res.render("channel", {
-    img: data[2],
-    currUser: data[0],
-    channel,
-    type: data[3],
-    posts,
-    archived,
-  });
-};
+// const handlegetchannel = async (req, res) => {
+//   const { data } = req.userDetails;
+//   const { channelid } = req.params;
+//   const channel = await Channel.findById(channelid).lean();
+//   const posts = channel.postIds;
+//   const archived = channel.archivedPostIds;
+//   return res.render("channel", {
+//     img: data[2],
+//     currUser: data[0],
+//     channel,
+//     type: data[3],
+//     posts,
+//     archived,
+//   });
+// };
 
 const handlepostcomment = async (req, res) => {
   try {
@@ -1301,6 +1301,5 @@ export {
   handlearchivepost,
   handleunarchivepost,
   handleunsavepost,
-  handlegetchannel,
   handlepostcomment,
 };

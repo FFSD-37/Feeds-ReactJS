@@ -108,25 +108,32 @@ You can create **child components** freely under these parent components.
 - [❌] Post Overlay  
 - [✅] Edit Profile  
 - [✅] Connect  
-- [✅❌] Channel Profile (Self/Other)
+- [✅] Channel Profile (Self/Other)
+- [❌] Channel Home(Landing Page)
+- [❌] Channel Connect
+- [❌] Kids Home(Landing Page)
 
 ---
 
 ### 👤 Gourav Khakse
 - [❌] Admin Portal  
-- [❌] Home (Landing Page)  
+- [❌] Home (Landing Page) + Ads 
 - [✅❌] Profile (Self/Others) 
 - [✅] Notification  
 - [✅] Games
+- [❌] Channel Notification  
+- [❌] Channel Stories
 
 ---
 
 ### 👤 Arnav Ranjan
 - [✅] Payment / Premium  
 - [❌] Chat  
-- [❌] Settings  
+- [❌] Settings
 - [❌] Daily Usage  
 - [❌] Create Post / Reels / Stories 
+- [❌] Channel Create  
+- [❌] Channel Chat  
 
 ---
 
@@ -135,7 +142,9 @@ You can create **child components** freely under these parent components.
 - [✅] Login Page (All Types)  
 - [✅] Activity Log  
 - [✅] Stories  
-- [❌] Ads
+- [❌] Delete Channel
+- [❌] Channel Settings
+- [❌] Kids Connect 
 
 ---
 
@@ -145,6 +154,8 @@ You can create **child components** freely under these parent components.
 - [❌] Reels  
 - [❌] Terms & Conditions  
 - [❌] Contact Us
+- [❌] Edit Channel  
+- [❌] Kids Settings
 
 ---
 

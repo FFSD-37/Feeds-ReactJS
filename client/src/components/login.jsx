@@ -75,7 +75,7 @@ export default function Login() {
       });
 
       const data = await res.json();
-      console.log(data)
+      // console.log(data)
       if (data && data.success) {
         // server may set cookies (uuid / cuid) — redirect to home or provided redirect
         if (data.redirect) window.location.href = data.redirect;
