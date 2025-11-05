@@ -11,7 +11,9 @@ import Stories from './components/stories.jsx';
 import ProfilePage from './components/Profile.jsx';
 import Connect from './components/connect.jsx';
 import EditProfile from './components/editProfile.jsx';
+import TandC from './components/TandC.jsx';
 import Contact from './components/Contact.jsx';
+
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { UserDataProvider, useUserData } from './providers/userData.jsx';
 
@@ -31,6 +33,7 @@ const AppContent = () => {
         <Route path="/profile/VoyagerX21" element={<ProfilePage />} />
         <Route path="/connect" element={<Connect />} />
         <Route path="/edit_profile" element={<EditProfile />} />
+        <Route path="/terms" element={<TandC />} />
         <Route path="/contact" element={<Contact />} />
       </Routes>
       {userData?.username ? <Sidebar /> : userData?.channelName ? <Sidebar /> : null}
