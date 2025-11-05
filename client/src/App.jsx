@@ -31,6 +31,7 @@ const AppContent = () => {
         <Route path="/profile/VoyagerX21" element={<ProfilePage />} />
         <Route path="/connect" element={<Connect />} />
         <Route path="/edit_profile" element={<EditProfile />} />
+        <Route path="/contact" element={<Contact />} />
       </Routes>
       {userData?.username ? <Sidebar /> : userData?.channelName ? <Sidebar /> : null}
     </>
