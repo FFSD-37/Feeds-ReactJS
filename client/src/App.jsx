@@ -12,7 +12,9 @@ import ProfilePage from './components/Profile.jsx';
 import Connect from './components/connect.jsx';
 import EditProfile from './components/editProfile.jsx';
 import TandC from './components/TandC.jsx';
+import Help from  './components/Help.jsx';
 import Contact from './components/Contact.jsx';
+import Reels from './components/Reels.jsx';
 
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { UserDataProvider, useUserData } from './providers/userData.jsx';
@@ -33,8 +35,10 @@ const AppContent = () => {
         <Route path="/profile/VoyagerX21" element={<ProfilePage />} />
         <Route path="/connect" element={<Connect />} />
         <Route path="/edit_profile" element={<EditProfile />} />
+        <Route path="/help" element={<Help />} />
         <Route path="/terms" element={<TandC />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/reels" element={<Reels />} />
       </Routes>
       {userData?.username ? <Sidebar /> : userData?.channelName ? <Sidebar /> : null}
     </>
