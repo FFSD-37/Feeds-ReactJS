@@ -36,6 +36,10 @@ const channelPostschema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Comment'
     }],
+    isArchived: {
+        type: Boolean,
+        default: false
+    },
     warnings: {
         type: Number,
         default: 0

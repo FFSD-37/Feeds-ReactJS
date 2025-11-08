@@ -229,6 +229,6 @@ router.post("/unsave/:id", isAuthuser, handleunsavepost);
 
 router.get("/getchannel/:channelName", isAuthuser, handlegetchannel);
 
-router.post("/getchannelposts", getChannelPosts);
+router.get("/getchannelposts", getChannelPosts);
 
 export default router;

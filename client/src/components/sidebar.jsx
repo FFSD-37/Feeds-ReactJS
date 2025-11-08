@@ -54,7 +54,6 @@ function Sidebar() {
     { name: "Create", href: "/create_post", icon: "/Images/Create.svg" },
     { name: "Chat", href: "/chat", icon: "/Images/Chat.svg" },
     { name: "Connect", href: "/connect", icon: "/Images/Connect.svg" },
-    { name: "Stories", href: "/stories", icon: "/Images/Stories.svg" },
     { name: "Reels", href: "/reels", icon: "/Images/Reels.svg" },
   ];
 
