@@ -74,31 +74,23 @@ function ChannelPage() {
         setChannelData(data);
 
         if (Array.isArray(data.channel_posts) && data.channel_posts.length > 0) {
+          const query = new URLSearchParams({ postIds: data.channel_posts.join(",") });
           const postsRes = await fetch(
-            `${import.meta.env.VITE_SERVER_URL}/getchannelposts`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ postIds: data.channel_posts }),
-            }
+            `${import.meta.env.VITE_SERVER_URL}/getchannelposts?${query.toString()}`,
+            { method: "GET", credentials: "include" }
           );
           setChannelPosts(await postsRes.json());
         }
 
-        if (
-          Array.isArray(data.channel_archived) &&
-          data.channel_archived.length > 0
-        ) {
+        if (Array.isArray(data.channel_archived) && data.channel_archived.length > 0) {
+          const query = new URLSearchParams({ postIds: data.channel_archived.join(",") });
           const archivedRes = await fetch(
-            `${import.meta.env.VITE_SERVER_URL}/getchannelposts`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ postIds: data.channel_archived }),
-            }
+            `${import.meta.env.VITE_SERVER_URL}/getchannelposts?${query.toString()}`,
+            { method: "GET", credentials: "include" }
           );
           setChannelArchivedPosts(await archivedRes.json());
         }
+
       } catch (error) {
         console.error("Error fetching channel:", error);
       }
@@ -112,8 +104,21 @@ function ChannelPage() {
         setShowMembers(false);
     };
 
+    const handleEscape = (e) => {
+      if (e.key === "Escape") {
+        setShowOptions(false);
+        setShowMembers(false);
+        setShowAbout(false);
+      }
+    };
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, [channelName]);
 
   const handleFollow = async () => {
@@ -165,6 +170,7 @@ function ChannelPage() {
           ) : (
             <video
               src={post.url}
+              autoPlay
               controls
               muted
               loop
@@ -209,12 +215,19 @@ function ChannelPage() {
           <div className="channel-admin-section">
             <div
               className="channel-admin"
-              onClick={() =>
-                navigate(`/profile/${channelData.channel_admin || "unknown"}`)
-              }
+              onClick={() => navigate(`/profile/${channelData.channel_admin}`)}
             >
-              <FaUser /> <span>{channelData.channel_admin}</span>
+              {channelData.channel_admin_pic ? (
+                <img
+                  src={channelData.channel_admin_pic}
+                  alt={channelData.channel_admin}
+                />
+              ) : (
+                <FaUser />
+              )}
+              <span>{channelData.channel_admin}</span>
             </div>
+
             <div
               className="channel-members"
               onClick={() => setShowMembers(true)}
@@ -229,7 +242,7 @@ function ChannelPage() {
               <button
                 className="channel-edit-btn"
                 onClick={() =>
-                  navigate(`/edit_channel/${channelData.channel_name}`)
+                  navigate(`/edit_channel`)
                 }
               >
                 Edit Channel
@@ -359,6 +372,72 @@ function ChannelPage() {
           </div>
         </div>
       )}
+      {/* === ABOUT OVERLAY === */}
+      {showAbout && (
+        <div className="channel-modal-overlay" onClick={() => setShowAbout(false)}>
+          <div
+            className="channel-modal about-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span
+              className="channel-close"
+              onClick={() => setShowAbout(false)}
+            >
+              ×
+            </span>
+
+            <h2 className="channel-modal-title">About {channelData.channel_name}</h2>
+
+            <div className="channel-about-content">
+              <img
+                src={channelData.channel_logo}
+                alt="Channel Logo"
+                className="channel-about-logo"
+              />
+
+              <p className="channel-about-desc">{channelData.channel_description}</p>
+
+              <div className="channel-about-section">
+                <strong>Admin:</strong>
+                <div
+                  className="channel-admin-info"
+                  onClick={() => navigate(`/profile/${channelData.channel_admin}`)}
+                >
+                  {channelData.channel_admin_pic ? (
+                    <img
+                      src={channelData.channel_admin_pic}
+                      alt={channelData.channel_admin}
+                      className="channel-admin-pic"
+                    />
+                  ) : (
+                    <FaUser />
+                  )}
+                  <span>{channelData.channel_admin}</span>
+                </div>
+              </div>
+
+              <div className="channel-about-section">
+                <strong>Category:</strong>{" "}
+                {channelData.channel_category?.join(", ") || "Uncategorized"}
+              </div>
+
+              <div className="channel-about-section">
+                <strong>Members:</strong> {channelData.channel_members?.length || 0}
+              </div>
+
+              <div className="channel-about-section">
+                <strong>Created On:</strong>{" "}
+                {new Date(channelData.created_at).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

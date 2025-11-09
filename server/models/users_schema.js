@@ -74,6 +74,12 @@ const userSchema = new mongoose.Schema({
         }
     }],
 
+    channelFollowings: [{
+        channelName:{
+            type:String
+        }
+    }],
+
     blockedUsers: [{
         type:String
     }],

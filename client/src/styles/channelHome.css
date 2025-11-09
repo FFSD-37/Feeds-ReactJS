@@ -1,0 +1,104 @@
+.channel_home_header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #1e1e1e;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.channel_home_logo {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid #ffcc00;
+  object-fit: cover;
+}
+
+.channel_home_info h2 {
+  color: #ffcc00;
+  font-size: 1.3rem;
+  margin: 0;
+}
+
+.channel_home_info p {
+  color: #ccc;
+  font-size: 0.9rem;
+}
+
+.channel_home_container {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 1rem;
+  color: #fff;
+  font-family: "Poppins", sans-serif;
+}
+
+.channel_home_title {
+  text-align: center;
+  font-size: 1.8rem;
+  color: #ffcc00;
+  margin-bottom: 1.5rem;
+}
+
+.channel_home_grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.channel_home_card {
+  background: #1e1e1e;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s ease;
+}
+
+.channel_home_card:hover {
+  transform: translateY(-4px);
+}
+
+.channel_home_img,
+.channel_home_video {
+  width: 100%;
+  height: 230px;
+  object-fit: cover;
+}
+
+.channel_home_content {
+  padding: 0.8rem 1rem;
+}
+
+.channel_home_meta {
+  display: flex;
+  justify-content: space-between;
+  color: #aaa;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.channel_home_loading,
+.channel_home_end {
+  text-align: center;
+  margin-top: 1rem;
+  color: #ccc;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .channel_home_grid {
+    grid-template-columns: 1fr;
+  }
+
+  .channel_home_img,
+  .channel_home_video {
+    height: 200px;
+  }
+
+  .channel_home_title {
+    font-size: 1.5rem;
+  }
+}

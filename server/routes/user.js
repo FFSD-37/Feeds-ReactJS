@@ -57,6 +57,8 @@ import {
   handleunarchivepost,
   handleunsavepost,
   handlepostcomment,
+  handleGetEditChannel,
+  updateChannelProfile,
 } from "../controllers/user.js";
 import {
   handlegetUserPost
@@ -65,6 +67,9 @@ import {
   handlegetchannel,
   getChannelPosts
 } from "../controllers/Ayush/channel.js";
+import{
+  getAllChannelPosts
+} from "../controllers/Ayush/home.js"
 import { handleimagKitauth } from "../services/imagKit.js";
 import { isAuthuser } from "../middleware/isAuthuser.js";
 import { checkOut, verify_payment } from "../controllers/payment.js";
@@ -229,6 +234,12 @@ router.post("/unsave/:id", isAuthuser, handleunsavepost);
 
 router.get("/getchannel/:channelName", isAuthuser, handlegetchannel);
 
-router.post("/getchannelposts", getChannelPosts);
+router.get("/getchannelposts", getChannelPosts);
+
+router.get("/edit_channel", isAuthuser, handleGetEditChannel);
+
+router.post("/updateChannelDetails", isAuthuser, updateChannelProfile);
+
+router.get("/getAllChannelPosts", isAuthuser, getAllChannelPosts);
 
 export default router;
