@@ -13,6 +13,7 @@ import Connect from './components/connect.jsx';
 import EditProfile from './components/editProfile.jsx';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { UserDataProvider, useUserData } from './providers/userData.jsx';
+import EditChannel from './components/editChannel.jsx';
 
 const AppContent = () => {
   const { userData } = useUserData();
@@ -30,6 +31,7 @@ const AppContent = () => {
         <Route path="/profile/VoyagerX21" element={<ProfilePage />} />
         <Route path="/connect" element={<Connect />} />
         <Route path="/edit_profile" element={<EditProfile />} />
+        <Route path="/edit_channel" element={<EditChannel />} />
       </Routes>
       {userData?.username ? <Sidebar /> : userData?.channelName ? <Sidebar /> : null}
     </>

@@ -1,0 +1,312 @@
+/* ---------- 🌐 GLOBAL CONTAINER ---------- */
+.edit_channel_container {
+  max-width: 700px;
+  margin: 3rem auto;
+  padding: 2rem;
+  background: #1e1e1e;
+  color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.3);
+  font-family: "Poppins", sans-serif;
+  transition: all 0.3s ease-in-out;
+}
+
+.edit_channel_heading {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 2rem;
+  color: #ffcc00;
+}
+
+/* ---------- 🖼️ LOGO SECTION ---------- */
+.edit_channel_logo-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.edit_channel_logo {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ffcc00;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.edit_channel_logo:hover {
+  transform: scale(1.05);
+}
+
+.edit_channel_logo-btn {
+  margin-top: 1rem;
+  background-color: #ffcc00;
+  color: #1e1e1e;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.edit_channel_logo-btn:hover {
+  background-color: #ffd633;
+}
+
+/* ---------- ✍️ FORM FIELDS ---------- */
+.edit_channel_form h4 {
+  margin-bottom: 0.4rem;
+  font-size: 1rem;
+  color: #ccc;
+}
+
+.edit_channel_field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #2c2c2c;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.3rem;
+  transition: background 0.3s ease;
+}
+
+.edit_channel_field input,
+.edit_channel_field textarea,
+.edit_channel_field select {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 1rem;
+  resize: none;
+}
+
+.edit_channel_field a {
+  color: #ffcc00;
+  font-size: 0.9rem;
+  cursor: pointer;
+  margin-left: 1rem;
+  transition: color 0.2s ease;
+}
+
+.edit_channel_field a:hover {
+  color: #ffd633;
+}
+
+/* ---------- 📚 CATEGORIES ---------- */
+.edit_channel_categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  background: #2c2c2c;
+  border-radius: 8px;
+  padding: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.edit_channel_category-item {
+  background: #333;
+  border-radius: 25px;
+  padding: 0.4rem 0.9rem;
+  color: #ddd;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.3s ease;
+}
+
+.edit_channel_category-item:hover {
+  background: #444;
+  color: #fff;
+}
+
+.edit_channel_category-item input {
+  accent-color: #ffcc00;
+}
+
+/* ---------- ⚖️ TERMS SECTION ---------- */
+.edit_channel_terms {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1.5rem 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.edit_channel_terms-link {
+  color: #ffcc00;
+  cursor: pointer;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.edit_channel_terms-link:hover {
+  color: #ffd633;
+}
+
+/* ---------- 💾 SAVE BUTTON ---------- */
+.edit_channel_submit-btn {
+  width: 100%;
+  background-color: #ffcc00;
+  color: #1e1e1e;
+  border: none;
+  padding: 0.9rem 0;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.edit_channel_submit-btn:hover {
+  background-color: #ffd633;
+}
+
+.edit_channel_submit-btn.saved {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.edit_channel_success-msg {
+  text-align: center;
+  margin-top: 1rem;
+  color: #28a745;
+  font-weight: 500;
+}
+
+/* ---------- 🧾 TERMS OVERLAY ---------- */
+.edit_channel_overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 15, 15, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.edit_channel_overlay-content {
+  background: #1e1e1e;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 650px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  color: #eee;
+  position: relative;
+  box-shadow: 0 0 20px rgba(255, 204, 0, 0.15);
+  animation: fadeIn 0.3s ease;
+}
+
+.edit_channel_close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  color: #ffcc00;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.edit_channel_close-btn:hover {
+  color: #ffd633;
+}
+
+.edit_channel_overlay-text {
+  margin-top: 1rem;
+  line-height: 1.5;
+}
+
+.edit_channel_overlay-text h2 {
+  color: #ffcc00;
+  margin-top: 1rem;
+  font-size: 1.1rem;
+}
+
+/* ---------- 📱 RESPONSIVE DESIGN ---------- */
+
+/* Tablets and small desktops */
+@media (max-width: 900px) {
+  .edit_channel_container {
+    width: 85%;
+    padding: 1.5rem;
+  }
+  .edit_channel_logo {
+    width: 110px;
+    height: 110px;
+  }
+  .edit_channel_heading {
+    font-size: 1.7rem;
+  }
+}
+
+/* Phones and small devices */
+@media (max-width: 600px) {
+  .edit_channel_container {
+    width: 92%;
+    margin: 2rem auto;
+    padding: 1.2rem;
+  }
+
+  .edit_channel_heading {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .edit_channel_field {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.7rem;
+  }
+
+  .edit_channel_field a {
+    margin-top: 0.4rem;
+  }
+
+  .edit_channel_logo {
+    width: 100px;
+    height: 100px;
+  }
+
+  .edit_channel_submit-btn {
+    font-size: 1rem;
+    padding: 0.8rem;
+  }
+
+  .edit_channel_categories {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .edit_channel_category-item {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .edit_channel_overlay-content {
+    padding: 1.2rem;
+    max-height: 85vh;
+  }
+}
+
+/* Smooth overlay animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

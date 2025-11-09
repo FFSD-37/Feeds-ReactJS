@@ -57,6 +57,8 @@ import {
   handleunarchivepost,
   handleunsavepost,
   handlepostcomment,
+  handleGetEditChannel,
+  updateChannelProfile,
 } from "../controllers/user.js";
 import {
   handlegetUserPost
@@ -230,5 +232,9 @@ router.post("/unsave/:id", isAuthuser, handleunsavepost);
 router.get("/getchannel/:channelName", isAuthuser, handlegetchannel);
 
 router.get("/getchannelposts", getChannelPosts);
+
+router.get("/edit_channel", isAuthuser, handleGetEditChannel);
+
+router.post("/updateChannelDetails", isAuthuser, updateChannelProfile);
 
 export default router;

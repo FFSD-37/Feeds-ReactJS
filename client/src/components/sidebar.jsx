@@ -49,7 +49,7 @@ function Sidebar() {
   ];
 
   const channelItems = [
-    { name: "Home", href: "/home", icon: "/Images/Home.svg" },
+    { name: "Home", href: "/channelhome", icon: "/Images/Home.svg" },
     { name: "Notifications", href: "/notifications", icon: "/Images/Notifications.svg" },
     { name: "Create", href: "/create_post", icon: "/Images/Create.svg" },
     { name: "Chat", href: "/chat", icon: "/Images/Chat.svg" },
@@ -120,7 +120,15 @@ function Sidebar() {
         {/* Dropdown Menu */}
         {showDropdown && (
           <div className="profile-dropdown show">
-            <a href="/edit_profile">Edit Profile</a>
+            {type === "Channel" ? (
+              <>
+                <a href="/edit_channel">Edit Channel</a>
+              </>
+            ) : (
+              <>
+                <a href="/edit_profile">Edit Profile</a>
+              </>
+            )}
             <a href="/dailyUsage">See Daily Usage</a>
             <a href="/settings">Settings</a>
             <a href="#" onClick={toggleLogoutModal}>
@@ -130,6 +138,7 @@ function Sidebar() {
             <a href="/delacc">Delete Account</a>
           </div>
         )}
+
       </div>
 
       {/* Logout Modal */}

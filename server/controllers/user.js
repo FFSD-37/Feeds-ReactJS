@@ -1243,6 +1243,80 @@ const handlepostcomment = async (req, res) => {
   }
 };
 
+const handleGetEditChannel = async (req, res) => {
+  try {
+    const { data } = req.userDetails; // from cuid
+    const channel = await Channel.findOne({ channelName: data[0] });
+
+    if (!channel) {
+      return res.status(404).json({ msg: "Channel not found" });
+    }
+
+    return res.json({
+      img: channel.channelLogo,
+      currChannel: channel.channelName,
+      CurrentChannel: channel,
+      type: data[3],
+    });
+  } catch (err) {
+    console.error("❌ Error in handleGetEditChannel:", err);
+    return res.status(500).json({ msg: "Server Error while fetching channel" });
+  }
+};
+
+const updateChannelProfile = async (req, res) => {
+  try {
+    const { data } = req.userDetails; // [channelName, adminName, channelLogo, "Channel", true]
+    const { logo, logoUrl, channelDescription, channelCategory } = req.body;
+
+    const updatedFields = {
+      channelDescription,
+      channelCategory: Array.isArray(channelCategory)
+        ? channelCategory
+        : JSON.parse(channelCategory || "[]"),
+    };
+
+    if (logo && logo !== "") {
+      updatedFields.channelLogo = logoUrl;
+    }
+
+    const channel = await Channel.findOneAndUpdate(
+      { channelName: data[0] },
+      { $set: updatedFields },
+      { new: true }
+    );
+
+    if (!channel) {
+      return res.status(404).json({ msg: "Channel not found" });
+    }
+
+    const token = create_JWTtoken(
+      [
+        channel.channelName,
+        data[1], // admin name
+        channel.channelLogo || data[2],
+        "Channel",
+        true,
+      ],
+      process.env.USER_SECRET,
+      "30d"
+    );
+
+    res.cookie("cuid", token, { httpOnly: true });
+
+    await ActivityLog.create({
+      username: data[0],
+      id: `#${Date.now()}`,
+      message: "Your Channel Profile has been Updated!!",
+    });
+
+    return res.json({ data: true });
+  } catch (err) {
+    console.error("❌ Error in updateChannelProfile:", err);
+    return res.status(500).json({ msg: "Server Error while updating channel" });
+  }
+};
+
 export {
   handleSignup,
   handleLogin,
@@ -1302,4 +1376,6 @@ export {
   handleunarchivepost,
   handleunsavepost,
   handlepostcomment,
+  handleGetEditChannel,
+  updateChannelProfile
 };

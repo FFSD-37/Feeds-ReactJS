@@ -242,7 +242,7 @@ function ChannelPage() {
               <button
                 className="channel-edit-btn"
                 onClick={() =>
-                  navigate(`/edit_channel/${channelData.channel_name}`)
+                  navigate(`/edit_channel`)
                 }
               >
                 Edit Channel
