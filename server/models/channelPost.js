@@ -11,7 +11,6 @@ const channelPostschema = new mongoose.Schema({
         enum: ['Reels', 'Img'],
         required: true
     },
-
     url: {
         type: String,
         required: true
@@ -23,6 +22,10 @@ const channelPostschema = new mongoose.Schema({
     channel: {
         type: String,
         required: [true, 'channel is required']
+    },
+    category: {
+        type: String,
+        required: [true, 'category is required']
     },
     likes: {
         type: Number,
