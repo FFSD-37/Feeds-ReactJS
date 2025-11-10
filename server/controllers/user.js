@@ -15,6 +15,7 @@ import Notification from '../models/notification_schema.js';
 import Channel from "../models/channelSchema.js"
 import channelPost from '../models/channelPost.js';
 import Story from "../models/storiesSchema.js";
+// import Adpost from "../models/ad_schema.js";
 
 async function storeOtp(email, otp) {
   try {
@@ -44,9 +45,9 @@ async function getOtp(email) {
 }
 
 const handleSignup = async (req, res) => {
-  console.log(req.body)
   try {
     const pass = await bcrypt.hash(req.body.password, 10);
+
     const userData = {
       fullName: req.body.fullName,
       username: req.body.username,
@@ -54,109 +55,166 @@ const handleSignup = async (req, res) => {
       phone: req.body.phone,
       password: pass,
       dob: req.body.dob,
-      profilePicture: req.body.profileImageUrl ? req.body.profileImageUrl : process.env.DEFAULT_USER_IMG,
+      profilePicture: req.body.profileImageUrl || process.env.DEFAULT_USER_IMG,
       bio: req.body.bio || "",
       gender: req.body.gender,
-      type: req.body.acctype,
+      type: req.body.acctype || "Normal",
       isPremium: false,
-      termsAccepted: !req.body.terms
+      termsAccepted: req.body.terms === true,
     };
 
-    await User.create(userData);
-    await ActivityLog.create({ username: req.body.username, id: `#${Date.now()}`, message: "You Registered Successfully!!" });
-    await User.findOneAndUpdate(
-      { username: req.body.username },
-      {
-        $inc: {
-          coins: 10
-        }
-      }
-    )
-    return res.render("login", { loginType: "Email", msg: "User Registered Successfully" });
-  }
-  catch (err) {
-    if (err.cause.code === 11000) {
-      const fields = Object.keys(err.cause.keyValue);
-      return res.render("Registration", { msg: `User with ${fields[0]} already exists` });
+    const user = await User.create(userData);
+
+    await ActivityLog.create({
+      username: user.username,
+      id: `#${Date.now()}`,
+      message: "You Registered Successfully!!",
+    });
+
+    await User.updateOne(
+      { username: user.username },
+      { $inc: { coins: 10 } }
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      user: {
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+      },
+    });
+  } catch (err) {
+    if (err.code === 11000) {
+      const fields = Object.keys(err.keyValue);
+      return res.status(400).json({
+        success: false,
+        message: `User with this ${fields[0]} already exists`,
+      });
     }
+
     if (err.name === "ValidationError") {
-      const errors = Object.values(err.errors).map(e => e.message);
-      return res.render("Registration", { msg: errors });
-    };
+      const errors = Object.values(err.errors).map((e) => e.message);
+      return res.status(400).json({
+        success: false,
+        message: errors.join(", "),
+      });
+    }
+
+    console.error("Signup Error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error during signup",
+    });
   }
-}
+};
 
 const handledelacc = async (req, res) => {
   try {
-    console.log(req.body);
     const { data } = req.userDetails;
-    const user = await User.findOne({ username: data[0] }).lean();
+    const user = await User.findOne({ username: data[0] });
 
-    if (!(await bcrypt.compare(req.body.password, user.password))) {
-      return res.render("delacc", {
-        img: data[2],
-        currUser: data[0],
-        msg: "Incorrect Password"
-      });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
     }
-    const liked = user.likeIds || [];
-    for (const postId of liked) {
-      const post = await Post.findById(postId);
-      if (post) {
-        post.likes -= 1;
+
+    // Password verification
+    const isMatch = await bcrypt.compare(req.body.password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: "Incorrect password" });
+    }
+
+    // Backup user data in Soft Deleted Users collection
+    await DelUser.create(user.toObject());
+
+    // 1️⃣ Delete user’s own posts (and related comments)
+    const userPosts = await Post.find({ author: user.username });
+    for (const post of userPosts) {
+      await Comment.deleteMany({ _id: { $in: post.comments } });
+    }
+    await Post.deleteMany({ author: user.username });
+
+    // 2️⃣ Delete user’s comments and replies across all posts
+    await Comment.deleteMany({ username: user.username });
+
+    // 3️⃣ Delete stories by user
+    await Story.deleteMany({ username: user.username });
+
+    // 4️⃣ Remove user’s posts and memberships from channels
+    await channelPost.deleteMany({ channel: { $in: user.channelName } });
+    await Channel.updateMany(
+      {},
+      {
+        $pull: {
+          channelMembers: { username: user.username },
+          postIds: { $in: user.postIds },
+        },
       }
-    }
-    await DelUser.insertOne(user);
+    );
 
-    let transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
+    // 5️⃣ Delete user’s activity logs
+    await ActivityLog.deleteMany({ username: user.username });
+
+    // 6️⃣ Delete the actual user
+    await User.deleteOne({ _id: user._id });
+
+    // 7️⃣ Send confirmation email
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
       port: 587,
       secure: false,
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
+        pass: process.env.EMAIL_PASS,
+      },
     });
-    let mailOptions = {
+
+    const mailOptions = {
       from: process.env.EMAIL_USER,
       to: user.email,
-      subject: 'DELETION ON ACCOUNT',
-      text: `Your Account ${user.username} from FEEDS has been deleted on Date: ${new Date()}. If it's not you, please Restore your account using /restore url from the login page. It's been great having you.`
+      subject: "Account Deleted - FEEDS",
+      text: `Hello ${user.username},
+
+Your FEEDS account has been deleted on ${new Date().toLocaleString()}.
+
+If you didn’t perform this action, please restore your account using /restore on the login page.
+
+Best regards,
+Team FEEDS`,
     };
 
-    await ActivityLog.create({ username: user.username, id: `#${Date.now()}`, message: "Your Account has been delete" })
-    await User.findByIdAndDelete({ _id: user._id });
-    try {
-      await transporter.sendMail(mailOptions);
-      res.render("login", { loginType: "Email", msg: "Account deleted successfully." });
-    }
-    catch (err) {
-      console.error('Error sending email:', err);
-      return res.status(500).json({ msg: "Failed to send OTP" });
-    }
+    await transporter.sendMail(mailOptions);
 
+    return res.status(200).json({
+      success: true,
+      message: "Account deleted successfully",
+    });
   } catch (error) {
-    console.error("Error deleting account:", error);
-    res.status(500).send("Internal Server Error");
+    console.error("❌ Error deleting account:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while deleting account",
+    });
   }
 };
 
-const handleLogin = async (req, res) => {
-  try {
-    const user = await User.findOne(req.body.identifykro === 'username' ? { username: req.body.identifier } : { email: req.body.identifier });
-    if (!user) return res.render("login", { loginType: "Email", msg: "Username Doesn't exists" });
-    const isPasswordMatch = await bcrypt.compare(req.body.password, user.password);
-    if (!isPasswordMatch) return res.render("login", { loginType: "Username", msg: "Incorrect password" });
+// const handleLogin = async (req, res) => {
+//   try {
+//     const user = await User.findOne(req.body.identifykro === 'username' ? { username: req.body.identifier } : { email: req.body.identifier });
+//     if (!user) return res.render("login", { loginType: "Email", msg: "Username Doesn't exists" });
+//     const isPasswordMatch = await bcrypt.compare(req.body.password, user.password);
+//     if (!isPasswordMatch) return res.render("login", { loginType: "Username", msg: "Incorrect password" });
 
-    const token = create_JWTtoken([user.username, user.email, user.profilePicture, user.type], process.env.USER_SECRET, '30d');
-    res.cookie('uuid', token, { httpOnly: true });
-    return res.redirect("/home");
-  }
-  catch (e) {
-    console.log(e);
-    return res.render("login", { loginType: "Email", msg: "Something went wrong" });
-  }
-};
+//     const token = create_JWTtoken([user.username, user.email, user.profilePicture, user.type], process.env.USER_SECRET, '30d');
+//     res.cookie('uuid', token, { httpOnly: true });
+//     return res.redirect("/home");
+//   }
+//   catch (e) {
+//     console.log(e);
+//     return res.render("login", { loginType: "Email", msg: "Something went wrong" });
+//   }
+// };
 
 function generateOTP() {
   const characters = '0123456789';
@@ -168,199 +226,396 @@ function generateOTP() {
 }
 
 const sendotp = async (req, res) => {
-  var mail = req.body.email;
-  if (!(await User.findOne({ email: mail }))) {
-    return res.render("Forgot_pass", { msg: "No such user", newpass: "NO", otpsec: "NO", emailsec: "YES", title: "Forgot Password" });
-  }
-  var otp = generateOTP();
-  let transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-  let mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: mail,
-    subject: 'Your OTP Code',
-    text: `Your OTP for resetting the password is: ${otp}`
-  };
-
   try {
-    await transporter.sendMail(mailOptions);
-    storeOtp(mail, otp);
-    return res.render("Forgot_pass", { msg: "OTP Sent successfully!!", otpsec: "YES", newpass: "NO", emailsec: "NO", title: "Forgot Password" });
-  } catch (error) {
-    console.error('Error sending email:', error);
-    return res.status(500).json({ msg: "Failed to send OTP" });
-  }
-}
+    const { email } = req.body;
 
-const verifyotp = async (req, res) => {
-  const action = req.body.action;
-  if (action === "verify") {
-    getOtp(req.body.foremail)
-      .then((otp) => {
-        if (otp) {
-          if (otp === req.body.otp) {
-            return res.render("Forgot_pass", { msg: "OTP Verified", otpsec: "NO", newpass: "YES", emailsec: "NO", title: "Forgot Password" })
-          }
-          else {
-            return res.render("Forgot_pass", { msg: "Invalid OTP", otpsec: "YES", newpass: "NO", emailsec: "NO", title: "Forgot Password" })
-          }
-        }
-        else {
-          return res.render("Forgot_pass", { msg: "No OTP Found", otpsec: "YES", newpass: "NO", emailsec: "NO", title: "Forgot Password" })
-        }
-      })
-      .catch((err) => console.error("Error:", err));
-  }
-  else {
-    const mail = req.body.foremail;
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "No user found with this email",
+      });
+    }
+
     const otp = generateOTP();
-    let transporter = nodemailer.createTransport({
-      service: 'gmail',
+
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
+        pass: process.env.EMAIL_PASS,
+      },
     });
-    let mailOptions = {
+
+    const mailOptions = {
       from: process.env.EMAIL_USER,
-      to: mail,
-      subject: 'Your OTP Code',
-      text: `Your OTP for resetting the password is: ${otp}`
+      to: email,
+      subject: "Your OTP Code - FEEDS",
+      text: `Hello ${user.username},
+
+Your One-Time Password (OTP) for resetting your FEEDS account password is: ${otp}
+
+This OTP is valid for a limited time. Please do not share it with anyone.
+
+Best regards,
+Team FEEDS`,
     };
 
-    try {
-      await transporter.sendMail(mailOptions);
-      storeOtp(mail, otp);
-      return res.render("Forgot_pass", { msg: "OTP Sent successfully!!", otpsec: "YES", newpass: "NO", emailsec: "NO", title: "Forgot Password" });
-    } catch (error) {
-      console.error('Error sending email:', error);
-      return res.status(500).json({ msg: "Failed to send OTP" });
+    await transporter.sendMail(mailOptions);
+
+    await storeOtp(email, otp);
+
+    return res.status(200).json({
+      success: true,
+      message: "OTP sent successfully",
+      email,
+    });
+  } catch (error) {
+    console.error("❌ Error sending OTP:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to send OTP. Please try again later.",
+    });
+  }
+};
+
+const verifyotp = async (req, res) => {
+  try {
+    const { email, otp, action } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and OTP are required",
+      });
     }
+
+    const storedOtp = await getOtp(email);
+
+    if (!storedOtp) {
+      return res.status(404).json({
+        success: false,
+        message: "No OTP found. Please request a new one.",
+      });
+    }
+
+    if (storedOtp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP. Please try again.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "OTP verified successfully",
+    });
+  } catch (error) {
+    console.error("❌ Error verifying OTP:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while verifying OTP",
+    });
   }
 };
 
 const handlefpadmin = async (req, res) => {
-  const otp2 = generateOTP();
-  let transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-  let mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: process.env.adminEmail,
-    subject: 'Your OTP Code',
-    text: `Your OTP for resetting the password is: ${otp2}`
-  };
-
   try {
+    const otp = generateOTP();
+
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: process.env.adminEmail,
+      subject: "Admin Password Reset OTP - FEEDS",
+      text: `Hello Admin,
+
+Your One-Time Password (OTP) to reset your admin credentials is: ${otp}
+
+This OTP is valid for a limited time. Please do not share it with anyone.
+
+- FEEDS Security`,
+    };
+
+    // Send mail
     await transporter.sendMail(mailOptions);
-    storeOtp(process.env.adminEmail, otp2);
-    return res.render("fpadmin", { msg: "OTP Sent successfully!!" });
+
+    // Save OTP in the database
+    await storeOtp(process.env.adminEmail, otp);
+
+    return res.status(200).json({
+      success: true,
+      message: "OTP sent successfully to admin email",
+    });
   } catch (error) {
-    console.error('Error sending email:', error);
-    return res.status(500).json({ msg: "Failed to send OTP" });
-  }
-}
-
-const adminPassUpdate = (req, res) => {
-  if (req.body.password === req.body.password1) {
-    getOtp(process.env.adminEmail)
-      .then((otp) => {
-        if (otp) {
-          if (otp === req.body.otp) {
-            process.env.adminPass = req.body.password;
-            return res.render("admin", { msg: "Password Updated Successfully" })
-          }
-          else {
-            return res.render("fpadmin", { msg: "Invalid OTP" });
-          }
-        }
-      })
-  }
-  else {
-    return res.render("fpadmin", { msg: "Password Mismatched" });
-  }
-}
-
-const updatepass = async (req, res) => {
-  if (req.body.new_password != req.body.new_password2) {
-    return res.render("Forgot_pass", { msg: "Password mismatch", otpsec: "NO", newpass: "YES", emailsec: "NO", title: "Forgot Password" })
-  }
-  else {
-    const user = await User.findOne({
-      email: req.body.foremail,
-    })
-
-    console.log(user, user.username);
-
-    if (await bcrypt.compare(user.password, req.body.new_password)) {
-      return res.render("Forgot_pass", { msg: "Same password as before", otpsec: "NO", newpass: "YES", emailsec: "NO", title: "Forgot Password" })
-    }
-    else {
-      user.password = await bcrypt.hash(req.body.new_password, 10);
-      await user.save();
-      await ActivityLog.create({ username: req.body.username, id: `#${Date.now()}`, message: "Your Password has been changed!!" });
-      return res.render("login", { msg: "Password Updated!!", loginType: null });
-    }
+    console.error("❌ Error sending admin OTP:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to send admin OTP",
+    });
   }
 };
 
-const handlelogout = (req, res) => {
-  res.cookie("uuid", "", { maxAge: 0 });
-  res.cookie("cuid", "", { maxAge: 0 });
-  return res.status(200).json({ message: "Logged out successfully" });
-}
+const adminPassUpdate = async (req, res) => {
+  try {
+    const { otp, newPassword, confirmPassword } = req.body;
 
-const handleContact = (req, res) => {
-  const data = {
-    Name: req.body.name,
-    Email: req.body.email,
-    sub: req.body.subject,
-    msg: req.body.message
-  };
-  const pat = path.resolve(`routes/Responses/${req.body.subject}/${req.body.email}.json`);
-  fs.writeFile(pat, JSON.stringify(data, null, 2), (err) => {
-    if (err) {
-      console.log("Error is writing file", err);
+    if (!otp || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields (OTP, newPassword, confirmPassword) are required",
+      });
     }
-    else {
-      return res.render("contact", { img: data[2], msg: "Your response is noted, we'll get back to you soon.", currUser: data[0] })
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Passwords do not match",
+      });
     }
-  })
-}
+
+    // Verify stored OTP
+    const storedOtp = await getOtp(process.env.adminEmail);
+    if (!storedOtp) {
+      return res.status(404).json({
+        success: false,
+        message: "No OTP found. Please request a new one.",
+      });
+    }
+
+    if (storedOtp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP. Please try again.",
+      });
+    }
+
+    // Update admin password (in-memory)
+    process.env.adminPass = newPassword;
+
+    // Optional: Persist the new admin password securely (e.g., to a .env or config file)
+    // Note: This should ideally be replaced with a DB entry if admin creds are stored there.
+
+    await ActivityLog.create({
+      username: "ADMIN",
+      id: `#${Date.now()}`,
+      message: "Admin password updated successfully.",
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Admin password updated successfully.",
+    });
+  } catch (error) {
+    console.error("❌ Error in adminPassUpdate:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while updating admin password",
+    });
+  }
+};
+
+const updatepass = async (req, res) => {
+  try {
+    const { email, new_password, confirm_password } = req.body;
+
+    if (!email || !new_password || !confirm_password) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
+    }
+
+    if (new_password !== confirm_password) {
+      return res.status(400).json({
+        success: false,
+        message: "Passwords do not match",
+      });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const isSamePassword = await bcrypt.compare(new_password, user.password);
+    if (isSamePassword) {
+      return res.status(400).json({
+        success: false,
+        message: "New password cannot be the same as the old password",
+      });
+    }
+
+    user.password = await bcrypt.hash(new_password, 10);
+    await user.save();
+
+    await ActivityLog.create({
+      username: user.username,
+      id: `#${Date.now()}`,
+      message: "Your password has been changed successfully.",
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Password updated successfully. You can now log in.",
+    });
+  } catch (error) {
+    console.error("❌ Error updating password:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while updating password",
+    });
+  }
+};
+
+
+const handlelogout = async (req, res) => {
+  try {
+    res.clearCookie("uuid", { httpOnly: true, sameSite: "strict", secure: true });
+    res.clearCookie("cuid", { httpOnly: true, sameSite: "strict", secure: true });
+
+    return res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    console.error("❌ Error during logout:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error while logging out",
+    });
+  }
+};
+
+const handleContact = async (req, res) => {
+  try {
+    const { name, email, subject, message } = req.body;
+
+    if (!name || !email || !subject || !message) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields (name, email, subject, message) are required",
+      });
+    }
+
+    // Save feedback in database
+    await Feedback.create({
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      name,
+      email,
+      subject,
+      message,
+    });
+
+    // Optional: Save to local file for admin log (non-blocking)
+    const folderPath = path.resolve(`responses/${subject}`);
+    const filePath = path.join(folderPath, `${email.replace(/[@.]/g, "_")}.json`);
+    fs.mkdirSync(folderPath, { recursive: true });
+    fs.writeFile(filePath, JSON.stringify({ name, email, subject, message }, null, 2), () => {});
+
+    return res.status(200).json({
+      success: true,
+      message: "Your response has been recorded. We'll get back to you soon!",
+    });
+  } catch (error) {
+    console.error("❌ Error in handleContact:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to submit feedback. Please try again later.",
+    });
+  }
+};
 
 const handleadminlogin = async (req, res) => {
-  if (req.body.username === process.env.adminUsername && req.body.password === process.env.adminPass) {
-    const totalUsers = await User.find({}).sort({ createdAt: -1 });
-    const totalPosts = await Post.find({});
-    const tickets = await Report.find({}).lean();
-    const orders = await Payment.find({}).lean();
-    const reviews = await Feedback.find({});
-    var revenue = 0;
-    orders.forEach(async order => {
-      if (order.status !== "Pending") {
-        revenue += Number(order.amount);
-        await User.findOneAndUpdate({ username: order.username }, { $exists: false }, { $set: { isPremium: true } });
-      }
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Username and password are required",
+      });
+    }
+
+    // Validate admin credentials
+    if (username !== process.env.adminUsername || password !== process.env.adminPass) {
+      return res.status(401).json({
+        success: false,
+        message: "Incorrect credentials",
+      });
+    }
+
+    // Fetch all necessary admin stats
+    const [users, posts, reports, orders, feedbacks] = await Promise.all([
+      User.find({}).sort({ createdAt: -1 }).lean(),
+      Post.find({}).lean(),
+      Report.find({}).lean(),
+      Payment.find({}).lean(),
+      Feedback.find({}).lean(),
+    ]);
+
+    // Calculate revenue
+    let revenue = 0;
+    const completedOrders = orders.filter((o) => o.status !== "Pending");
+    completedOrders.forEach((order) => (revenue += Number(order.amount || 0)));
+
+    // Ensure premium flag is up-to-date
+    for (const order of completedOrders) {
+      await User.updateOne(
+        { username: order.username },
+        { $set: { isPremium: true } }
+      );
+    }
+
+    // Structure the admin dashboard response
+    const dashboardData = {
+      totalRevenue: revenue,
+      totalUsers: users.length,
+      totalPosts: posts.length,
+      totalReports: reports.length,
+      totalOrders: orders.length,
+      totalFeedbacks: feedbacks.length,
+      users,
+      posts,
+      reports,
+      orders,
+      feedbacks,
+    };
+
+    return res.status(200).json({
+      success: true,
+      message: "Admin login successful",
+      dashboard: dashboardData,
     });
-    return res.render("adminPortal", { total_revenue: revenue, total_users: totalUsers.length, total_posts: totalPosts.length, allUsersInOrder: totalUsers, total_tickets: tickets.length, allOrders: orders, allUsers: totalUsers, allReports: tickets, allReviews: reviews });
+  } catch (error) {
+    console.error("❌ Error in handleadminlogin:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while logging in admin",
+    });
   }
-  else {
-    return res.render("admin", { msg: "Incorrect Credentials" });
-  }
-}
+};
 
 const fetchOverlayUser = async (req, res) => {
   const { user_id, username, email } = req.body;
@@ -369,110 +624,213 @@ const fetchOverlayUser = async (req, res) => {
 }
 
 const handlegetHome = async (req, res) => {
-  const { data } = req.userDetails;
-  const createdAt = req.query.createdAt || new Date();
-  const posts = await (
-    data[3] === "Kids"
-      ? channelPost.find({ createdAt: { $lt: createdAt } })
-      : Post.find({ createdAt: { $lt: createdAt } })
-  )
-    .sort({ createdAt: -1 })
-    .limit(5)
-    .lean();
+  try {
+    const { data } = req.userDetails; // [username, email, profileUrl, type, isPremium]
+    const username = data[0];
+    const userType = data[3];
+    const createdAt = req.query.createdAt || new Date();
+    const categories = req.query.categories
+      ? req.query.categories.split(",").map((c) => c.trim())
+      : [];
 
-  if (!posts) return res.status(404).json({ err: "Post not found" });
+    // Base query
+    const baseFilter = { createdAt: { $lt: createdAt }, isArchived: false };
 
-  const user = await User.findOne({ username: data[0] }).lean();
-  posts.map((post) => {
-    if (user.likeIds?.includes(post.id)) {
-      post = { ...post, liked: true };
+    // For kids: filter posts based on selected/allowed categories
+    let posts = [];
+
+    if (userType === "Kids") {
+      if (!categories.length) {
+        return res.status(400).json({
+          success: false,
+          message: "Categories are required for Kids account feed",
+        });
+      }
+
+      posts = await channelPost
+        .find({ ...baseFilter, category: { $in: categories } })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean();
+    } else {
+      posts = await Post.find(baseFilter)
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean();
     }
-    if (user.savedPostsIds?.includes(post.id)) {
-      post = { ...post, saved: true };
-    }
-  })
-  return res.render("home", { img: data[2], currUser: data[0], posts, type: data[3] });
-}
 
-const handlegetpayment = (req, res) => {
-  const { data } = req.userDetails;
-  return res.render("payment", { img: data[2], currUser: data[0] });
-}
-
-const handlegetprofile = async (req, res) => {
-  const u = req.params;
-  const { data } = req.userDetails;
-  const profUser = await User.findOne({ username: u.username });
-
-  if (!profUser || profUser.blockedUsers.includes(data[0])) {
-    return res.render("Error_page", {
-      img: data[2],
-      currUser: data[0],
-      error_msg: "Profile Not Found!!"
-    });
-  }
-
-  const postIds = profUser.postIds || [];
-  const postObjects = await Post.find({ _id: { $in: postIds } });
-
-  const meUser = await User.findOne({ username: data[0] });
-  const isFollowingThem = meUser.followings.some(f => f.username === u.username);
-  const isFollowedByThem = meUser.followers.some(f => f.username === u.username);
-  const isFriend = isFollowingThem && isFollowedByThem;
-  const isFollower = isFollowedByThem && !isFollowingThem;
-  const isRequested = isFollowingThem && !isFollowedByThem;
-
-  const isOwnProfile = u.username === data[0];
-  const isKid = profUser.type === "Kids";
-
-  if (isKid) {
-    return res.render("profile_kids", {
-      img: data[2],
-      myUser: profUser,
-      currUser: data[0]
-    });
-  }
-
-  const savedIds = profUser.savedPostsIds || [];
-  const savedObjects = await Post.find({ id: { $in: savedIds } });
-  const likeIds = profUser.likedPostsIds || [];
-  const likedObjects = await Post.find({ id: { $in: likeIds } });
-  const archiveIds = profUser.archivedPostsIds || [];
-  const archivedObjects = await Post.find({ id: { $in: archiveIds } });
-
-  if (isOwnProfile) {
-    return res.render("profile", {
-      img: data[2],
-      myUser: profUser,
-      currUser: data[0],
-      posts: postObjects,
-      saved: savedObjects,
-      liked: likedObjects,
-      archived: archivedObjects,
-      isFollower,
-      isFriend,
-      isRequested
-    });
-  } else {
-    if (profUser.isPremium) {
-      await Notification.create({
-        mainUser: u.username,
-        msgSerial: 5,
-        userInvolved: data[0],
-        coin: 1
+    if (!posts.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No posts found for the given filters",
       });
     }
-    return res.render("profile_others", {
-      img: data[2],
-      myUser: profUser,
-      currUser: data[0],
-      posts: postObjects,
-      saved: savedObjects,
-      liked: likedObjects,
-      archived: archivedObjects,
-      isFollower,
-      isFriend,
-      isRequested
+
+    // User metadata
+    const user = await User.findOne({ username }).lean();
+    const likedIds = user.likedPostsIds || [];
+    const savedIds = user.savedPostsIds || [];
+
+    // Mark liked/saved posts
+    const updatedPosts = posts.map((post) => ({
+      ...post,
+      liked: likedIds.includes(post.id),
+      saved: savedIds.includes(post.id),
+    }));
+
+    return res.status(200).json({
+      success: true,
+      message: "Posts fetched successfully",
+      posts: updatedPosts,
+      user: {
+        username,
+        profilePicture: data[2],
+        type: userType,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error in handlegetHome:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching posts",
+    });
+  }
+};
+
+const handlegetpayment = async (req, res) => {
+  try {
+    const { data } = req.userDetails; // [username, email, profileUrl, type, isPremium]
+    const username = data[0];
+
+    const user = await User.findOne({ username }).lean();
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Fetch payment history for this user
+    const payments = await Payment.find({ username })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment data fetched successfully",
+      user: {
+        username,
+        isPremium: user.isPremium,
+        coins: user.coins,
+        profilePicture: user.profilePicture,
+      },
+      payments,
+    });
+  } catch (error) {
+    console.error("❌ Error in handlegetpayment:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching payment details",
+    });
+  }
+};
+
+const handlegetprofile = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const { data } = req.userDetails; // [loggedUsername, email, profilePicture, type, isPremium]
+    const loggedInUser = data[0];
+
+    // Find the requested profile
+    const profileUser = await User.findOne({ username }).lean();
+    if (!profileUser) {
+      return res.status(404).json({
+        success: false,
+        message: "Profile not found",
+      });
+    }
+
+    // Check if current user is blocked by the profile owner
+    if (profileUser.blockedUsers.includes(loggedInUser)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are blocked by this user",
+      });
+    }
+
+    // Fetch posts created by this user
+    const postIds = profileUser.postIds || [];
+    const posts = await Post.find({ _id: { $in: postIds }, isArchived: false }).lean();
+
+    // Fetch saved, liked, and archived posts
+    const savedIds = profileUser.savedPostsIds || [];
+    const likedIds = profileUser.likedPostsIds || [];
+    const archiveIds = profileUser.archivedPostsIds || [];
+
+    const [saved, liked, archived] = await Promise.all([
+      Post.find({ id: { $in: savedIds } }).lean(),
+      Post.find({ id: { $in: likedIds } }).lean(),
+      Post.find({ id: { $in: archiveIds } }).lean(),
+    ]);
+
+    // Relationship info
+    const loggedUser = await User.findOne({ username: loggedInUser }).lean();
+    const isFollowing = loggedUser.followings.some((f) => f.username === username);
+    const isFollowedBy = loggedUser.followers.some((f) => f.username === username);
+    const isFriend = isFollowing && isFollowedBy;
+    const isFollower = isFollowedBy && !isFollowing;
+    const isRequested = isFollowing && !isFollowedBy;
+    const isOwnProfile = username === loggedInUser;
+
+    // Kids profile logic
+    const isKid = profileUser.type === "Kids";
+
+    // If the viewed user is premium, give the viewer a small coin bonus
+    if (!isOwnProfile && profileUser.isPremium) {
+      await Notification.create({
+        mainUser: username,
+        msgSerial: 5,
+        userInvolved: loggedInUser,
+        coin: 1,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile fetched successfully",
+      userProfile: {
+        username: profileUser.username,
+        fullName: profileUser.fullName,
+        display_name: profileUser.display_name,
+        bio: profileUser.bio,
+        gender: profileUser.gender,
+        profilePicture: profileUser.profilePicture,
+        followers: profileUser.followers.length,
+        followings: profileUser.followings.length,
+        isPremium: profileUser.isPremium,
+        type: profileUser.type,
+        visibility: profileUser.visibility,
+        isKid,
+      },
+      posts,
+      saved,
+      liked,
+      archived,
+      relationship: {
+        isOwnProfile,
+        isFollowing,
+        isFollowedBy,
+        isFriend,
+        isFollower,
+        isRequested,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error in handlegetprofile:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching profile",
     });
   }
 };
@@ -489,37 +847,46 @@ const handlegetcontact = (req, res) => {
 }
 
 const handlegetconnect = async (req, res) => {
-  const { data } = req.userDetails;
-
   try {
-    const currentUser = await User.findOne({ username: data[0] }).populate('followings');
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const username = data[0];
+
+    const currentUser = await User.findOne({ username }).lean();
+    if (!currentUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Get mutual connections
+    const followingUsernames = currentUser.followings.map((f) => f.username);
 
     const mutualFollowersPromises = currentUser.followings.map(async (user) => {
-      const followedUser = await User.findOne({ username: user.username })
-        .populate('followers');
-      return followedUser.followers.filter(follower => follower.username !== data[0]);
+      const followedUser = await User.findOne({ username: user.username }).lean();
+      return (followedUser?.followers || [])
+        .filter((f) => f.username !== username)
+        .map((f) => f.username);
     });
 
     const mutualFollowersArrays = await Promise.all(mutualFollowersPromises);
+    const mutualUsernames = [...new Set(mutualFollowersArrays.flat())];
 
-    let mutualFollowers = [...new Set(
-      mutualFollowersArrays.flat().map(user => user.username)
-    )];
+    const users = await User.find({ username: { $in: mutualUsernames } }).lean();
 
-    const users = await User.find({ username: { $in: mutualFollowers } });
-
-    mutualFollowers = users.map(user => ({
+    const mutualFollowers = users.map((user) => ({
       username: user.username,
       avatarUrl: user.profilePicture,
       display_name: user.display_name,
       followers: user.followers.length,
       following: user.followings.length,
-      isFollowing: currentUser.followings.some(f => f.username === user.username)
+      isFollowing: followingUsernames.includes(user.username),
     }));
-    return res.json({ users: mutualFollowers });
+
+    return res.status(200).json({ success: true, users: mutualFollowers });
   } catch (error) {
-    console.error("Error in handlegetconnect:", error);
-    return res.status(500).send("Internal Server Error");
+    console.error("❌ Error in handlegetconnect:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error while fetching connections",
+    });
   }
 };
 
@@ -538,22 +905,63 @@ const handlegetadmin = (req, res) => {
 }
 
 const handlegetreels = async (req, res) => {
-  const { data } = req.userDetails;
+  try {
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const username = data[0];
 
-  const userType = data[3];
-  let posts = await Post.find({
-    type: "Reels",
-  }).sort({ createdAt: -1 }).lean();
+    const user = await User.findOne({ username }).lean();
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
 
-  if (!posts) return res.status(404).json({ err: "Post not found" });
-  posts = await Promise.all(posts.map(async (post) => {
-    const author = await User.findOne({ username: post.author }).lean();
-    const isLiked = author.likedPostsIds?.includes(post.id) || false;
-    return { ...post, avatar: author.profilePicture, liked: isLiked };
-  }))
+    // Fetch all reels (non-archived)
+    const reels = await Post.find({ type: "Reels", isArchived: false })
+      .sort({ createdAt: -1 })
+      .lean();
 
-  return res.render("reels", { img: data[2], currUser: data[0], posts });
-}
+    if (!reels.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No reels available",
+      });
+    }
+
+    // Include author info & liked status
+    const likedIds = user.likedPostsIds || [];
+    const enrichedReels = await Promise.all(
+      reels.map(async (reel) => {
+        const author = await User.findOne({ username: reel.author }).lean();
+        return {
+          ...reel,
+          authorProfile: {
+            username: author?.username || "Unknown",
+            profilePicture: author?.profilePicture || process.env.DEFAULT_USER_IMG,
+          },
+          liked: likedIds.includes(reel.id),
+        };
+      })
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Reels fetched successfully",
+      reels: enrichedReels,
+      user: {
+        username: user.username,
+        profilePicture: user.profilePicture,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error in handlegetreels:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching reels",
+    });
+  }
+};
 
 const handlegethelp = (req, res) => {
   const { data } = req.userDetails;
@@ -569,41 +977,111 @@ const handlegetforgetpass = (req, res) => {
 }
 
 const handlegeteditprofile = async (req, res) => {
-  const { data } = req.userDetails;
-  const user = await User.findOne({ username: data[0] });
-  if (data[3] === "Kids") {
-    return res.json({
-      img: data[2],
-      currUser: data[0],
-      CurrentUser: user,
-      type: data[3],
+  try {
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const username = data[0];
+
+    const user = await User.findOne({ username }).lean();
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User data fetched successfully",
+      user: {
+        username: user.username,
+        fullName: user.fullName,
+        display_name: user.display_name,
+        email: user.email,
+        phone: user.phone,
+        bio: user.bio,
+        gender: user.gender,
+        dob: user.dob,
+        type: user.type,
+        isPremium: user.isPremium,
+        profilePicture: user.profilePicture,
+        visibility: user.visibility,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error in handlegeteditprofile:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching user data",
     });
   }
-  return res.json({
-    img: data[2],
-    currUser: data[0],
-    CurrentUser: user,
-    type: data[3],
-  });
 };
 
 const updateUserProfile = async (req, res) => {
-  const { data } = req.userDetails;
-  const { photo, profileImageUrl, display_name, name, bio, gender, phone, terms } = req.body;
-  await User.findOneAndUpdate(
-    { username: data[0] },
-    { $set: { display_name: display_name, fullName: name, bio: bio, gender: gender, phone: phone } }
-  )
-  if (photo !== "") {
-    await User.findOneAndUpdate({ username: data[0] }, { profilePicture: profileImageUrl });
-  }
+  try {
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const username = data[0];
+    const { profileImageUrl, display_name, fullName, bio, gender, phone } = req.body;
 
-  const token = create_JWTtoken([data[0], data[1], (photo !== "") ? profileImageUrl : data[2], data[3]], process.env.USER_SECRET, '30d');
-  res.cookie('uuid', token, { httpOnly: true });
-  await ActivityLog.create({ username: data[0], id: `#${Date.now()}`, message: "You Profile has been Updated!!" });
-  // return res.redirect(`/profile/${data[0]}`);
-  return res.json({ data: true });
-}
+    // Build update object dynamically
+    const updateData = {};
+    if (display_name) updateData.display_name = display_name.trim();
+    if (fullName) updateData.fullName = fullName.trim();
+    if (bio !== undefined) updateData.bio = bio.trim();
+    if (gender) updateData.gender = gender;
+    if (phone) updateData.phone = phone.trim();
+    if (profileImageUrl) updateData.profilePicture = profileImageUrl;
+
+    // Apply the update
+    const updatedUser = await User.findOneAndUpdate(
+      { username },
+      { $set: updateData },
+      { new: true }
+    ).lean();
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Refresh JWT token with updated profile picture
+    const newToken = create_JWTtoken(
+      [username, updatedUser.email, updatedUser.profilePicture, updatedUser.type, updatedUser.isPremium],
+      process.env.USER_SECRET,
+      "30d"
+    );
+    res.cookie("uuid", newToken, { httpOnly: true });
+
+    // Log profile update activity
+    await ActivityLog.create({
+      username,
+      id: `#${Date.now()}`,
+      message: "Your profile has been updated successfully!",
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: {
+        username,
+        profilePicture: updatedUser.profilePicture,
+        fullName: updatedUser.fullName,
+        display_name: updatedUser.display_name,
+        bio: updatedUser.bio,
+        gender: updatedUser.gender,
+        phone: updatedUser.phone,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error in updateUserProfile:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while updating profile",
+    });
+  }
+};
 
 const handlegetpostoverlay = (req, res) => {
   return res.render("post_overlay");
@@ -615,23 +1093,64 @@ const handlegetcreatepost = (req, res) => {
 }
 
 const handlecreatepost = async (req, res) => {
-  console.log(req.body);
-  const { data } = req.userDetails;
-  if (req.body.postType === "story") {
-    const user = {
-      username: data[0],
-      url: req.body.profileImageUrl
+  try {
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const { postType, mediaUrl, caption } = req.body;
+
+    if (!postType || !mediaUrl) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing post type or media URL",
+      });
     }
-    await Story.create(user);
-    return res.render("create_post", { img: data[2], currUser: data[0], msg: "story uploaded successfully" })
+
+    const username = data[0];
+
+    // Handle story upload
+    if (postType === "story") {
+      const story = await Story.create({
+        username,
+        url: mediaUrl,
+      });
+
+      await ActivityLog.create({
+        username,
+        id: `#${Date.now()}`,
+        message: "Story uploaded successfully!",
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: "Story uploaded successfully",
+        story,
+      });
+    }
+
+    // For posts (image or reel), we just return prepared data for frontend confirmation
+    if (["reel", "image"].includes(postType.toLowerCase())) {
+      return res.status(200).json({
+        success: true,
+        message: "Proceed to caption and finalize post",
+        preview: {
+          type: postType.toLowerCase() === "reel" ? "Reels" : "Img",
+          url: mediaUrl,
+          caption: caption || "",
+        },
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      message: "Invalid post type",
+    });
+  } catch (error) {
+    console.error("❌ Error in handlecreatepost:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while creating post",
+    });
   }
-  if (req.body.postType === "reel") {
-    return res.render("create_post3", { img: data[2], currUser: data[0], post: req.body.profileImageUrl, type: req.body.postType })
-  }
-  else {
-    return res.render("create_post_second", { img2: req.body.profileImageUrl, img: data[2], currUser: data[0], type: req.body.postType });
-  }
-}
+};
 
 const handlegetcreatepost2 = (req, res) => {
   const { data } = req.userDetails
@@ -639,83 +1158,283 @@ const handlegetcreatepost2 = (req, res) => {
 }
 
 const followSomeone = async (req, res) => {
-  const { data } = req.userDetails;
-  const { username } = req.params;
   try {
-    await User.findOneAndUpdate(
-      { username: data[0] },
-      {
-        $addToSet: {
-          followings: {
-            username: username
-          }
-        }
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const followerUsername = data[0];
+    const { username: targetUsername } = req.params;
+
+    if (followerUsername === targetUsername) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot follow yourself.",
+      });
+    }
+
+    const [me, targetUser] = await Promise.all([
+      User.findOne({ username: followerUsername }),
+      User.findOne({ username: targetUsername }),
+    ]);
+
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    // Check if target already follows me
+    const alreadyFollowsMe = targetUser.followings.some(
+      (f) => f.username === followerUsername
+    );
+
+    // 🧩 Handle Private Account
+    if (targetUser.visibility === "Private") {
+      // If they already follow me, make it a mutual follow
+      if (alreadyFollowsMe) {
+        await Promise.all([
+          User.updateOne(
+            { username: followerUsername },
+            { $addToSet: { followings: { username: targetUsername } } }
+          ),
+          User.updateOne(
+            { username: targetUsername },
+            { $addToSet: { followers: { username: followerUsername } } }
+          ),
+        ]);
+
+        await ActivityLog.create({
+          username: followerUsername,
+          id: `#${Date.now()}`,
+          message: `You and @${targetUsername} are now friends!`,
+        });
+
+        await Notification.create({
+          mainUser: targetUsername,
+          msgSerial: 1,
+          userInvolved: followerUsername,
+          coin: 1,
+        });
+
+        await User.updateOne(
+          { username: followerUsername },
+          { $inc: { coins: 1 } }
+        );
+
+        return res.status(200).json({
+          success: true,
+          status: "friend",
+          message: `You and @${targetUsername} are now friends!`,
+        });
       }
-    )
-    await User.findOneAndUpdate(
-      { username: username },
-      {
-        $addToSet: {
-          followers: {
-            username: data[0]
-          }
-        }
-      }
-    )
-    await ActivityLog.create({ username: data[0], id: `#${Date.now()}`, message: `You have started following #${username}!!` });
-    await User.findOneAndUpdate(
-      { username: data[0] },
-      {
-        $inc: {
-          coins: 1
-        }
-      }
-    )
-    await Notification.create({ mainUser: username, msgSerial: 1, userInvolved: data[0], coin: 1 });
-    return res.json({ success: true, message: null });
+
+      // Otherwise, send follow request
+      await User.updateOne(
+        { username: followerUsername },
+        { $addToSet: { requested: { username: targetUsername } } }
+      );
+
+      await Notification.create({
+        mainUser: targetUsername,
+        msgSerial: 2,
+        userInvolved: followerUsername,
+        coin: 0,
+      });
+
+      return res.status(200).json({
+        success: true,
+        status: "requested",
+        message: `Follow request sent to @${targetUsername}`,
+      });
+    }
+
+    // 🌍 Handle Public Account
+    await Promise.all([
+      User.updateOne(
+        { username: followerUsername },
+        { $addToSet: { followings: { username: targetUsername } } }
+      ),
+      User.updateOne(
+        { username: targetUsername },
+        { $addToSet: { followers: { username: followerUsername } } }
+      ),
+    ]);
+
+    await ActivityLog.create({
+      username: followerUsername,
+      id: `#${Date.now()}`,
+      message: `You started following @${targetUsername}`,
+    });
+
+    await Notification.create({
+      mainUser: targetUsername,
+      msgSerial: 1,
+      userInvolved: followerUsername,
+      coin: 1,
+    });
+
+    await User.updateOne(
+      { username: followerUsername },
+      { $inc: { coins: 1 } }
+    );
+
+    return res.status(200).json({
+      success: true,
+      status: "following",
+      message: `You are now following @${targetUsername}`,
+    });
+  } catch (error) {
+    console.error("❌ Error in followSomeone:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while following user",
+    });
   }
-  catch (err) {
-    console.log(err);
-  }
-}
+};
 
 const unfollowSomeone = async (req, res) => {
-  const { data } = req.userDetails;
-  const { username } = req.params;
   try {
-    await User.findOneAndUpdate(
-      { username: data[0] },
-      { $pull: { followings: { username: username } } },
-      { new: true }
-    )
-    await User.findOneAndUpdate(
-      { username: username },
-      { $pull: { followers: { username: data[0] } } },
-      { new: true }
-    )
-    await ActivityLog.create({ username: data[0], id: `#${Date.now()}`, message: `You have unfollowed #${username}!!` });
-    await User.findOneAndUpdate(
-      { username: data[0] },
-      {
-        $dec: {
-          coins: 1
-        }
-      }
-    )
-    await Notification.create({ mainUser: username, msgSerial: 7, userInvolved: data[0], coin: 1 });
-    return res.json({ success: true, message: null });
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const unfollowerUsername = data[0];
+    const { username: targetUsername } = req.params;
+
+    if (unfollowerUsername === targetUsername) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot unfollow yourself.",
+      });
+    }
+
+    const [me, targetUser] = await Promise.all([
+      User.findOne({ username: unfollowerUsername }),
+      User.findOne({ username: targetUsername }),
+    ]);
+
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    // 🧩 Case 1: If you previously sent a follow request (Private account)
+    if (me.requested.some((r) => r.username === targetUsername)) {
+      await User.updateOne(
+        { username: unfollowerUsername },
+        { $pull: { requested: { username: targetUsername } } }
+      );
+
+      await ActivityLog.create({
+        username: unfollowerUsername,
+        id: `#${Date.now()}`,
+        message: `You canceled your follow request to @${targetUsername}`,
+      });
+
+      return res.status(200).json({
+        success: true,
+        status: "request_canceled",
+        message: `Follow request to @${targetUsername} canceled.`,
+      });
+    }
+
+    // 🧩 Case 2: If you’re currently following them (Public or accepted Private)
+    const isFollowing = me.followings.some((f) => f.username === targetUsername);
+    if (isFollowing) {
+      await Promise.all([
+        User.updateOne(
+          { username: unfollowerUsername },
+          { $pull: { followings: { username: targetUsername } } }
+        ),
+        User.updateOne(
+          { username: targetUsername },
+          { $pull: { followers: { username: unfollowerUsername } } }
+        ),
+      ]);
+
+      await ActivityLog.create({
+        username: unfollowerUsername,
+        id: `#${Date.now()}`,
+        message: `You unfollowed @${targetUsername}`,
+      });
+
+      await Notification.create({
+        mainUser: targetUsername,
+        msgSerial: 7,
+        userInvolved: unfollowerUsername,
+        coin: 0,
+      });
+
+      // Optionally deduct a coin or adjust engagement
+      await User.updateOne(
+        { username: unfollowerUsername },
+        { $inc: { coins: -1 } }
+      );
+
+      return res.status(200).json({
+        success: true,
+        status: "unfollowed",
+        message: `You unfollowed @${targetUsername}`,
+      });
+    }
+
+    // 🧩 Case 3: Not following or requested (invalid action)
+    return res.status(400).json({
+      success: false,
+      message: `You are not following or haven't requested @${targetUsername}.`,
+    });
+  } catch (error) {
+    console.error("❌ Error in unfollowSomeone:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while unfollowing user",
+    });
   }
-  catch (err) {
-    console.log(err);
-    return res.json({ success: false, message: "not succeeded" });
-  }
-}
+};
 
 const handlegetnotification = async (req, res) => {
-  const { data } = req.userDetails;
-  const allNotifications = await Notification.find({ mainUser: data[0] }).lean().sort({ createdAt: -1 });
-  return res.render("notifications", { img: data[2], currUser: data[0], allNotifications })
-}
+  try {
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const username = data[0];
+
+    const notifications = await Notification.find({ mainUser: username })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (!notifications || notifications.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No notifications found.",
+        notifications: [],
+      });
+    }
+
+    // Optionally enrich notifications with user info
+    const enrichedNotifications = await Promise.all(
+      notifications.map(async (n) => {
+        const user = await User.findOne({ username: n.userInvolved }).lean();
+        return {
+          id: n._id,
+          userInvolved: n.userInvolved,
+          profilePicture: user?.profilePicture || process.env.DEFAULT_USER_IMG,
+          msgSerial: n.msgSerial,
+          coin: n.coin,
+          createdAt: n.createdAt,
+          message: getNotificationMessage(n.msgSerial, n.userInvolved),
+        };
+      })
+    );
+
+    return res.status(200).json({
+      success: true,
+      notifications: enrichedNotifications,
+    });
+  } catch (error) {
+    console.error("❌ Error in handlegetnotification:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching notifications",
+    });
+  }
+};
 
 const getSearch = async (req, res) => {
   const { data } = req.userDetails;
@@ -756,79 +1475,461 @@ const getSearch = async (req, res) => {
 }
 
 const handlegetsettings = async (req, res) => {
-  const { data } = req.userDetails;
-  const Meuser = await User.findOne({ username: data[0] });
-  return res.render("settings", { img: data[2], currUser: data[0], Meuser })
-}
+  try {
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const username = data[0];
+
+    const user = await User.findOne({ username }).lean();
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Settings loaded successfully",
+      settings: {
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+        display_name: user.display_name,
+        phone: user.phone,
+        visibility: user.visibility,
+        gender: user.gender,
+        type: user.type,
+        bio: user.bio || "",
+        isPremium: user.isPremium,
+        profilePicture: user.profilePicture,
+        followersCount: user.followers.length,
+        followingsCount: user.followings.length,
+        createdAt: user.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error in handlegetsettings:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while loading settings",
+    });
+  }
+};
 
 const togglePP = async (req, res) => {
-  const { data } = req.userDetails;
-  await User.findOneAndUpdate({ username: data[0] }, [{ $set: { visibility: { $cond: [{ $eq: ["$visibility", "Public"] }, "Private", "Public"] } } }], { new: true });
-  const Meuser = await User.findOne({ username: data[0] });
-}
+  try {
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const username = data[0];
+
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    // Toggle visibility
+    const newVisibility = user.visibility === "Public" ? "Private" : "Public";
+    user.visibility = newVisibility;
+    await user.save();
+
+    // Reflect visibility on user's posts
+    const isPublicValue = newVisibility === "Public";
+    await Post.updateMany(
+      { author: username },
+      { $set: { ispublic: isPublicValue } }
+    );
+
+    // Log this activity
+    await ActivityLog.create({
+      username,
+      id: `#${Date.now()}`,
+      message: `Profile visibility changed to ${newVisibility}`,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Profile and posts are now ${newVisibility}`,
+      newVisibility,
+    });
+  } catch (error) {
+    console.error("❌ Error in togglePP:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while toggling visibility",
+    });
+  }
+};
 
 const signupChannel = async (req, res) => {
-  const { data } = req.userDetails;
-  return res.render("channelregistration", { msg: null, img: data[2], currUser: data[0] });
-}
+  try {
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const username = data[0];
+
+    const user = await User.findOne({ username }).lean();
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found. Please log in again.",
+      });
+    }
+
+    // Define all allowed categories for channels
+    const channelCategories = [
+      "All",
+      "Entertainment",
+      "Education",
+      "Animations",
+      "Games",
+      "Memes",
+      "News",
+      "Tech",
+      "Vlog",
+      "Sports",
+      "Nature",
+      "Music",
+      "Marketing",
+      "Fitness",
+      "Lifestyle",
+    ];
+
+    return res.status(200).json({
+      success: true,
+      message: "Ready for channel registration",
+      user: {
+        username: user.username,
+        profilePicture: user.profilePicture,
+        type: user.type,
+      },
+      availableCategories: channelCategories,
+    });
+  } catch (error) {
+    console.error("❌ Error in signupChannel:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while preparing channel registration",
+    });
+  }
+};
 
 const registerChannel = async (req, res) => {
-  const { data } = req.userDetails;
-  console.log(req.body.selectedCategories);
-  const user = await User.findOne({ username: data[0] });
-  const channel = {
-    channelName: req.body.channelName,
-    channelDescription: req.body.channelDescription,
-    channelCategory: JSON.parse(req.body.selectedCategories),
-    channelLogo: req.body.profileImageUrl,
-    channelAdmin: user._id,
-  };
-  await Channel.create(channel);
-  return res.render("channelregistration", { msg: null, img: data[2], currUser: data[0] })
-}
-
-const createPostfinalize = (req, res) => {
   try {
-    const { data } = req.userDetails
-    console.log(req.body);
-    return res.render("create_post3", { img: data[2], currUser: data[0], post: req.body.profileImageUrl, type: req.body.type });
-  } catch (err) { console.log(err) }
-}
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const username = data[0];
+    const { channelName, channelDescription, channelCategory, channelPassword, profileImageUrl } = req.body;
+
+    if (!channelName || !channelDescription || !channelPassword || !channelCategory) {
+      return res.status(400).json({
+        success: false,
+        message: "All required fields must be filled.",
+      });
+    }
+
+    // Check if channel already exists
+    const existing = await Channel.findOne({ channelName });
+    if (existing) {
+      return res.status(409).json({
+        success: false,
+        message: "Channel name already exists. Choose another one.",
+      });
+    }
+
+    // Find the user creating the channel
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    // Hash channel password for security
+    const hashedPassword = await bcrypt.hash(channelPassword, 10);
+
+    // Parse or validate categories
+    const parsedCategories = Array.isArray(channelCategory)
+      ? channelCategory
+      : JSON.parse(channelCategory);
+
+    const validOptions = [
+      "All",
+      "Entertainment",
+      "Education",
+      "Animations",
+      "Games",
+      "Memes",
+      "News",
+      "Tech",
+      "Vlog",
+      "Sports",
+      "Nature",
+      "Music",
+      "Marketing",
+      "Fitness",
+      "Lifestyle",
+    ];
+
+    const invalid = parsedCategories.find((cat) => !validOptions.includes(cat));
+    if (invalid) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid category: ${invalid}`,
+      });
+    }
+
+    // Create the new channel
+    const newChannel = await Channel.create({
+      channelName,
+      channelDescription,
+      channelCategory: parsedCategories,
+      channelLogo: profileImageUrl || process.env.DEFAULT_USER_IMG,
+      channelPassword: hashedPassword,
+      channelAdmin: user._id,
+      channelMembers: [{ username }],
+    });
+
+    // Add channel reference to user
+    await User.updateOne(
+      { username },
+      { $addToSet: { channelName: channelName } }
+    );
+
+    // Log creation
+    await ActivityLog.create({
+      username,
+      id: `#${Date.now()}`,
+      message: `Channel '${channelName}' created successfully!`,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Channel registered successfully",
+      channel: {
+        name: newChannel.channelName,
+        description: newChannel.channelDescription,
+        logo: newChannel.channelLogo,
+        categories: newChannel.channelCategory,
+        createdAt: newChannel.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error in registerChannel:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while creating channel",
+    });
+  }
+};
+
+const createPostfinalize = async (req, res) => {
+  try {
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const { profileImageUrl, type, caption } = req.body;
+
+    if (!profileImageUrl || !type) {
+      return res.status(400).json({
+        success: false,
+        message: "Post type and media URL are required.",
+      });
+    }
+
+    // Validate post type
+    const validTypes = ["Img", "Reel", "Story"];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid post type. Must be one of: ${validTypes.join(", ")}`,
+      });
+    }
+
+    // Return preview data to frontend for confirmation
+    return res.status(200).json({
+      success: true,
+      message: "Post data ready for finalization",
+      preview: {
+        username: data[0],
+        mediaUrl: profileImageUrl,
+        caption: caption || "",
+        type,
+        profilePicture: data[2],
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error in createPostfinalize:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while finalizing post creation",
+    });
+  }
+};
 
 const handlegetlog = async (req, res) => {
-  const { data } = req.userDetails;
-  const allLogs = await ActivityLog.find({ username: data[0] }).lean().sort({ createdAt: -1 });
-  return res.json({ allogs: allLogs });
-}
+  try {
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const username = data[0];
+
+    // Optional pagination params
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const logs = await ActivityLog.find({ username })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const totalLogs = await ActivityLog.countDocuments({ username });
+
+    return res.status(200).json({
+      success: true,
+      message: "Activity logs fetched successfully",
+      logs,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalLogs / limit),
+        totalLogs,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error in handlegetlog:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching activity logs",
+    });
+  }
+};
 
 const uploadFinalPost = async (req, res) => {
-  const { data } = req.userDetails;
-  const idd = `${data[0]}-${Date.now()}`;
-  const postObj = {
-    id: idd,
-    type: req.body.type ? "Img" : "Reels",
-    url: req.body.avatar,
-    content: req.body.caption,
-    author: data[0],
+  try {
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const username = data[0];
+    const { type, avatar, caption } = req.body;
+
+    if (!avatar || !type) {
+      return res.status(400).json({
+        success: false,
+        message: "Post type and media URL are required.",
+      });
+    }
+
+    // Find the user for visibility and validation
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    const postId = `${username}-${Date.now()}`;
+
+    // Determine visibility (sync with user profile)
+    const isPublic = user.visibility === "Public";
+
+    // Create post object
+    const postObj = {
+      id: postId,
+      type: type === "Img" ? "Img" : "Reel",
+      url: avatar,
+      content: caption || "",
+      author: username,
+      ispublic: isPublic,
+      likes: 0,
+      comments: [],
+    };
+
+    const post = await Post.create(postObj);
+
+    // Add post ID to user document
+    await User.findOneAndUpdate(
+      { username },
+      { $push: { postIds: post._id } },
+      { new: true }
+    );
+
+    // Log the action
+    await ActivityLog.create({
+      username,
+      id: `#${Date.now()}`,
+      message: `You uploaded a new ${post.type === "Reel" ? "reel" : "post"}!`,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: `${post.type === "Reel" ? "Reel" : "Post"} uploaded successfully.`,
+      post: {
+        id: post.id,
+        url: post.url,
+        content: post.content,
+        type: post.type,
+        ispublic: post.ispublic,
+        createdAt: post.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error in uploadFinalPost:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while uploading post",
+    });
   }
-  await Post.create(postObj);
-  const post = await Post.findOne({ id: idd }).lean();
-  await User.findOneAndUpdate({ username: data[0] }, { $push: { postIds: post._id } }, { new: true, upsert: false });
-  return res.render("create_post", { img: data[2], currUser: data[0], msg: "post uploaded successfully" })
-}
+};
 
 const reportAccount = async (req, res) => {
-  const { data } = req.userDetails;
-  const { username } = req.params;
-  const report = {
-    post_id: "On account",
-    post_author: username,
-    report_number: Number(Date.now()),
-    user_reported: data[0],
+  try {
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const reporter = data[0];
+    const { username } = req.params;
+    const { reason } = req.body;
+
+    // Validate target user
+    const reportedUser = await User.findOne({ username });
+    if (!reportedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User to be reported not found.",
+      });
+    }
+
+    // Prevent self-reporting
+    if (reporter === username) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot report your own account.",
+      });
+    }
+
+    // Create report record
+    const report = await Report.create({
+      post_id: "On account",
+      report_number: Date.now(),
+      user_reported: reporter,
+      reason: reason || "No reason provided",
+      status: "Pending",
+    });
+
+    // Optional: add activity log
+    await ActivityLog.create({
+      username: reporter,
+      id: `#${Date.now()}`,
+      message: `You reported the account of @${username}.`,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Account reported successfully.",
+      reportId: report._id,
+    });
+  } catch (error) {
+    console.error("❌ Error in reportAccount:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while reporting account.",
+    });
   }
-  await Report.create(report);
-  return res.json({ data: true });
-}
+};
 
 const handlegetloginchannel = async (req, res) => {
   const { data } = req.userDetails;
@@ -836,30 +1937,125 @@ const handlegetloginchannel = async (req, res) => {
 }
 
 const handleloginchannel = async (req, res) => {
-  const { data } = req.userDetails;
-  const { channelName, channelPassword } = req.body;
-  const channel = await Channel.findOne({ channelName: channelName });
-  const user = await User.findOne({ username: data[0] });
-  if (channel && channel.channelAdmin == user._id) {
-    if (channel.channelPassword == channelPassword) {
-      return res.render("channel", { img: data[2], currUser: data[0], channel });
+  try {
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const { channelName, channelPassword } = req.body;
+
+    if (!channelName || !channelPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Channel name and password are required.",
+      });
     }
-    else {
-      return res.render("channellogin", { img: data[2], currUser: data[0], msg: "Channel do not exists." });
+
+    const channel = await Channel.findOne({ channelName });
+    const user = await User.findOne({ username: data[0] });
+
+    if (!channel) {
+      return res.status(404).json({
+        success: false,
+        message: "Channel not found.",
+      });
     }
+
+    if (!user || String(channel.channelAdmin) !== String(user._id)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to manage this channel.",
+      });
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      channelPassword,
+      channel.channelPassword
+    );
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid channel password.",
+      });
+    }
+
+    // Generate a new JWT token for channel login
+    const token = create_JWTtoken(
+      [channel.channelName, user.username, channel.channelLogo, "Channel", true],
+      process.env.USER_SECRET,
+      "30d"
+    );
+
+    // Clear user token and set channel token
+    res.cookie("uuid", "", { maxAge: 0 });
+    res.cookie("cuid", token, { httpOnly: true });
+
+    // Log channel login
+    await ActivityLog.create({
+      username: user.username,
+      id: `#${Date.now()}`,
+      message: `Logged into channel '${channel.channelName}'`,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Channel logged in successfully.",
+      channel: {
+        name: channel.channelName,
+        logo: channel.channelLogo,
+        categories: channel.channelCategory,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error in handleloginchannel:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error during channel login.",
+    });
   }
-}
+};
 
 const handlegetallnotifications = async (req, res) => {
-  const { data } = req.userDetails;
-  if (data) {
-    const allNotifications = await Notification.find({ mainUser: data[0] }).lean().sort({ createdAt: -1 });
-    return res.json({ allNotifications: allNotifications })
+  try {
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+
+    if (!data || !data[0]) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized access. Please log in again.",
+      });
+    }
+
+    const username = data[0];
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 15;
+    const skip = (page - 1) * limit;
+
+    const notifications = await Notification.find({ mainUser: username })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const total = await Notification.countDocuments({ mainUser: username });
+
+    return res.status(200).json({
+      success: true,
+      message: "Notifications fetched successfully.",
+      notifications,
+      pagination: {
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+        hasMore: skip + notifications.length < total,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error in handlegetallnotifications:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching notifications.",
+    });
   }
-  else {
-    return res.json({ success: false })
-  }
-}
+};
 
 const handleloginsecond = async (req, res) => {
   console.log(req.body);
@@ -970,45 +2166,170 @@ const handleloginsecond = async (req, res) => {
 };
 
 const handlelikereel = async (req, res) => {
-  const { data } = req.userDetails;
-  const user = await User.findOne({ username: data[0] });
-  if (user.likedPostsIds.includes(req.body.reel_id)) {
-    await Post.findOneAndUpdate(
-      { _id: req.body.reel_id },
-      { $inc: { likes: -1 } }
-    );
-    await User.findOneAndUpdate(
-      { username: data[0] },
-      { $pull: { likedPostsIds: req.body.reel_id } }
-    );
-  } else {
-    await Post.findOneAndUpdate(
-      { _id: req.body.reel_id },
-      { $inc: { likes: 1 } }
-    );
-    await User.findOneAndUpdate(
-      { username: data[0] },
-      { $push: { likedPostsIds: req.body.reel_id } }
-    );
+  try {
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const username = data[0];
+    const { reel_id } = req.body;
+
+    if (!reel_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Reel ID is required.",
+      });
+    }
+
+    const user = await User.findOne({ username });
+    const post = await Post.findOne({ _id: reel_id });
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Reel not found.",
+      });
+    }
+
+    if (post.type !== "Reels") {
+      return res.status(400).json({
+        success: false,
+        message: "The specified post is not a reel.",
+      });
+    }
+
+    const hasLiked = user.likedPostsIds.includes(reel_id);
+
+    if (hasLiked) {
+      // Unlike the reel
+      await Post.findByIdAndUpdate(reel_id, { $inc: { likes: -1 } });
+      await User.findOneAndUpdate(
+        { username },
+        { $pull: { likedPostsIds: reel_id } }
+      );
+
+      await ActivityLog.create({
+        username,
+        id: `#${Date.now()}`,
+        message: `You unliked a reel by @${post.author}.`,
+      });
+    } else {
+      // Like the reel
+      await Post.findByIdAndUpdate(reel_id, { $inc: { likes: 1 } });
+      await User.findOneAndUpdate(
+        { username },
+        { $addToSet: { likedPostsIds: reel_id } } // avoids duplicates
+      );
+
+      await ActivityLog.create({
+        username,
+        id: `#${Date.now()}`,
+        message: `You liked a reel by @${post.author}.`,
+      });
+
+      // Create a notification for the author (if not self-like)
+      if (post.author !== username) {
+        await Notification.create({
+          mainUser: post.author,
+          msgSerial: 2, // example serial for 'like reel'
+          userInvolved: username,
+          coin: 1,
+        });
+
+        await User.findOneAndUpdate(
+          { username: post.author },
+          { $inc: { coins: 1 } }
+        );
+      }
+    }
+
+    // Fetch updated likes
+    const updatedPost = await Post.findById(reel_id).select("likes");
+
+    return res.status(200).json({
+      success: true,
+      message: hasLiked ? "Reel unliked successfully." : "Reel liked successfully.",
+      likes: updatedPost.likes,
+    });
+  } catch (error) {
+    console.error("❌ Error in handlelikereel:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while liking reel.",
+    });
   }
-  const post = await Post.findOne({ _id: req.body.reel_id });
-  return res.json({ likes: post.likes });
 };
 
 const handlereportpost = async (req, res) => {
-  const { data } = req.userDetails;
-  // console.log(req.body);
-  const { reason, post_id } = req.body;
-  const report = await Report.create({
-    post_id: post_id,
-    user_reported: data[0],
-    reason: reason,
-  });
-  await Report.findOneAndUpdate(
-    { _id: report._id },
-    { $inc: { report_number: 1 } }
-  );
-  return res.json({ data: true });
+  try {
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const reporter = data[0];
+    const { reason, post_id } = req.body;
+
+    if (!post_id || !reason) {
+      return res.status(400).json({
+        success: false,
+        message: "Post ID and reason are required.",
+      });
+    }
+
+    // Check if post exists
+    const post = await Post.findOne({ id: post_id });
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found.",
+      });
+    }
+
+    // Prevent duplicate reports by the same user
+    const existingReport = await Report.findOne({
+      post_id,
+      user_reported: reporter,
+    });
+
+    if (existingReport) {
+      return res.status(400).json({
+        success: false,
+        message: "You have already reported this post.",
+      });
+    }
+
+    // Create new report entry
+    const report = await Report.create({
+      post_id,
+      report_number: Date.now(),
+      user_reported: reporter,
+      reason,
+      status: "Pending",
+    });
+
+    // Add to activity log
+    await ActivityLog.create({
+      username: reporter,
+      id: `#${Date.now()}`,
+      message: `You reported a post by @${post.author} for "${reason}".`,
+    });
+
+    // Optional: notify post author
+    if (post.author !== reporter) {
+      await Notification.create({
+        mainUser: post.author,
+        msgSerial: 3, // example serial for 'report received'
+        userInvolved: reporter,
+        coin: 0,
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: "Post reported successfully.",
+      reportId: report._id,
+    });
+  } catch (error) {
+    console.error("❌ Error in handlereportpost:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while reporting post.",
+    });
+  }
 };
 
 const handlegetads = async (req, res) => {
@@ -1319,7 +2640,7 @@ const updateChannelProfile = async (req, res) => {
 
 export {
   handleSignup,
-  handleLogin,
+  // handleLogin,
   sendotp,
   verifyotp,
   updatepass,
