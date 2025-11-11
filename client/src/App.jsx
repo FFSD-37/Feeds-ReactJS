@@ -15,6 +15,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { UserDataProvider, useUserData } from './providers/userData.jsx';
 import EditChannel from './components/editChannel.jsx';
 import ChannelHome from './components/channelHome.jsx';
+import ChannelPostOverlay from './components/ChannelPostOverlay.jsx';
 
 const AppContent = () => {
   const { userData } = useUserData();
@@ -34,6 +35,7 @@ const AppContent = () => {
         <Route path="/edit_profile" element={<EditProfile />} />
         <Route path="/edit_channel" element={<EditChannel />} />
         <Route path="/channelhome" element={<ChannelHome />} />
+        <Route path="/channel/post/:id" element={<ChannelPostOverlay />} />
       </Routes>
       {userData?.username ? <Sidebar /> : userData?.channelName ? <Sidebar /> : null}
     </>
