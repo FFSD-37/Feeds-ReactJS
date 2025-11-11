@@ -1,7 +1,7 @@
 import express from "express";
 import {
   handleSignup,
-  handleLogin,
+  // handleLogin,
   sendotp,
   verifyotp,
   updatepass,
@@ -132,7 +132,7 @@ router.get("/admin", handlegetadmin);
 
 router.get("/signup", isAuthuser, handlegetsignup);
 
-router.post("/login", isAuthuser, handleLogin);
+// router.post("/login", isAuthuser, handleLogin);
 
 router.post("/signup", isAuthuser, handleSignup);
 
