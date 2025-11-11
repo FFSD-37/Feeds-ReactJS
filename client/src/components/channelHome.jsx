@@ -1,112 +1,344 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import { useUserData } from "./../providers/userData.jsx";
-import "./../styles/channelHome.css";
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useUserData } from './../providers/userData.jsx';
+import './../styles/channelHome.css';
 
 function ChannelHome() {
   const { userData } = useUserData();
+  const navigate = useNavigate();
+
   const [posts, setPosts] = useState([]);
   const [skip, setSkip] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [dropdownPost, setDropdownPost] = useState(null);
+  const [reportPostId, setReportPostId] = useState(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [playingVideoId, setPlayingVideoId] = useState(null);
+
   const observerRef = useRef();
+  const dropdownRef = useRef();
+  const modalRef = useRef();
 
   const fetchPosts = useCallback(async () => {
     if (loading || !hasMore) return;
     setLoading(true);
-
     try {
       const res = await fetch(
         `${import.meta.env.VITE_SERVER_URL}/getAllChannelPosts?skip=${skip}&limit=5`,
-        { credentials: "include" }
+        { credentials: 'include' },
       );
       const data = await res.json();
 
-      if (data.success) {
-        setPosts((prev) => [...prev, ...data.posts]);
-        setHasMore(data.hasMore);
-        setSkip((prev) => prev + 5);
+      if (data.success && data.posts.length > 0) {
+        // prevent duplicates (compare by _id)
+        setPosts(prev => {
+          const existingIds = new Set(prev.map(p => p._id));
+          const newPosts = data.posts.filter(p => !existingIds.has(p._id));
+          return [...prev, ...newPosts];
+        });
+
+        setSkip(prev => prev + data.posts.length);
+        setHasMore(data.hasMore && data.posts.length > 0);
       } else {
-        console.warn("⚠️", data.message);
+        // stop infinite scroll when no new posts
         setHasMore(false);
       }
     } catch (err) {
-      console.error("❌ Error fetching posts:", err);
+      console.error('❌ Error fetching posts:', err);
     } finally {
       setLoading(false);
     }
   }, [skip, hasMore, loading]);
 
   useEffect(() => {
-    fetchPosts(); // initial load
+    fetchPosts();
   }, []);
 
-  // Infinite scroll observer
   useEffect(() => {
     if (loading || !hasMore) return;
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) fetchPosts();
+      entries => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          fetchPosts();
+        }
       },
-      { threshold: 0.9 }
+      { threshold: 0.9 },
     );
     if (observerRef.current) observer.observe(observerRef.current);
     return () => observer.disconnect();
   }, [fetchPosts, loading, hasMore]);
 
+  const timeAgo = dateString => {
+    const date = new Date(dateString);
+    const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+    const intervals = {
+      year: 31536000,
+      mon: 2592000,
+      w: 604800,
+      d: 86400,
+      h: 3600,
+      m: 60,
+    };
+    for (const [unit, sec] of Object.entries(intervals)) {
+      const count = Math.floor(seconds / sec);
+      if (count >= 1) return `${count} ${unit}${count > 1 ? 's' : ''} ago`;
+    }
+    return 'just now';
+  };
+
+  // --- Fix: Outside click/escape that ignores dropdown clicks inside ---
+  useEffect(() => {
+    const handleClickOutside = e => {
+      const dropdown = dropdownRef.current;
+      const modal = modalRef.current;
+      if (showReportModal && modal && !modal.contains(e.target))
+        handleCloseReport();
+      if (
+        dropdownPost &&
+        dropdown &&
+        !dropdown.contains(e.target) &&
+        !e.target.closest('.channel_home_post_menu_trigger')
+      ) {
+        setDropdownPost(null);
+      }
+    };
+
+    const handleEscape = e => {
+      if (e.key === 'Escape') {
+        setDropdownPost(null);
+        handleCloseReport();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showReportModal, dropdownPost]);
+
+  const handleDropdownToggle = id =>
+    setDropdownPost(p => (p === id ? null : id));
+  const handleReportClick = id => {
+    setReportPostId(id);
+    setDropdownPost(null);
+    setShowReportModal(true);
+  };
+
+  const handleShare = id => {
+    const url = `${window.location.origin}/post/${id}`;
+    navigator.share
+      ? navigator.share({ title: 'Feeds Post', url }).catch(() => {})
+      : alert('Share this URL: ' + url);
+    setDropdownPost(null);
+  };
+
+  const handleCopyLink = id => {
+    navigator.clipboard.writeText(`${window.location.origin}/post/${id}`);
+    alert('Post link copied!');
+    setDropdownPost(null);
+  };
+
+  const handleCloseReport = () => {
+    setShowReportModal(false);
+    setReportPostId(null);
+  };
+
+  const handleReasonSelect = reason => {
+    alert(`Reported post ${reportPostId} for: ${reason}`);
+    handleCloseReport();
+  };
+
+  const handleVideoClick = id => {
+    const video = document.getElementById(`video-${id}`);
+    if (video.paused) {
+      video.play();
+      setPlayingVideoId(id);
+    } else {
+      video.pause();
+      setPlayingVideoId(null);
+    }
+  };
+
   return (
-    <div className="channel_home_container">
-      <div className="channel_home_header">
-        <img
-          src={userData.profileUrl || "/Images/default_user.jpeg"}
-          alt="Channel Logo"
-          className="channel_home_logo"
-        />
-        <div className="channel_home_info">
-          <h2>{userData.channelName}</h2>
-          <p>Managed by @{userData.adminName}</p>
+    <div className="channel_home_main">
+      {/* Left Sidebar */}
+      <div className="channel_home_left_section">
+        <div
+          className="channel_home_logo_class"
+          onClick={() => navigate('/channelhome')}
+        >
+          <img
+            className="channel_home_logo"
+            src="https://ik.imagekit.io/FFSD0037/logo.jpeg?updatedAt=1746701257780"
+            alt="Feeds Logo"
+          />
+        </div>
+        <div className="channel_home_footer">
+          <a href="/contact">About</a> • <a href="/help">Help</a> •{' '}
+          <a href="/tandc">Terms</a> •{' '}
+          <a
+            href="https://www.google.com/maps/place/Indian+Institute+of+Information+Technology,+Sri+City,+Chittoor/"
+            target="_blank"
+          >
+            Location
+          </a>
+          <p>
+            © 2025 <a href="/home">Feeds</a> from IIIT Sri City
+          </p>
         </div>
       </div>
 
-      <h3 className="channel_home_title">Channel Feed</h3>
+      {/* Feed Section */}
+      <div className="channel_home_feed_section">
+        <h1 className="channel_home_title">
+          Feeds : The Personalized Social Platform
+        </h1>
+        <div className="channel_home_divider"></div>
 
-      <div className="channel_home_grid">
-        {posts.length > 0 ? (
-          posts.map((post, i) => (
-            <div key={post.id || i} className="channel_home_card">
-              {post.type === "Img" ? (
-                <img src={post.url} alt="Post" className="channel_home_img" />
-              ) : (
-                <video
-                  src={post.url}
-                  className="channel_home_video"
-                  controls
-                  muted
-                  playsInline
-                />
-              )}
-              <div className="channel_home_content">
-                <p>{post.content}</p>
-                <div className="channel_home_meta">
-                  <span>❤️ {post.likes}</span>
-                  <span>💬 {post.comments?.length || 0}</span>
-                  <span>
-                    📅 {new Date(post.createdAt).toLocaleDateString("en-IN")}
-                  </span>
+        {posts.length === 0 && !loading ? (
+          <p className="channel_home_no_posts">No posts to display.</p>
+        ) : (
+          posts.map(post => (
+            <div key={post._id} className="channel_home_post_card">
+              <div className="channel_home_post_header">
+                <span
+                  className="channel_home_post_channel"
+                  onClick={() => navigate(`/channel/${post.channel}`)}
+                >
+                  @{post.channel}
+                </span>
+                <div
+                  className="channel_home_post_menu_trigger"
+                  onClick={() => handleDropdownToggle(post._id)}
+                >
+                  •••
                 </div>
+
+                {dropdownPost === post._id && (
+                  <div className="channel_home_dropdown_menu" ref={dropdownRef}>
+                    <div
+                      className="channel_home_dropdown_item danger"
+                      onClick={() => handleReportClick(post._id)}
+                    >
+                      Report
+                    </div>
+                    <div
+                      className="channel_home_dropdown_item normal"
+                      onClick={() => alert('Opening post overlay...')}
+                    >
+                      Go to post
+                    </div>
+                    <div
+                      className="channel_home_dropdown_item normal"
+                      onClick={() => handleShare(post._id)}
+                    >
+                      Share to...
+                    </div>
+                    <div
+                      className="channel_home_dropdown_item normal"
+                      onClick={() => handleCopyLink(post._id)}
+                    >
+                      Copy link
+                    </div>
+                    <div
+                      className="channel_home_dropdown_item normal"
+                      onClick={() => setDropdownPost(null)}
+                    >
+                      Cancel
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {post.type === 'Img' ? (
+                <img
+                  className="channel_home_post_media"
+                  src={post.url}
+                  alt="Post"
+                />
+              ) : (
+                <div
+                  className="channel_home_video_wrapper"
+                  onClick={() => handleVideoClick(post._id)}
+                >
+                  <video
+                    id={`video-${post._id}`}
+                    className="channel_home_post_media"
+                    src={post.url}
+                    muted
+                    loop
+                    playsInline
+                  />
+                  {playingVideoId !== post._id && (
+                    <div className="channel_home_play_button">▶</div>
+                  )}
+                </div>
+              )}
+
+              {post.content && (
+                <p className="channel_home_post_caption">{post.content}</p>
+              )}
+
+              <div className="channel_home_post_actions">
+                <div className="channel_home_action_item">❤️ {post.likes}</div>
+                <div className="channel_home_action_item">
+                  💬 {post.comments?.length || 0}
+                </div>
+              </div>
+              <div className="channel_home_post_time">
+                {timeAgo(post.createdAt)}
               </div>
             </div>
           ))
-        ) : (
-          !loading && <p className="channel_home_empty">No posts yet</p>
         )}
+
+        {loading && (
+          <p className="channel_home_loading">Loading more posts...</p>
+        )}
+        {!hasMore && posts.length > 0 && (
+          <p className="channel_home_end_text">No more posts to show</p>
+        )}
+        <div ref={observerRef}></div>
       </div>
 
-      {loading && <p className="channel_home_loading">Loading more posts...</p>}
-      {!hasMore && posts.length > 0 && (
-        <p className="channel_home_end">No more posts to show</p>
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="channel_home_report_overlay">
+          <div className="channel_home_report_modal" ref={modalRef}>
+            <div className="channel_home_modal_header">
+              <span>Report</span>
+              <button
+                className="channel_home_close_btn"
+                onClick={handleCloseReport}
+              >
+                ×
+              </button>
+            </div>
+            <p className="channel_home_modal_title">
+              Why are you reporting this post?
+            </p>
+            <ul className="channel_home_report_options">
+              {[
+                "I just don't like it",
+                'Bullying or unwanted contact',
+                'Suicide, self-injury or eating disorders',
+                'Violence, hate or exploitation',
+                'Selling or promoting restricted items',
+                'Nudity or sexual activity',
+                'Scam, fraud or spam',
+                'False information',
+              ].map(reason => (
+                <li key={reason} onClick={() => handleReasonSelect(reason)}>
+                  {reason} <span>›</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       )}
-
-      <div ref={observerRef}></div>
     </div>
   );
 }
