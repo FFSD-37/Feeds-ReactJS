@@ -105,11 +105,11 @@ You can create **child components** freely under these parent components.
 
 ### 👤 Ayush
 - [✅] Sidebar  
-- [❌] Post Overlay  
+- [❌✅] Post Overlay  
 - [✅] Edit Profile  
 - [✅] Connect  
 - [✅] Channel Profile (Self/Other)
-- [❌] Channel Home(Landing Page)
+- [✅] Channel Home(Landing Page)
 - [❌] Channel Connect
 - [❌] Kids Home(Landing Page)
 
@@ -117,17 +117,17 @@ You can create **child components** freely under these parent components.
 
 ### 👤 Gourav Khakse
 - [❌] Admin Portal  
-- [❌] Home (Landing Page) + Ads 
-- [✅❌] Profile (Self/Others) 
-- [✅] Notification  
+- [❌] Home (Landing Page)
+- [❌] Profile (Self/Others) 
+- [❌] Notification  
 - [✅] Games
 - [❌] Channel Notification  
-- [❌] Channel Stories
+- [❌] Kids Setting
 
 ---
 
 ### 👤 Arnav Ranjan
-- [✅] Payment / Premium  
+- [❌] Payment / Premium  
 - [❌] Chat  
 - [❌] Settings
 - [❌] Daily Usage  
@@ -155,7 +155,7 @@ You can create **child components** freely under these parent components.
 - [❌] Terms & Conditions  
 - [❌] Contact Us
 - [❌] Edit Channel  
-- [❌] Kids Settings
+- [❌] Kids Reels
 
 ---
 

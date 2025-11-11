@@ -68,7 +68,11 @@ import {
   getChannelPosts
 } from "../controllers/Ayush/channel.js";
 import{
-  getAllChannelPosts
+  getAllChannelPosts,
+  likeChannelPost,
+  saveChannelPost,
+  commentOnChannelPost,
+  getSingleChannelPost,
 } from "../controllers/Ayush/home.js"
 import { handleimagKitauth } from "../services/imagKit.js";
 import { isAuthuser } from "../middleware/isAuthuser.js";
@@ -241,5 +245,13 @@ router.get("/edit_channel", isAuthuser, handleGetEditChannel);
 router.post("/updateChannelDetails", isAuthuser, updateChannelProfile);
 
 router.get("/getAllChannelPosts", isAuthuser, getAllChannelPosts);
+
+router.get("/channelPost/:id", isAuthuser, getSingleChannelPost);
+
+router.post("/channel/like", isAuthuser, likeChannelPost);
+
+router.post("/channel/save", isAuthuser, saveChannelPost);
+
+router.post("/channel/comment", isAuthuser, commentOnChannelPost);
 
 export default router;
