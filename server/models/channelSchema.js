@@ -51,6 +51,14 @@ const channelSchema = new mongoose.Schema({
     archivedPostsIds: [{
         type: String
     }],
+
+    likedPostsIds: [{
+        type: String
+    }],
+
+    savedPostsIds: [{
+        type: String
+    }],
     
     postIds:[{
         type: String

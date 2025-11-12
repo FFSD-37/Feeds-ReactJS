@@ -16,7 +16,7 @@ const channelCommentSchema = new mongoose.Schema(
 
     type: {
       type: String,
-      enum: ["Channel", "User"],
+      enum: ["Channel", "Normal"],
       required: true,
     },
 

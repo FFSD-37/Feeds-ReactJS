@@ -65,7 +65,9 @@ import {
 } from "../controllers/Gourav/profile.js";
 import { 
   handlegetchannel,
-  getChannelPosts
+  getChannelPosts,
+  followChannel,
+  unfollowChannel,
 } from "../controllers/Ayush/channel.js";
 import{
   getAllChannelPosts,
@@ -238,7 +240,7 @@ router.post("/unsave/:id", isAuthuser, handleunsavepost);
 
 router.get("/getchannel/:channelName", isAuthuser, handlegetchannel);
 
-router.get("/getchannelposts", getChannelPosts);
+router.get("/getchannelposts", isAuthuser, getChannelPosts);
 
 router.get("/edit_channel", isAuthuser, handleGetEditChannel);
 
@@ -253,5 +255,9 @@ router.post("/channel/like", isAuthuser, likeChannelPost);
 router.post("/channel/save", isAuthuser, saveChannelPost);
 
 router.post("/channel/comment", isAuthuser, commentOnChannelPost);
+
+router.post("/follow_channel/:channelName", isAuthuser, followChannel);
+
+router.post("/unfollow_channel/:channelName", isAuthuser, unfollowChannel);
 
 export default router;

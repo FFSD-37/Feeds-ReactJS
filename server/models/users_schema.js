@@ -112,7 +112,7 @@ const userSchema = new mongoose.Schema({
 
     type: {
         type: String,
-        enum: ["Kids","Student","Normal", "Admin"],
+        enum: ["Kids","Normal", "Admin"],
         default:'Normal'
     },
 

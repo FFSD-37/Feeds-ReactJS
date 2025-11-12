@@ -9,7 +9,7 @@
   background: transparent;
 }
 
-/* --- Sidebar (Restored Like Before) --- */
+/* --- Sidebar --- */
 .channel_home_left_section {
   width: 23%;
   min-width: 220px;
@@ -315,6 +315,19 @@
   font-size: 0.95rem;
   margin-top: 15px;
 }
+
+.channel_home_action_item {
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: transform 0.2s ease;
+}
+
+.channel_home_action_item:hover {
+  transform: scale(1.15);
+}
+
+.channel_home_action_item.liked { color: #e91e63; }
+.channel_home_action_item.saved { color: #2196f3; }
 
 /* --- Responsive Tweaks --- */
 @media (max-width: 1100px) {
