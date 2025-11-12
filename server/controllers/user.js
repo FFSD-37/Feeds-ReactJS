@@ -846,49 +846,7 @@ const handlegetcontact = (req, res) => {
   return res.render("contact", { img: data[2], msg: null, currUser: data[0] });
 }
 
-const handlegetconnect = async (req, res) => {
-  try {
-    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
-    const username = data[0];
 
-    const currentUser = await User.findOne({ username }).lean();
-    if (!currentUser) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
-    // Get mutual connections
-    const followingUsernames = currentUser.followings.map((f) => f.username);
-
-    const mutualFollowersPromises = currentUser.followings.map(async (user) => {
-      const followedUser = await User.findOne({ username: user.username }).lean();
-      return (followedUser?.followers || [])
-        .filter((f) => f.username !== username)
-        .map((f) => f.username);
-    });
-
-    const mutualFollowersArrays = await Promise.all(mutualFollowersPromises);
-    const mutualUsernames = [...new Set(mutualFollowersArrays.flat())];
-
-    const users = await User.find({ username: { $in: mutualUsernames } }).lean();
-
-    const mutualFollowers = users.map((user) => ({
-      username: user.username,
-      avatarUrl: user.profilePicture,
-      display_name: user.display_name,
-      followers: user.followers.length,
-      following: user.followings.length,
-      isFollowing: followingUsernames.includes(user.username),
-    }));
-
-    return res.status(200).json({ success: true, users: mutualFollowers });
-  } catch (error) {
-    console.error("❌ Error in handlegetconnect:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal Server Error while fetching connections",
-    });
-  }
-};
 
 const handlegetgames = (req, res) => {
   const { data } = req.userDetails;
@@ -1182,14 +1140,31 @@ const followSomeone = async (req, res) => {
       });
     }
 
-    // Check if target already follows me
+    // 🔹 Already requested
+    if (me.requested.some((r) => r.username === targetUsername)) {
+      return res.status(200).json({
+        success: true,
+        status: "requested",
+        message: `You already sent a follow request to @${targetUsername}`,
+      });
+    }
+
+    // 🔹 Already following
+    if (me.followings.some((f) => f.username === targetUsername)) {
+      return res.status(200).json({
+        success: true,
+        status: "following",
+        message: `You are already following @${targetUsername}`,
+      });
+    }
+
     const alreadyFollowsMe = targetUser.followings.some(
       (f) => f.username === followerUsername
     );
 
-    // 🧩 Handle Private Account
+    // 🧩 Private account handling
     if (targetUser.visibility === "Private") {
-      // If they already follow me, make it a mutual follow
+      // If they already follow you → mutual follow
       if (alreadyFollowsMe) {
         await Promise.all([
           User.updateOne(
@@ -1227,7 +1202,7 @@ const followSomeone = async (req, res) => {
         });
       }
 
-      // Otherwise, send follow request
+      // Otherwise → Send follow request
       await User.updateOne(
         { username: followerUsername },
         { $addToSet: { requested: { username: targetUsername } } }
@@ -1240,6 +1215,12 @@ const followSomeone = async (req, res) => {
         coin: 0,
       });
 
+      await ActivityLog.create({
+        username: followerUsername,
+        id: `#${Date.now()}`,
+        message: `You sent a follow request to @${targetUsername}`,
+      });
+
       return res.status(200).json({
         success: true,
         status: "requested",
@@ -1247,7 +1228,7 @@ const followSomeone = async (req, res) => {
       });
     }
 
-    // 🌍 Handle Public Account
+    // 🌍 Public account
     await Promise.all([
       User.updateOne(
         { username: followerUsername },
@@ -1293,7 +1274,7 @@ const followSomeone = async (req, res) => {
 
 const unfollowSomeone = async (req, res) => {
   try {
-    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const { data } = req.userDetails;
     const unfollowerUsername = data[0];
     const { username: targetUsername } = req.params;
 
@@ -1316,7 +1297,7 @@ const unfollowSomeone = async (req, res) => {
       });
     }
 
-    // 🧩 Case 1: If you previously sent a follow request (Private account)
+    // 🧩 Case 1: Cancel follow request (Private account)
     if (me.requested.some((r) => r.username === targetUsername)) {
       await User.updateOne(
         { username: unfollowerUsername },
@@ -1329,6 +1310,13 @@ const unfollowSomeone = async (req, res) => {
         message: `You canceled your follow request to @${targetUsername}`,
       });
 
+      await Notification.create({
+        mainUser: targetUsername,
+        msgSerial: 8,
+        userInvolved: unfollowerUsername,
+        coin: 0,
+      });
+
       return res.status(200).json({
         success: true,
         status: "request_canceled",
@@ -1336,7 +1324,7 @@ const unfollowSomeone = async (req, res) => {
       });
     }
 
-    // 🧩 Case 2: If you’re currently following them (Public or accepted Private)
+    // 🧩 Case 2: Unfollow someone you follow
     const isFollowing = me.followings.some((f) => f.username === targetUsername);
     if (isFollowing) {
       await Promise.all([
@@ -1363,7 +1351,6 @@ const unfollowSomeone = async (req, res) => {
         coin: 0,
       });
 
-      // Optionally deduct a coin or adjust engagement
       await User.updateOne(
         { username: unfollowerUsername },
         { $inc: { coins: -1 } }
@@ -1376,7 +1363,7 @@ const unfollowSomeone = async (req, res) => {
       });
     }
 
-    // 🧩 Case 3: Not following or requested (invalid action)
+    // 🧩 Case 3: Invalid action
     return res.status(400).json({
       success: false,
       message: `You are not following or haven't requested @${targetUsername}.`,
@@ -1435,44 +1422,6 @@ const handlegetnotification = async (req, res) => {
     });
   }
 };
-
-const getSearch = async (req, res) => {
-  const { data } = req.userDetails;
-  const { username } = req.params;
-  const currentUser = await User.findOne({ username: data[0] }).populate('followings');
-
-  const usernameMatches = await User.find({
-    username: { $regex: username, $options: "i" }
-  }).limit(10);
-
-  const uniqueUsernames = new Set(usernameMatches.map(u => u.username));
-
-  let displayNameMatches = [];
-  if (usernameMatches.length < 5) {
-    displayNameMatches = await User.find({
-      display_name: { $regex: username, $options: "i" },
-      username: { $nin: [...uniqueUsernames] }
-    }).limit(5 - usernameMatches.length);
-  }
-
-  const allUsers = [...usernameMatches, ...displayNameMatches];
-  const userMap = new Map();
-  allUsers.forEach(user => userMap.set(user.username, user));
-
-  let users = Array.from(userMap.values())
-    .filter(user => user.username !== data[0]);
-
-  users = users.map(user => ({
-    username: user.username,
-    avatarUrl: user.profilePicture,
-    display_name: user.display_name,
-    followers: user.followers.length,
-    following: user.followings.length,
-    isFollowing: currentUser.followings.some(f => f.username === user.username)
-  }));
-
-  return res.json({ users });
-}
 
 const handlegetsettings = async (req, res) => {
   try {
@@ -2652,7 +2601,6 @@ export {
   handlegetprofile,
   handlegetterms,
   handlegetcontact,
-  handlegetconnect,
   handlegetforgetpass,
   handlegetsignup,
   handlegethelp,
@@ -2674,7 +2622,6 @@ export {
   followSomeone,
   unfollowSomeone,
   handlegetnotification,
-  getSearch,
   handlegetsettings,
   togglePP,
   signupChannel,

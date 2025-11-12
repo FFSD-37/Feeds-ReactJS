@@ -13,7 +13,6 @@ import {
   handlegetprofile,
   handlegetterms,
   handlegetcontact,
-  handlegetconnect,
   handlegetgames,
   handlegetdelacc,
   handlegetreels,
@@ -33,7 +32,6 @@ import {
   fetchOverlayUser,
   followSomeone,
   unfollowSomeone,
-  getSearch,
   handlegetnotification,
   handlegetsettings,
   togglePP,
@@ -76,6 +74,12 @@ import{
   commentOnChannelPost,
   getSingleChannelPost,
 } from "../controllers/Ayush/home.js"
+import{
+  handleGetConnect,
+  getSearch,
+  followEntity,
+  unfollowEntity,
+} from "../controllers/Ayush/connect.js"
 import { handleimagKitauth } from "../services/imagKit.js";
 import { isAuthuser } from "../middleware/isAuthuser.js";
 import { checkOut, verify_payment } from "../controllers/payment.js";
@@ -99,7 +103,7 @@ router.get("/tandc", isAuthuser, handlegetterms);
 
 router.get("/contact", isAuthuser, handlegetcontact);
 
-router.get("/connect", isAuthuser, handlegetconnect);
+router.get("/connect", isAuthuser, handleGetConnect);
 
 router.get("/games", isAuthuser, handlegetgames);
 
@@ -188,7 +192,7 @@ router.get("/chat/:username", isAuthuser, getChat);
 
 router.get("/chat", isAuthuser, getChatpage);
 
-router.get("/search/:username", isAuthuser, getSearch);
+router.get("/connect/search", isAuthuser, getSearch);
 
 router.get("/dailyUsage", isAuthuser, getDailyusage);
 
@@ -259,5 +263,9 @@ router.post("/channel/comment", isAuthuser, commentOnChannelPost);
 router.post("/follow_channel/:channelName", isAuthuser, followChannel);
 
 router.post("/unfollow_channel/:channelName", isAuthuser, unfollowChannel);
+
+router.post("/connect/follow", isAuthuser, followEntity);
+
+router.post("/connect/unfollow", isAuthuser, unfollowEntity);
 
 export default router;
