@@ -1,231 +1,333 @@
-import React, { useState, useEffect } from "react";
-import { useUserData } from "./../providers/userData.jsx";
-import "./../styles/connect.css";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useUserData } from './../providers/userData.jsx';
+import './../styles/connect.css';
+import {
+  FaGlobe,
+  FaBook,
+  FaFilm,
+  FaGamepad,
+  FaLaugh,
+  FaNewspaper,
+  FaLaptopCode,
+  FaVideo,
+  FaTv,
+  FaFutbol,
+  FaLeaf,
+  FaMusic,
+  FaBullhorn,
+  FaDumbbell,
+  FaHeart,
+} from 'react-icons/fa';
 
-const Connect = ({ type = "People" }) => {
+const Connect = () => {
   const { userData } = useUserData();
+  const navigate = useNavigate();
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [users, setUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [initialized, setInitialized] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [mode, setMode] = useState(null);
+  const [filter, setFilter] = useState('All');
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState(null);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/verify`, {
-          method: "GET",
-          credentials: "include",
-        });
-        const data = await res.json();
-        setCurrentUser(data?.data?.[0] || null);
-      } catch (error) {
-        console.error("Error verifying user:", error);
-      }
-    };
-    fetchUser();
-  }, []);
+  const categoryIcons = {
+    All: <FaGlobe color="#9e9e9e" />,
+    Education: <FaBook color="#3f51b5" />,
+    Animations: <FaFilm color="#ff9800" />,
+    Games: <FaGamepad color="#00ff99" />,
+    Memes: <FaLaugh color="#ff4081" />,
+    News: <FaNewspaper color="#00bcd4" />,
+    Tech: <FaLaptopCode color="#8e24aa" />,
+    Vlog: <FaVideo color="#ff5722" />,
+    Entertainment: <FaTv color="#ffd740" />,
+    Sports: <FaFutbol color="#4caf50" />,
+    Nature: <FaLeaf color="#43a047" />,
+    Music: <FaMusic color="#00b0ff" />,
+    Marketing: <FaBullhorn color="#cddc39" />,
+    Fitness: <FaDumbbell color="#f44336" />,
+    Lifestyle: <FaHeart color="#e91e63" />,
+  };
 
-  // 🔹 Fetch mutual followers
+  const categories = Object.keys(categoryIcons);
+
+  // 🔹 Initialize mode after userData is ready
   useEffect(() => {
+    if (userData && userData.type) {
+      setMode(userData.type === 'Normal' ? 'users' : 'channels');
+      setInitialized(true);
+    }
+  }, [userData]);
+
+  // 🔹 Fetch connections or followed channels based on mode/type
+  useEffect(() => {
+    if (!initialized || !mode) return;
+
     const fetchConnect = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/connect`, {
-          method: "GET",
-          credentials: "include",
-        });
+        const res = await fetch(
+          `${import.meta.env.VITE_SERVER_URL}/connect?mode=${mode}`,
+          {
+            credentials: 'include',
+          },
+        );
         const data = await res.json();
-
-        setUsers(data.users || []);
-        setFilteredUsers(data.users || []);
+        if (!data.success) throw new Error(data.message);
+        setItems(data.items || []);
       } catch (err) {
-        console.error("Error fetching mutual followers:", err);
+        console.error('❌ Fetch connect failed:', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchConnect();
-  }, []);
 
-  // 🔹 Handle search
+    fetchConnect();
+  }, [mode, initialized, userData?.type]);
+
+  // 🔹 Search & Filter
   useEffect(() => {
-    const delayDebounce = setTimeout(async () => {
-      if (searchTerm.trim() === "") {
-        setFilteredUsers(users);
-        return;
-      }
+    if (!initialized || !mode) return;
+
+    const delay = setTimeout(async () => {
+      if (searchTerm.trim() === '') return;
 
       try {
+        const params = new URLSearchParams({
+          query: searchTerm,
+          type: mode === 'channels' ? 'channel' : 'user',
+          category: filter,
+        });
+
         const res = await fetch(
-          `${import.meta.env.VITE_SERVER_URL}/search/${searchTerm.toLowerCase()}`,
-          { method: "GET", credentials: "include" }
+          `${import.meta.env.VITE_SERVER_URL}/connect/search?${params.toString()}`,
+          { credentials: 'include' },
         );
         const data = await res.json();
-        setFilteredUsers(data.users || []);
+        setItems(data.items || []);
       } catch (err) {
-        console.error("Search failed:", err);
+        console.error('❌ Search failed:', err);
       }
     }, 400);
 
-    return () => clearTimeout(delayDebounce);
-  }, [searchTerm, users]);
+    return () => clearTimeout(delay);
+  }, [searchTerm, filter, mode, initialized]);
 
-  // 🔹 Follow / Unfollow user
-  const handleFollowToggle = async (username, isFollowing) => {
+  // 🔹 Follow / Unfollow / Requested logic
+  const handleFollowToggle = async (
+    target,
+    targetType,
+    currentState,
+    visibility,
+  ) => {
     try {
+      const isFollowing = currentState === 'following' || currentState === true;
       const endpoint = isFollowing
-        ? `${import.meta.env.VITE_SERVER_URL}/unfollow/${username}`
-        : `${import.meta.env.VITE_SERVER_URL}/follow/${username}`;
+        ? `${import.meta.env.VITE_SERVER_URL}/connect/unfollow`
+        : `${import.meta.env.VITE_SERVER_URL}/connect/follow`;
 
       const res = await fetch(endpoint, {
-        method: "POST",
-        credentials: "include",
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target, targetType }),
       });
 
-      if (!res.ok) throw new Error("Request failed");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
 
-      // Update local state instantly
-      setFilteredUsers((prev) =>
-        prev.map((user) =>
-          user.username === username
-            ? { ...user, isFollowing: !isFollowing }
-            : user
-        )
+      setItems(prev =>
+        prev.map(i => {
+          if (i.username === target || i.name === target) {
+            const updated = { ...i };
+            switch (data.status) {
+              case 'requested':
+                updated.requested = true;
+                updated.isFollowing = false;
+                break;
+              case 'request_canceled':
+                updated.requested = false;
+                updated.isFollowing = false;
+                break;
+              case 'following':
+              case 'friend':
+                updated.isFollowing = true;
+                updated.requested = false;
+                break;
+              case 'unfollowed':
+                updated.isFollowing = false;
+                updated.requested = false;
+                break;
+              default:
+                break;
+            }
+            return updated;
+          }
+          return i;
+        }),
       );
-    } catch (error) {
-      console.error("Follow/unfollow error:", error);
+    } catch (err) {
+      console.error('❌ Follow toggle failed:', err);
     }
   };
 
+  const getButtonLabel = item =>
+    item.requested
+      ? 'Requested'
+      : item.isFollowing
+        ? 'Following'
+        : item.friend
+          ? 'Friend'
+          : 'Follow';
+
+  const getButtonClass = item =>
+    item.requested
+      ? 'connect-btn-requested'
+      : item.isFollowing
+        ? 'connect-btn-following'
+        : item.friend
+          ? 'connect-btn-friend'
+          : 'connect-btn-default';
+
+  if (!initialized)
+    return (
+      <div className="connect-loading">
+        <p>Loading...</p>
+      </div>
+    );
+
+  // 🔹 Navigate to profile or channel
+  const handleCardClick = item => {
+    if (item.type === 'Channel') navigate(`/channel/${item.name}`);
+    else navigate(`/profile/${item.username}`);
+  };
+
   return (
-    <div className="connect-body min-h-screen bg-gradient-to-br from-indigo-400 to-purple-600 px-4 sm:px-8 md:px-16 lg:px-32 py-8 font-inter">
-      <div className="connect-content max-w-6xl mx-auto">
-        {/* HEADER */}
+    <div className="connect-body">
+      <div className="connect-container">
         <div className="connect-header">
           <h1 className="connect-title">
-            {type === "Kids" ? "🔍 Discover New Channels" : "🔍 Discover People"}
+            {userData?.type === 'Normal'
+              ? mode === 'users'
+                ? '👥 Connect with People'
+                : '📺 Discover Channels'
+              : '📺 Channels You Follow'}
           </h1>
-          <p className="connect-subtitle">
-            {type === "Kids"
-              ? "Connect, Learn and Grow together"
-              : "Mutual connections based on who your followings follow"}
-          </p>
+          {userData?.type === 'Normal' && (
+            <div className="connect-toggle">
+              <button
+                className={`connect-toggle-btn ${mode === 'users' ? 'active' : ''}`}
+                onClick={() => setMode('users')}
+              >
+                People
+              </button>
+              <button
+                className={`connect-toggle-btn ${mode === 'channels' ? 'active' : ''}`}
+                onClick={() => setMode('channels')}
+              >
+                Channels
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* SEARCH BOX */}
-        <div className="connect-search-container">
-          <div className="connect-search-wrapper relative max-w-xl mx-auto">
-            <span className="connect-search-icon absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 text-xl">
-              🔎
-            </span>
-            <input
-              type="text"
-              className="connect-search-input"
-              placeholder={
-                type === "Kids"
-                  ? "Search by channel name..."
-                  : "Search by name or username..."
-              }
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+        {/* SEARCH & FILTER */}
+        <div className="connect-searchbar">
+          <input
+            type="text"
+            className="connect-search-input"
+            placeholder={
+              mode === 'channels'
+                ? 'Search by channel name...'
+                : 'Search by username or name...'
+            }
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+          {mode === 'channels' && (
+            <select
+              className="connect-filter"
+              value={filter}
+              onChange={e => setFilter(e.target.value)}
+            >
+              {categories.map(cat => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         {/* RESULTS */}
-        <div className="connect-container">
+        <div className={`connect-results ${loading ? '' : 'connect-fade show'}`}>
           {loading ? (
-            <div className="connect-empty-state">
-              <div className="connect-empty-state-icon animate-spin">⏳</div>
-              <div className="connect-empty-state-text">Loading...</div>
-            </div>
-          ) : filteredUsers.length === 0 ? (
-            <div className="connect-empty-state">
-              <div className="connect-empty-state-icon">👥</div>
-              <div className="connect-empty-state-text">No results found</div>
-            </div>
+            <div className="connect-loading">Loading...</div>
+          ) : items.length === 0 ? (
+            <div className="connect-empty">No results found</div>
           ) : (
-            <>
-              <div className="connect-results-header">
-                <span className="connect-results-count text-indigo-600 font-bold">
-                  {filteredUsers.length}
-                </span>{" "}
-                {type === "Kids" ? "Channels" : "People"} Found
-              </div>
-
-              <ul id="connect-peopleList" className="connect-people-list grid gap-4">
-                {filteredUsers.map((user, index) => (
-                  <li key={index} className="connect-list-item flex items-center justify-between">
-                    <div className="connect-profile flex items-center gap-4">
-                      <img
-                        src={user.avatarUrl || user.channelLogo}
-                        alt={user.display_name || user.channelName}
-                        className="connect-profile-img"
-                      />
-                      <div className="connect-info">
-                        <a
-                          href={`/profile/${user.username || user.channelName}`}
-                          className="connect-profile-link"
-                        >
-                          <div className="connect-profile-name">
-                            {user.display_name || user.channelName}
-                          </div>
-                          <div className="connect-profile-username text-gray-500">
-                            @{user.username || user.channelName}
-                          </div>
-                        </a>
-                        <div className="connect-stats flex gap-4 text-sm mt-1">
-                          {type === "Kids" ? (
-                            <div className="connect-stat-item">
-                              <span className="connect-stat-icon">➕</span>
-                              <span className="connect-stat-value">
-                                {user.channelMembers?.length || 0}
-                              </span>{" "}
-                              Members
-                            </div>
-                          ) : (
-                            <>
-                              <div className="connect-stat-item">
-                                <span className="connect-stat-icon">👥</span>
-                                <span className="connect-stat-value">
-                                  {user.followers || 0}
-                                </span>{" "}
-                                Followers
-                              </div>
-                              <div className="connect-stat-item">
-                                <span className="connect-stat-icon">➕</span>
-                                <span className="connect-stat-value">
-                                  {user.following || 0}
-                                </span>{" "}
-                                Following
-                              </div>
-                            </>
-                          )}
-                        </div>
+            <ul className="connect-list">
+              {items.map((item, i) => (
+                <li
+                  key={i}
+                  className="connect-item"
+                  onClick={() => handleCardClick(item)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="connect-left">
+                    <img
+                      src={item.avatarUrl || item.logo}
+                      alt={item.username || item.name}
+                      className="connect-avatar"
+                    />
+                    <div className="connect-info">
+                      <div className="connect-name">
+                        {item.display_name || item.name}
+                        {item.category && (
+                          <span className="connect-category-icon">
+                            {categoryIcons[item.category[0]]}
+                          </span>
+                        )}
+                      </div>
+                      <div className="connect-username">
+                        @{item.username || item.name}
+                      </div>
+                      <div className="connect-stats">
+                        {item.type === 'Channel' ? (
+                          <span>{item.members} Members</span>
+                        ) : (
+                          <>
+                            <span>{item.followers || 0} Followers</span>
+                            <span>{item.following || 0} Following</span>
+                          </>
+                        )}
                       </div>
                     </div>
+                  </div>
 
-                    {/* 🔹 Follow Button */}
-                    {type !== "Kids" && currentUser !== user.username && (
-                      <button
-                        className={`connect-follow-btn px-4 py-2 rounded-lg font-semibold transition ${
-                          user.isFollowing
-                            ? "bg-gray-300 text-gray-700 hover:bg-gray-400"
-                            : "bg-indigo-600 text-white hover:bg-indigo-700"
-                        }`}
-                        onClick={() =>
-                          handleFollowToggle(user.username, user.isFollowing)
-                        }
-                      >
-                        {user.isFollowing ? "Following" : "Follow"}
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </>
+                  {(userData?.type === 'Normal' || userData?.type === 'Kids') && (
+                    <button
+                      className={`connect-follow-btn ${getButtonClass(item)}`}
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleFollowToggle(
+                          item.username || item.name,
+                          item.type,
+                          item.isFollowing
+                            ? 'following'
+                            : item.requested
+                              ? 'requested'
+                              : 'none',
+                          item.visibility,
+                        );
+                      }}
+                    >
+                      {getButtonLabel(item)}
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </div>

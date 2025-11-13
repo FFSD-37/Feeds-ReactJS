@@ -1,11 +1,10 @@
-/* === RESET === */
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-/* === VARIABLES === */
 :root {
   --primary: #00bcd4;
   --primary-hover: #0097a7;
@@ -32,7 +31,36 @@
   overflow-x: hidden;
 }
 
-/* === HEADER (compact + centered) === */
+/* === HEADER  === */
+.channel-top-actions {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.5rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.channel-follow-btn,
+.channel-unfollow-btn,
+.channel-edit-btn {
+  background: var(--primary);
+  border: none;
+  color: white;
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: var(--transition);
+}
+
+.channel-follow-btn:hover,
+.channel-unfollow-btn:hover,
+.channel-edit-btn:hover {
+  background: var(--primary-hover);
+}
+
 .channel-header {
   display: flex;
   align-items: center;
@@ -90,6 +118,53 @@
 .channel-category-icon:hover {
   transform: scale(1.25);
   opacity: 0.85;
+}
+
+.channel-category-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.channel-category-icon::after {
+  content: attr(data-name);
+  position: absolute;
+  bottom: 115%; /* closer to the icon */
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 5;
+}
+
+.channel-category-icon:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-2px);
+}
+
+.channel-category-icon::before {
+  content: '';
+  position: absolute;
+  bottom: 108%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 4px;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.85) transparent transparent transparent;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.channel-category-icon:hover::before {
+  opacity: 1;
 }
 
 /* === ADMIN + MEMBERS === */
@@ -348,6 +423,64 @@
   object-fit: cover;
 }
 
+/* === MEMBERS MODAL === */
+.channel-member-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 0.3rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) rgba(255, 255, 255, 0.1);
+}
+
+.channel-member-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.channel-member-list::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 5px;
+}
+
+.channel-member-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.channel-member-item:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+}
+
+.channel-member-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  object-fit: cover;
+  box-shadow: 0 0 6px rgba(0, 188, 212, 0.3);
+}
+
+.channel-member-item span {
+  color: white;
+  font-weight: 500;
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+.channel-member-item:last-child {
+  margin-bottom: 0.4rem;
+}
+
 /* === FOOTER (fixed + clean) === */
 .channel-footer {
   position: fixed;
@@ -400,6 +533,22 @@
   .channel-posts-grid {
     grid-template-columns: repeat(auto-fit, minmax(90px, 0.33fr));
     gap: 0.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .channel-modal {
+    width: 92%;
+    padding: 1rem;
+  }
+
+  .channel-member-item {
+    padding: 0.5rem 0.7rem;
+  }
+
+  .channel-member-pic {
+    width: 36px;
+    height: 36px;
   }
 }
 

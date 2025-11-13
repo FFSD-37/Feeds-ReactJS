@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserData } from './../providers/userData.jsx';
-import ChannelPostOverlay from './ChannelPostOverlay.jsx'; // ✅ Import overlay
+import ChannelPostOverlay from './ChannelPostOverlay.jsx';
 import './../styles/channelHome.css';
 
 function ChannelHome() {
@@ -16,8 +16,7 @@ function ChannelHome() {
   const [reportPostId, setReportPostId] = useState(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [playingVideoId, setPlayingVideoId] = useState(null);
-
-  const [activePostId, setActivePostId] = useState(null); // ✅ Added state for overlay
+  const [activePostId, setActivePostId] = useState(null); 
 
   const observerRef = useRef();
   const dropdownRef = useRef();
@@ -35,8 +34,8 @@ function ChannelHome() {
 
       if (data.success && data.posts.length > 0) {
         setPosts(prev => {
-          const existingIds = new Set(prev.map(p => p._id));
-          const newPosts = data.posts.filter(p => !existingIds.has(p._id));
+          const existingIds = new Set(prev.map(p => p.id));
+          const newPosts = data.posts.filter(p => !existingIds.has(p.id));
           return [...prev, ...newPosts];
         });
 
@@ -88,45 +87,45 @@ function ChannelHome() {
     return 'just now';
   };
 
-  // useEffect(() => {
-  //   const handleEscape = e => {
-  //     if (e.key === 'Escape') {
-  //       setDropdownPost(null);
-  //       handleCloseReport();
-  //       setActivePostId(null); // ✅ close overlay on ESC
-  //     }
-  //   };
-  //   document.addEventListener('keydown', handleEscape);
-  //   return () => document.removeEventListener('keydown', handleEscape);
-  // }, []);
-
   const handleDropdownToggle = id =>
     setDropdownPost(p => (p === id ? null : id));
+
   const handleReportClick = id => {
     setReportPostId(id);
     setDropdownPost(null);
     setShowReportModal(true);
   };
-  const handleShare = id => {
-    const url = `${window.location.origin}/post/${id}`;
-    navigator.share
-      ? navigator.share({ title: 'Feeds Post', url }).catch(() => {})
-      : alert('Share this URL: ' + url);
+
+  const handleShare = post => {
+    const url = `${window.location.origin}/channel/post/${post.id}`;
+    if (navigator.share) {
+      navigator
+        .share({ title: 'Feeds Post', url })
+        .catch(() => console.log('Share cancelled'));
+    } else {
+      alert('Share this URL: ' + url);
+    }
     setDropdownPost(null);
   };
-  const handleCopyLink = id => {
-    navigator.clipboard.writeText(`${window.location.origin}/post/${id}`);
+
+  const handleCopyLink = post => {
+    navigator.clipboard.writeText(
+      `${window.location.origin}/channel/post/${post.id}`,
+    );
     alert('Post link copied!');
     setDropdownPost(null);
   };
+
   const handleCloseReport = () => {
     setShowReportModal(false);
     setReportPostId(null);
   };
+
   const handleReasonSelect = reason => {
     alert(`Reported post ${reportPostId} for: ${reason}`);
     handleCloseReport();
   };
+
   const handleVideoClick = id => {
     const video = document.getElementById(`video-${id}`);
     if (video.paused) {
@@ -135,6 +134,59 @@ function ChannelHome() {
     } else {
       video.pause();
       setPlayingVideoId(null);
+    }
+  };
+
+  const handleOpenPost = post => {
+    // Open overlay locally
+    setActivePostId(post.id);
+  };
+
+  const handleLike = async postId => {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/channel/like`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ postId }),
+        },
+      );
+      const data = await res.json();
+      if (data.success) {
+        setPosts(prev =>
+          prev.map(p =>
+            p._id === postId
+              ? { ...p, likes: data.likes, liked: data.liked }
+              : p,
+          ),
+        );
+      }
+    } catch (err) {
+      console.error('❌ Error liking post:', err);
+    }
+  };
+
+  const handleSave = async postId => {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/channel/save`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ postId }),
+        },
+      );
+      const data = await res.json();
+      if (data.success) {
+        setPosts(prev =>
+          prev.map(p => (p._id === postId ? { ...p, saved: data.saved } : p)),
+        );
+      }
+    } catch (err) {
+      console.error('❌ Error saving post:', err);
     }
   };
 
@@ -178,7 +230,7 @@ function ChannelHome() {
           <p className="channel_home_no_posts">No posts to display.</p>
         ) : (
           posts.map(post => (
-            <div key={post._id} className="channel_home_post_card">
+            <div key={post.id} className="channel_home_post_card">
               <div className="channel_home_post_header">
                 <span
                   className="channel_home_post_channel"
@@ -188,34 +240,34 @@ function ChannelHome() {
                 </span>
                 <div
                   className="channel_home_post_menu_trigger"
-                  onClick={() => handleDropdownToggle(post._id)}
+                  onClick={() => handleDropdownToggle(post.id)}
                 >
                   •••
                 </div>
 
-                {dropdownPost === post._id && (
+                {dropdownPost === post.id && (
                   <div className="channel_home_dropdown_menu" ref={dropdownRef}>
                     <div
                       className="channel_home_dropdown_item danger"
-                      onClick={() => handleReportClick(post._id)}
+                      onClick={() => handleReportClick(post.id)}
                     >
                       Report
                     </div>
                     <div
                       className="channel_home_dropdown_item normal"
-                      onClick={() => setActivePostId(post._id)} // ✅ Show overlay
+                      onClick={() => handleOpenPost(post)} // ✅ open overlay
                     >
                       Go to post
                     </div>
                     <div
                       className="channel_home_dropdown_item normal"
-                      onClick={() => handleShare(post._id)}
+                      onClick={() => handleShare(post)}
                     >
                       Share to...
                     </div>
                     <div
                       className="channel_home_dropdown_item normal"
-                      onClick={() => handleCopyLink(post._id)}
+                      onClick={() => handleCopyLink(post)}
                     >
                       Copy link
                     </div>
@@ -234,22 +286,22 @@ function ChannelHome() {
                   className="channel_home_post_media"
                   src={post.url}
                   alt="Post"
-                  onClick={() => setActivePostId(post._id)} // ✅ open overlay
+                  onClick={() => handleOpenPost(post)}
                 />
               ) : (
                 <div
                   className="channel_home_video_wrapper"
-                  onClick={() => handleVideoClick(post._id)}
+                  onClick={() => handleVideoClick(post.id)}
                 >
                   <video
-                    id={`video-${post._id}`}
+                    id={`video-${post.id}`}
                     className="channel_home_post_media"
                     src={post.url}
                     muted
                     loop
                     playsInline
                   />
-                  {playingVideoId !== post._id && (
+                  {playingVideoId !== post.id && (
                     <div className="channel_home_play_button">▶</div>
                   )}
                 </div>
@@ -258,7 +310,7 @@ function ChannelHome() {
               {post.content && (
                 <p
                   className="channel_home_post_caption"
-                  onClick={() => setActivePostId(post._id)} // ✅ open overlay
+                  onClick={() => handleOpenPost(post)}
                 >
                   {post.content}
                 </p>
@@ -267,17 +319,26 @@ function ChannelHome() {
               <div className="channel_home_post_actions">
                 <div
                   className="channel_home_action_item"
-                  onClick={() => setActivePostId(post._id)} // open overlay
+                  onClick={() => handleLike(post._id)}
+                  title={post.liked ? 'Unlike' : 'Like'}
                 >
-                  ❤️ {post.likes}
+                  {post.liked ? '❤️' : '🤍'} {post.likes}
                 </div>
                 <div
                   className="channel_home_action_item"
-                  onClick={() => setActivePostId(post._id)} // open overlay
+                  onClick={() => handleSave(post._id)}
+                  title={post.saved ? 'Unsave' : 'Save'}
+                >
+                  {post.saved ? '💾' : '📁'}
+                </div>
+                <div
+                  className="channel_home_action_item"
+                  onClick={() => handleOpenPost(post)}
                 >
                   💬 {post.comments?.length || 0}
                 </div>
               </div>
+
               <div className="channel_home_post_time">
                 {timeAgo(post.createdAt)}
               </div>
@@ -285,18 +346,20 @@ function ChannelHome() {
           ))
         )}
 
-        {loading && <p className="channel_home_loading">Loading more posts...</p>}
+        {loading && (
+          <p className="channel_home_loading">Loading more posts...</p>
+        )}
         {!hasMore && posts.length > 0 && (
           <p className="channel_home_end_text">No more posts to show</p>
         )}
         <div ref={observerRef}></div>
       </div>
 
-      {/* Overlay component */}
+      {/* Overlay Component */}
       {activePostId && (
         <ChannelPostOverlay
           id={activePostId}
-          onClose={() => setActivePostId(null)} // ✅ handle close
+          onClose={() => setActivePostId(null)}
         />
       )}
 

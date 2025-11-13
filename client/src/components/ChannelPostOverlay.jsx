@@ -1,17 +1,42 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import '../styles/channelPostOverlay.css';
 
-export default function ChannelPostOverlay({ id, onClose }) {
+const timeAgo = dateString => {
+  const date = new Date(dateString);
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+  const intervals = {
+    year: 31536000,
+    month: 2592000,
+    week: 604800,
+    day: 86400,
+    hour: 3600,
+    minute: 60,
+  };
+  for (const [unit, sec] of Object.entries(intervals)) {
+    const count = Math.floor(seconds / sec);
+    if (count >= 1) return `${count}${unit[0]}${count > 1 ? '' : ''} ago`;
+  }
+  return 'just now';
+};
+
+export default function ChannelPostOverlay({ id: propId, onClose }) {
   const navigate = useNavigate();
+  const { id: routeId } = useParams();
+  const id = propId || routeId;
+
   const [post, setPost] = useState(null);
+  const [liked, setLiked] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [replyTo, setReplyTo] = useState(null);
   const [showEmoji, setShowEmoji] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
-  const [showReportModal, setShowReportModal] = useState(false); // ✅ new
+  const [showReportModal, setShowReportModal] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const standalone = !onClose; // Detect full-page mode
 
   useEffect(() => {
     const script = document.createElement('script');
@@ -34,27 +59,27 @@ export default function ChannelPostOverlay({ id, onClose }) {
     const handleEsc = e => {
       if (e.key !== 'Escape') return;
 
-      // Step 1: Close emoji picker first
+      // Close emoji picker first
       if (showEmoji) {
         setShowEmoji(false);
         e.stopPropagation();
         return;
       }
 
-      // Step 2: Close report modal next
+      // Close report modal next
       if (showReportModal) {
         setShowReportModal(false);
         e.stopPropagation();
         return;
       }
 
-      // Step 3: Finally close the overlay itself
-      onClose();
+      // Finally close overlay (if modal)
+      if (!standalone && onClose) onClose();
     };
 
     document.addEventListener('keydown', handleEsc);
     return () => document.removeEventListener('keydown', handleEsc);
-  }, [showEmoji, showReportModal, onClose]);
+  }, [showEmoji, showReportModal, onClose, standalone]);
 
   useEffect(() => {
     if (!id) return;
@@ -67,6 +92,8 @@ export default function ChannelPostOverlay({ id, onClose }) {
         if (data.success) {
           setPost(data.post);
           setComments(data.comments);
+          setLiked(data.post.userHasLiked || false);
+          setSaved(data.post.userHasSaved || false);
         }
       })
       .finally(() => setLoading(false));
@@ -80,16 +107,21 @@ export default function ChannelPostOverlay({ id, onClose }) {
       body: JSON.stringify({ postId: post._id }),
     });
     const data = await res.json();
-    if (data.success) setPost(prev => ({ ...prev, likes: data.likes }));
+    if (data.success) {
+      setPost(prev => ({ ...prev, likes: data.likes }));
+      setLiked(data.liked);
+    }
   };
 
   const handleSave = async () => {
-    await fetch(`${import.meta.env.VITE_SERVER_URL}/channel/save`, {
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/channel/save`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({ postId: post._id }),
     });
+    const data = await res.json();
+    if (data.success) setSaved(data.saved);
   };
 
   const handleAddComment = async () => {
@@ -125,31 +157,29 @@ export default function ChannelPostOverlay({ id, onClose }) {
     }
   };
 
-  // ✅ Show the report modal instead of alert
   const handleReport = () => {
     setShowReportModal(true);
     setShowOptions(false);
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(window.location.href);
+    const link = `${window.location.origin}/channel/post/${post.id}`;
+    navigator.clipboard.writeText(link);
     alert('Post link copied!');
     setShowOptions(false);
   };
 
   const handleShare = () => {
+    const link = `${window.location.origin}/channel/post/${post.id}`;
     navigator.share
-      ? navigator.share({ title: 'Feeds Post', url: window.location.href })
-      : alert('Copy URL to share manually.');
+      ? navigator.share({ title: 'Feeds Post', url: link })
+      : alert(`Copy this URL manually:\n${link}`);
     setShowOptions(false);
   };
 
-  const handleCloseReport = () => {
-    setShowReportModal(false);
-  };
+  const handleCloseReport = () => setShowReportModal(false);
 
   const handleReasonSelect = reason => {
-    // API call can be added here
     alert(`Reported post for: ${reason}`);
     setShowReportModal(false);
   };
@@ -166,14 +196,21 @@ export default function ChannelPostOverlay({ id, onClose }) {
       <div className="channel-post-overlay-container">
         <div className="channel-post-overlay-content">
           <p>Post not found.</p>
-          <button onClick={onClose}>Close</button>
+          {!standalone && <button onClick={onClose}>Close</button>}
         </div>
       </div>
     );
 
   return (
     <>
-      <div className="channel-post-overlay-container" onClick={onClose}>
+      <div
+        className={
+          standalone
+            ? 'channel-post-fullpage-container'
+            : 'channel-post-overlay-container'
+        }
+        onClick={!standalone && !showReportModal ? onClose : undefined}
+      >
         <div
           className="channel-post-overlay-wrapper"
           onClick={e => e.stopPropagation()}
@@ -187,6 +224,7 @@ export default function ChannelPostOverlay({ id, onClose }) {
               >
                 @{post.channel}
               </span>
+
               <div className="channel-post-overlay-options">
                 <button onClick={() => setShowOptions(p => !p)}>⋯</button>
                 {showOptions && (
@@ -221,10 +259,29 @@ export default function ChannelPostOverlay({ id, onClose }) {
             )}
 
             <div className="channel-post-overlay-actions">
-              <button onClick={handleLike}>❤️ {post.likes}</button>
-              <button onClick={() => setShowEmoji(!showEmoji)}>💬</button>
-              <button onClick={handleSave}>💾</button>
-              <button onClick={handleShare}>🔗</button>
+              <button
+                onClick={handleLike}
+                className={liked ? 'liked' : 'unliked'}
+                title={liked ? 'Unlike' : 'Like'}
+              >
+                {liked ? '❤️' : '🤍'} {post.likes}
+              </button>
+
+              <button onClick={() => setShowEmoji(!showEmoji)} title="Comment">
+                💬
+              </button>
+
+              <button
+                onClick={handleSave}
+                className={saved ? 'saved' : 'unsaved'}
+                title={saved ? 'Unsave' : 'Save'}
+              >
+                {saved ? '💾' : '📁'}
+              </button>
+
+              <button onClick={handleShare} title="Share">
+                🔗
+              </button>
             </div>
 
             <div className="channel-post-overlay-caption">{post.content}</div>
@@ -237,45 +294,53 @@ export default function ChannelPostOverlay({ id, onClose }) {
                 <p className="channel-post-overlay-empty">No comments yet</p>
               ) : (
                 comments.map(c => (
-                  <div
-                    key={c._id}
-                    className="channel-post-overlay-comment-item"
-                  >
+                  <div key={c._id} className="channel-post-comment-block">
                     <img
                       src={c.avatarUrl}
                       alt="avatar"
+                      className="channel-post-comment-avatar"
                       onClick={() =>
                         c.type === 'Channel'
                           ? navigate(`/channel/${c.name}`)
                           : navigate(`/profile/${c.name}`)
                       }
                     />
-                    <div>
-                      <strong
-                        onClick={() =>
-                          c.type === 'Channel'
-                            ? navigate(`/channel/${c.name}`)
-                            : navigate(`/profile/${c.name}`)
-                        }
-                      >
-                        @{c.name}
-                      </strong>
-                      <p>{c.text}</p>
-                      <span
-                        className="channel-post-overlay-reply"
-                        onClick={() => setReplyTo(c)}
-                      >
-                        Reply
-                      </span>
+                    <div className="channel-post-comment-bubble">
+                      <div className="channel-post-comment-header">
+                        <strong
+                          onClick={() =>
+                            c.type === 'Channel'
+                              ? navigate(`/channel/${c.name}`)
+                              : navigate(`/profile/${c.name}`)
+                          }
+                        >
+                          @{c.name}
+                        </strong>
+                        <span className="comment-time">
+                          {timeAgo(c.createdAt)}
+                        </span>
+                      </div>
+                      <p className="channel-post-comment-text">{c.text}</p>
+                      <div className="channel-post-comment-footer">
+                        <span
+                          className="reply-btn"
+                          onClick={() => {
+                            setReplyTo(c);
+                            document
+                              .querySelector(
+                                '.channel-post-overlay-comment-input',
+                              )
+                              ?.focus();
+                          }}
+                        >
+                          Reply
+                        </span>
+                      </div>
 
-                      {/* Replies */}
                       {c.replies?.length > 0 && (
-                        <div className="channel-post-overlay-replies">
+                        <div className="channel-post-comment-replies">
                           {c.replies.map(r => (
-                            <div
-                              key={r._id}
-                              className="channel-post-overlay-reply-item"
-                            >
+                            <div key={r._id} className="reply-bubble">
                               <img
                                 src={r.avatarUrl}
                                 alt="avatar"
@@ -285,16 +350,23 @@ export default function ChannelPostOverlay({ id, onClose }) {
                                     : navigate(`/profile/${r.name}`)
                                 }
                               />
-                              <strong
-                                onClick={() =>
-                                  r.type === 'Channel'
-                                    ? navigate(`/channel/${r.name}`)
-                                    : navigate(`/profile/${r.name}`)
-                                }
-                              >
-                                @{r.name}
-                              </strong>
-                              <p>{r.text}</p>
+                              <div>
+                                <div className="reply-header">
+                                  <strong
+                                    onClick={() =>
+                                      r.type === 'Channel'
+                                        ? navigate(`/channel/${r.name}`)
+                                        : navigate(`/profile/${r.name}`)
+                                    }
+                                  >
+                                    @{r.name}
+                                  </strong>
+                                  <span className="comment-time">
+                                    {timeAgo(r.createdAt)}
+                                  </span>
+                                </div>
+                                <p className="reply-text">{r.text}</p>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -350,9 +422,19 @@ export default function ChannelPostOverlay({ id, onClose }) {
             )}
           </div>
         </div>
+
+        {/* ✅ Optional Back Button for standalone */}
+        {standalone && (
+          <button
+            className="channel-post-fullpage-back-btn"
+            onClick={() => navigate(-1)}
+          >
+            ← Back
+          </button>
+        )}
       </div>
 
-      {/* ✅ Report Modal Overlay (above post overlay) */}
+      {/* Report Modal */}
       {showReportModal && (
         <div className="channel-post-overlay-report-overlay">
           <div className="channel-post-overlay-report-modal">
