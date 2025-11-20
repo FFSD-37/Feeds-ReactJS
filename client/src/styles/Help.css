@@ -1,0 +1,109 @@
+:root {
+  --accent-blue: #0056b3;
+  --text-dark: #333;
+  --card-bg: #ffffff;
+  /* This is the Lighter Purple from your 1st image */
+  --main-bg-color: #7c66ff; 
+}
+
+.help-container {
+  /* Set the main background to the lighter purple */
+  background-color: var(--main-bg-color);
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.help-card {
+  /* White card in the center */
+  background: var(--card-bg);
+  border: 1px solid #e9ecef;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  
+  max-width: 600px;
+  width: 100%;
+  padding: 2.5rem;
+  border-radius: 24px;
+  animation: fadeIn 0.8s ease-out;
+  overflow: hidden; 
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.help-title {
+  text-align: center;
+  font-size: 2.2rem;
+  color: var(--accent-blue);
+  margin-bottom: 1.5rem;
+  font-weight: 800;
+  background: transparent;
+}
+
+.help-subtitle {
+  font-size: 1.4rem;
+  color: #1e293b;
+  margin-bottom: 1.2rem;
+  font-weight: 700;
+  border-bottom: 2px solid rgba(0, 86, 179, 0.1);
+  padding-bottom: 0.5rem;
+}
+
+.help-faq-list {
+  list-style: none;
+  padding: 0;
+}
+
+.help-faq-item {
+  margin-bottom: 1.2rem;
+  color: var(--text-dark);
+  
+  /* Light grey background for items */
+  background: #f1f5f9;
+  border-radius: 16px;
+  padding: 1.2rem;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.help-faq-item:hover {
+  transform: translateY(-2px);
+  background: #fff;
+  border-color: var(--accent-blue);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.help-faq-item b {
+  display: block;
+  font-size: 1.1rem;
+  color: var(--accent-blue);
+  margin-bottom: 0.5rem;
+}
+
+.help-footer {
+  margin-top: 2.5rem;
+  text-align: center;
+  font-size: 1.1rem;
+  color: #444;
+}
+
+.help-link {
+  color: var(--accent-blue);
+  text-decoration: none;
+  font-weight: 700;
+  background: #e9ecef;
+  padding: 6px 14px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.help-link:hover {
+  background: var(--accent-blue);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 86, 179, 0.3);
+}
