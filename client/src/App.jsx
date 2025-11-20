@@ -10,6 +10,7 @@ import Stories from './components/stories.jsx';
 import ProfilePage from './components/Profile.jsx';
 import Connect from './components/connect.jsx';
 import EditProfile from './components/editProfile.jsx';
+import KidsProfile from "./components/KidsProfile";
 import {
   BrowserRouter as Router,
   Route,
@@ -79,6 +80,7 @@ const AppContent = () => {
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/dailyUsage" element={<DailyUsagePage />} />
         <Route path="*" element={<NotFound />} />
+        <Route path="/kids-profile/:username" element={<KidsProfile />} />
       </Routes>
       {userData?.username ? (
         <Sidebar />
