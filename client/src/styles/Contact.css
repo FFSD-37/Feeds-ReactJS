@@ -1,0 +1,103 @@
+:root {
+  --bg: rgba(255, 255, 255, 0.6);
+  --bubble-sent: rgba(0, 123, 255, 0.8);
+  --bubble-recv: rgba(220, 220, 220, 0.8);
+}
+
+/* This acts like his ".messages" class - It holds the background image */
+.contact-container {
+  background-image: url('https://img.freepik.com/free-vector/night-ocean-landscape-full-moon-stars-shine_107791-7397.jpg?semt=ais_hybrid&w=740');
+  background-size: cover;
+  background-position: center;
+  
+  /* Make sure it takes full height so we see the stars */
+  width: 100%;
+  min-height: 100vh; 
+  
+  /* Center the card in the middle of the stars */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+/* This acts like his ".message" class - It is the glass bubble */
+.contact-card {
+  /* Glass Effect */
+  background: var(--bg);
+  backdrop-filter: blur(5px); 
+  -webkit-backdrop-filter: blur(5px);
+  
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  
+  max-width: 420px;
+  width: 100%;
+  padding: 2.2rem 1.7rem;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+}
+
+.contact-title {
+  font-size: 2rem;
+  color: #0056b3; /* Darker blue for visibility */
+  text-align: center;
+  font-weight: 700;
+  margin-bottom: 1.4rem;
+  text-shadow: 0 1px 1px rgba(255,255,255,0.8);
+}
+
+.contact-form label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5em;
+  color: #000;
+}
+
+/* Styling inputs to be round like chat bars */
+.contact-form input, .contact-form textarea {
+  width: 100%;
+  margin-top: 0.3em;
+  margin-bottom: 1em;
+  padding: 12px 15px;
+  
+  /* Round shapes */
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.9);
+  
+  font-size: 1rem;
+  outline: none;
+}
+
+.contact-form input:focus, .contact-form textarea:focus { 
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.4);
+}
+
+/* Button looks like the "Sent" message bubble */
+.contact-btn {
+  background: var(--bubble-sent);
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 1.08em;
+  margin-top: .3em;
+  width: 100%;
+  transition: transform 0.1s;
+}
+
+.contact-btn:hover {
+  transform: scale(1.02);
+}
+
+.contact-success {
+  background: rgba(220, 252, 231, 0.9);
+  color: #15803d;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+  margin-bottom: 10px;
+}
