@@ -16,6 +16,8 @@ import { UserDataProvider, useUserData } from './providers/userData.jsx';
 import EditChannel from './components/editChannel.jsx';
 import ChannelHome from './components/channelHome.jsx';
 import ChannelPostOverlay from './components/ChannelPostOverlay.jsx';
+import HomePage from './components/Landing.jsx';
+// import { Home } from 'lucide-react';
 
 const AppContent = () => {
   const { userData } = useUserData();
@@ -36,6 +38,7 @@ const AppContent = () => {
         <Route path="/edit_channel" element={<EditChannel />} />
         <Route path="/channelhome" element={<ChannelHome />} />
         <Route path="/channel/post/:id" element={<ChannelPostOverlay />} />
+        <Route path="/home" element={<HomePage />} />
       </Routes>
       {userData?.username ? <Sidebar /> : userData?.channelName ? <Sidebar /> : null}
     </>

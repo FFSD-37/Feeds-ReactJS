@@ -201,6 +201,61 @@ const handleSavePost=async(req,res)=>{
     }
 }
 
+async function getAuthorAvatar(username){
+    const u = await User.findOne({username: username});
+    return u?.profilePicture || process.env.DEFAULT_USER_IMG;
+}
+
+const suggestedPost2 = async (req, res) => {
+    try{
+        const createdAt=req.query.createdAt || new Date();
+
+        const userDetails=verify_JWTtoken(req.cookies.uuid, process.env.USER_SECRET);
+        if(!userDetails) return res.status(401).json({ err: "Unauthorized" });
+        const userType=userDetails.data[3];
+        
+        let posts = await (
+            userType === "Kids"
+              ? channelPost.find({ createdAt: { $lt: createdAt } })
+              : Post.find({ createdAt: { $lt: createdAt } })
+          )
+            .sort({ createdAt: -1 })
+            .lean();
+
+        if (!posts) return res.status(404).json({ err: "Post not found" });
+
+        const user=await User.findOne({username:userDetails.data[0]}).lean();
+        posts = await Promise.all(
+            posts.map(async (post) => {
+              if (user.likedPostsIds?.includes(post.id.toString())) {
+                post.liked = true;
+              }
+              else{
+                post.liked = false;
+              }
+      
+              if (user.savedPostsIds?.includes(post.id.toString())) {
+                post.saved = true;
+              }
+              else {
+                post.saved = false;
+              }
+      
+              post.authorAvatar = await getAuthorAvatar(post.author);
+      
+              return post;
+            })
+          );
+        if(!posts) return res.status(404).json({ err: "Post not found" });
+        
+        return res.json({success:true, posts})
+    }
+    catch(error){
+        console.log(error);
+        return res.status(500).json({err:error.message})
+    }
+}
+
 export {
     handlePostupload,
     handlePostDelete,
@@ -208,5 +263,6 @@ export {
     suggestedPost,
     suggestedReels,
     handleLikePost,
-    handleSavePost
+    handleSavePost,
+    suggestedPost2
 };

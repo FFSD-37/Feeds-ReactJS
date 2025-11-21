@@ -86,6 +86,7 @@ import { checkOut, verify_payment } from "../controllers/payment.js";
 import { getChat, getChatpage } from "../controllers/chat.js";
 import { getDailyusage } from "../controllers/timout.js";
 import { handlegetstories } from "../controllers/userStory.js";
+import homeRouter from "./home.js";
 
 const router = express.Router();
 
@@ -267,5 +268,7 @@ router.post("/unfollow_channel/:channelName", isAuthuser, unfollowChannel);
 router.post("/connect/follow", isAuthuser, followEntity);
 
 router.post("/connect/unfollow", isAuthuser, unfollowEntity);
+
+router.use("/home", homeRouter);
 
 export default router;
