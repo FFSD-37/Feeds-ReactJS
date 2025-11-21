@@ -103,6 +103,13 @@ const HomePage = () => {
         credentials: 'include',
       },
     );
+    const data = await res.json();
+    if (data.success){
+      console.log("saved");
+    }
+    else {
+      console.log("error");
+    }
     // 🔥 YOUR API CALL HERE
     // await fetch(`${import.meta.env.VITE_SERVER_URL}/post/save/${postId}`, { method: "POST", credentials: "include" });
   };
@@ -230,8 +237,47 @@ const HomePage = () => {
   };
 
   const sendReply = async commentId => {
-    console.log('Replying to', commentId, ':', replyText);
+    const res = await fetch(
+      `${import.meta.env.VITE_SERVER_URL}/home/userpost_reply`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          commentId,
+          reply: replyText,
+          postID: activePostId,
+        }),
+      },
+    );
 
+    const data = await res.json();
+
+    if (data.success) {
+      // ⭐ UPDATE UI IMMEDIATELY (REAL-TIME REPLY)
+      setComments(prev =>
+        prev.map(commentPair => {
+          const main = commentPair[0];
+          const replies = commentPair[1] || [];
+
+          if (main._id === commentId) {
+            return [
+              main,
+              [
+                ...replies,
+                data.reply, // backend response of the new reply
+              ],
+            ];
+          }
+
+          return commentPair;
+        }),
+      );
+    } else {
+      console.log('error!!');
+    }
+
+    // close reply UI
     setReplyBoxVisible(null);
     setReplyText('');
   };
@@ -253,10 +299,10 @@ const HomePage = () => {
             _id: data.comment._id,
             text: commentText,
             username: userData.username,
-            avatarUrl: userData.profileUrl   // if needed
+            avatarUrl: userData.profileUrl, // if needed
           },
-          []   // empty replies
-        ]
+          [], // empty replies
+        ],
       ]);
     } else {
       alert(data.message);
@@ -266,9 +312,26 @@ const HomePage = () => {
     setCommentText('');
   };
 
-  const reportComment = async commentId => {
+  const reportComment = async (commentId) => {
     // 🔥 Your API fetch
-    alert(`Reported comment ID: ${commentId}`);
+    const res = await fetch(
+      `${import.meta.env.VITE_SERVER_URL}/home/comment_report`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ commentId }), 
+      }
+    )
+    const data = await res.json();
+    if (data.success){
+      alert(`${data.message} with id: ${data.reportId}`)
+    }
+    else{
+      alert(`${data.message}`);
+    }
+    // console.log(data);
+    // alert(`Reported comment ID: ${commentId}`);
   };
 
   // 🔥 Simple skeleton loader UI
@@ -517,7 +580,10 @@ const HomePage = () => {
               <h3 className="comment-title">Comments</h3>
               <button
                 className="close-btn"
-                onClick={() => {setShowComments(false); setShowEmoji(false);}}
+                onClick={() => {
+                  setShowComments(false);
+                  setShowEmoji(false);
+                }}
               >
                 ✕
               </button>
@@ -601,8 +667,20 @@ const HomePage = () => {
 
                               {/* TEXT */}
                               <div>
-                                <p className="reply-text">{reply.text}</p>
-                                <span className="reply-author">
+                                <p
+                                  className="reply-text"
+                                  style={{ color: 'black', fontSize: '12px' }}
+                                >
+                                  {reply.text}
+                                </p>
+                                <span
+                                  className="reply-author"
+                                  style={{
+                                    color: 'black',
+                                    fontSize: '10px',
+                                    fontWeight: 'bold',
+                                  }}
+                                >
                                   @{reply.username}
                                 </span>
                               </div>
