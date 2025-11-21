@@ -5,17 +5,28 @@ export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  
+  const fetchAllNotification = async () => {
+    const res = await fetch(
+      `${import.meta.env.VITE_SERVER_URL}/GetAllNotifications`,
+      {
+        method: "GET",
+        credentials: "include"
+      },
+    );
+    const data = await res.json();
+    console.log(data);
+    if (data.success){
+      setNotifications(data.notifications);
+      setLoading(false);
+    }
+    else{
+      console.log("error fetching notifications")
+    }
+  }
+  
   useEffect(() => {
-    fetch('/GetAllNotifications')
-      .then(res => res.json())
-      .then(data => {
-        setNotifications(data.allNotifications || []);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
+    fetchAllNotification();
   }, []);
 
   const followBack = async (username, index) => {

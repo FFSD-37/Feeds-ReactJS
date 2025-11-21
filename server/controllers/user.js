@@ -1211,7 +1211,7 @@ const followSomeone = async (req, res) => {
 
       await Notification.create({
         mainUser: targetUsername,
-        msgSerial: 2,
+        msgSerial: 4,
         userInvolved: followerUsername,
         coin: 0,
       });
@@ -1313,7 +1313,7 @@ const unfollowSomeone = async (req, res) => {
 
       await Notification.create({
         mainUser: targetUsername,
-        msgSerial: 8,
+        msgSerial: 12,
         userInvolved: unfollowerUsername,
         coin: 0,
       });
@@ -1975,14 +1975,9 @@ const handlegetallnotifications = async (req, res) => {
     }
 
     const username = data[0];
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 15;
-    const skip = (page - 1) * limit;
 
     const notifications = await Notification.find({ mainUser: username })
       .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
       .lean();
 
     const total = await Notification.countDocuments({ mainUser: username });
@@ -1990,13 +1985,7 @@ const handlegetallnotifications = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Notifications fetched successfully.",
-      notifications,
-      pagination: {
-        total,
-        page,
-        totalPages: Math.ceil(total / limit),
-        hasMore: skip + notifications.length < total,
-      },
+      notifications
     });
   } catch (error) {
     console.error("❌ Error in handlegetallnotifications:", error);
@@ -2178,7 +2167,7 @@ const handlelikereel = async (req, res) => {
       if (post.author !== username) {
         await Notification.create({
           mainUser: post.author,
-          msgSerial: 2, // example serial for 'like reel'
+          msgSerial: 3, // example serial for 'like reel'
           userInvolved: username,
           coin: 1,
         });
@@ -2262,7 +2251,7 @@ const handlereportpost = async (req, res) => {
     if (post.author !== reporter) {
       await Notification.create({
         mainUser: post.author,
-        msgSerial: 3, // example serial for 'report received'
+        msgSerial: 13, // example serial for 'report received'
         userInvolved: reporter,
         coin: 0,
       });
