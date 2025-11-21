@@ -223,6 +223,7 @@ const HomePage = () => {
   const [replyBoxVisible, setReplyBoxVisible] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [commentText, setCommentText] = useState('');
+  // const [commentNumbers, setCommentNumbers] = useState(0);
 
   const openReplyBox = commentId => {
     setReplyBoxVisible(commentId);
@@ -245,7 +246,18 @@ const HomePage = () => {
     });
     const data = await res.json();
     if (data.success) {
-      alert(data.message);
+      setComments(prev => [
+        ...prev,
+        [
+          {
+            _id: data.comment._id,
+            text: commentText,
+            username: userData.username,
+            avatarUrl: userData.profileUrl   // if needed
+          },
+          []   // empty replies
+        ]
+      ]);
     } else {
       alert(data.message);
     }
@@ -343,7 +355,6 @@ const HomePage = () => {
                       <MessageCircle
                         style={{ width: '16px', height: '16px' }}
                       />
-                      <span>{post.comments.length}</span>
                     </div>
                     <div
                       className="post-stat"
@@ -506,7 +517,7 @@ const HomePage = () => {
               <h3 className="comment-title">Comments</h3>
               <button
                 className="close-btn"
-                onClick={() => setShowComments(false)}
+                onClick={() => {setShowComments(false); setShowEmoji(false);}}
               >
                 ✕
               </button>
