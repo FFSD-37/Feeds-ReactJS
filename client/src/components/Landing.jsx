@@ -7,11 +7,12 @@ import {
   Share2,
   Bookmark,
 } from 'lucide-react';
+import EmojiPicker from 'emoji-picker-react';
 import '../styles/Landing.css';
 import { useUserData } from '../providers/userData.jsx';
 import { useNavigate } from 'react-router-dom';
 
-const WinkuSocial = () => {
+const HomePage = () => {
   const { userData } = useUserData();
   const [allPosts, setAllPosts] = useState([]);
   const [friends, setFriends] = useState([]);
@@ -21,6 +22,10 @@ const WinkuSocial = () => {
   const [loadingFriends, setLoadingFriends] = useState(true);
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState(null);
+  const [showComments, setShowComments] = useState(false);
+  const [activePostId, setActivePostId] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [showEmoji, setShowEmoji] = useState(false);
 
   const navigate = useNavigate();
 
@@ -102,37 +107,35 @@ const WinkuSocial = () => {
     // await fetch(`${import.meta.env.VITE_SERVER_URL}/post/save/${postId}`, { method: "POST", credentials: "include" });
   };
 
-  const selectReason = async (reason) => {
+  const selectReason = async reason => {
     setShowReportModal(false);
     try {
       const res = await fetch(
         `${import.meta.env.VITE_SERVER_URL}/report_post`,
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json"
+            'Content-Type': 'application/json',
           },
-          credentials: "include",
+          credentials: 'include',
           body: JSON.stringify({
             reason,
-            post_id: selectedPostId
+            post_id: selectedPostId,
           }),
-        }
+        },
       );
-  
+
       const data = await res.json();
-  
+
       if (data.success) {
         alert(`Post reported - id: ${data.reportId}`);
       } else {
-        alert(data.message || "Something went wrong");
+        alert(data.message || 'Something went wrong');
       }
-  
     } catch (err) {
-      console.log("Error reporting post:", err);
+      console.log('Error reporting post:', err);
     }
-  
-  };  
+  };
 
   const toggleLike = async postId => {
     setAllPosts(prev =>
@@ -196,6 +199,65 @@ const WinkuSocial = () => {
     }
     return 'just now';
   }
+
+  const openComments = async postId => {
+    setActivePostId(postId);
+    const res = await fetch(
+      `${import.meta.env.VITE_SERVER_URL}/home/userpost_comments`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ postID: postId }),
+      },
+    );
+
+    let data = await res.json();
+    if (data.success) {
+      setComments(data.comment_array);
+    }
+    setShowComments(true);
+    console.log(comments);
+  };
+
+  const [replyBoxVisible, setReplyBoxVisible] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [commentText, setCommentText] = useState('');
+
+  const openReplyBox = commentId => {
+    setReplyBoxVisible(commentId);
+  };
+
+  const sendReply = async commentId => {
+    console.log('Replying to', commentId, ':', replyText);
+
+    setReplyBoxVisible(null);
+    setReplyText('');
+  };
+
+  const sendComment = async () => {
+    console.log(activePostId);
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/comment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ postID: activePostId, commentText: commentText }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert(data.message);
+    } else {
+      alert(data.message);
+    }
+    // console.log('Posting new comment:', commentText);
+
+    setCommentText('');
+  };
+
+  const reportComment = async commentId => {
+    // 🔥 Your API fetch
+    alert(`Reported comment ID: ${commentId}`);
+  };
 
   // 🔥 Simple skeleton loader UI
   const PostSkeleton = () => (
@@ -273,7 +335,11 @@ const WinkuSocial = () => {
                   )}
 
                   <div className="post-stats">
-                    <div className="post-stat" style={{ cursor: 'pointer' }}>
+                    <div
+                      className="post-stat"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => openComments(post.id)}
+                    >
                       <MessageCircle
                         style={{ width: '16px', height: '16px' }}
                       />
@@ -432,8 +498,204 @@ const WinkuSocial = () => {
           </div>
         </div>
       )}
+      {showComments && (
+        <div className="comment-overlay">
+          <div className="comment-box">
+            {/* HEADER */}
+            <div className="comment-header">
+              <h3 className="comment-title">Comments</h3>
+              <button
+                className="close-btn"
+                onClick={() => setShowComments(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* LIST */}
+            <div className="comment-list">
+              {comments.length === 0 && (
+                <p className="no-comments">No comments yet</p>
+              )}
+
+              {comments.map(commentPair => {
+                const main = commentPair[0];
+                const replies = commentPair[1] || [];
+
+                return (
+                  <div key={main._id} className="comment-item">
+                    {/* MAIN COMMENT */}
+                    <div
+                      className="comment-body"
+                      style={{ display: 'flex', gap: '10px' }}
+                    >
+                      {/* PFP */}
+                      <img
+                        src={main.avatarUrl}
+                        alt={main.username}
+                        className="comment-pfp"
+                        style={{
+                          width: '38px',
+                          height: '38px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                        }}
+                      />
+
+                      {/* TEXT */}
+                      <div>
+                        <p className="comment-text">{main.text}</p>
+                        <span className="comment-author">@{main.username}</span>
+                      </div>
+                    </div>
+
+                    {/* ACTIONS */}
+                    <div
+                      className="comment-actions"
+                      style={{
+                        display: 'flex',
+                        gap: '12px',
+                        marginLeft: '48px',
+                      }}
+                    >
+                      <button onClick={() => reportComment(main._id)}>
+                        Report
+                      </button>
+                      <button onClick={() => openReplyBox(main._id)}>
+                        Reply
+                      </button>
+                    </div>
+
+                    {/* REPLIES */}
+                    {replies.length > 0 && (
+                      <div
+                        className="reply-list"
+                        style={{ marginLeft: '55px' }}
+                      >
+                        {replies.map((reply, idx) => (
+                          <div key={reply._id || idx} className="reply-item">
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                              {/* PFP */}
+                              <img
+                                src={reply.avatarUrl}
+                                alt={reply.username}
+                                className="reply-pfp"
+                                style={{
+                                  width: '32px',
+                                  height: '32px',
+                                  borderRadius: '50%',
+                                  objectFit: 'cover',
+                                }}
+                              />
+
+                              {/* TEXT */}
+                              <div>
+                                <p className="reply-text">{reply.text}</p>
+                                <span className="reply-author">
+                                  @{reply.username}
+                                </span>
+                              </div>
+                            </div>
+
+                            <button
+                              className="reply-report-btn"
+                              onClick={() => reportComment(reply._id)}
+                              style={{ marginLeft: '42px' }}
+                            >
+                              Report
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* REPLY BOX */}
+                    {replyBoxVisible === main._id && (
+                      <div
+                        className="reply-input-wrapper"
+                        style={{ marginLeft: '48px' }}
+                      >
+                        <input
+                          className="reply-input"
+                          type="text"
+                          placeholder="Write a reply..."
+                          value={replyText}
+                          onChange={e => setReplyText(e.target.value)}
+                        />
+
+                        {/* SEND */}
+                        <button
+                          className="reply-send-btn"
+                          onClick={() => sendReply(main._id)}
+                        >
+                          Send
+                        </button>
+
+                        {/* CANCEL - NEW BUTTON */}
+                        <button
+                          className="reply-cancel-btn"
+                          style={{
+                            marginLeft: '8px',
+                            background: 'transparent',
+                            border: '1px solid #666',
+                            color: '#ccc',
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() => {
+                            setReplyBoxVisible(null);
+                            setReplyText('');
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* NEW COMMENT INPUT */}
+            <div className="new-comment-area">
+              {showEmoji && (
+                <div className="emoji-picker-popup">
+                  <EmojiPicker
+                    onEmojiClick={emoji => {
+                      setCommentText(prev => prev + emoji.emoji);
+                      setShowEmoji(false);
+                    }}
+                    theme="dark"
+                  />
+                </div>
+              )}
+
+              <div className="comment-input-wrapper">
+                <button
+                  className="emoji-btn"
+                  onClick={() => setShowEmoji(!showEmoji)}
+                >
+                  😃
+                </button>
+
+                <input
+                  className="comment-input"
+                  placeholder="Add a comment..."
+                  value={commentText}
+                  onChange={e => setCommentText(e.target.value)}
+                />
+
+                <button className="post-btn" onClick={sendComment}>
+                  Post
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default WinkuSocial;
+export default HomePage;

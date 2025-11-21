@@ -15,6 +15,7 @@ import Notification from '../models/notification_schema.js';
 import Channel from "../models/channelSchema.js"
 import channelPost from '../models/channelPost.js';
 import Story from "../models/storiesSchema.js";
+import Comment from '../models/comment_schema.js';
 // import Adpost from "../models/ad_schema.js";
 
 async function storeOtp(email, otp) {

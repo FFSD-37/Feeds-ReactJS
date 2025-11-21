@@ -31,7 +31,7 @@ export const UserDataProvider = ({ children }) => {
             delete data.email;
             delete data.username;
           }
-          console.log(data);
+          // console.log(data);
 
           setUserData(data);
           if (pathname === '/login' || pathname === '/signup')
