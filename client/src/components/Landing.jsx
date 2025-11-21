@@ -104,11 +104,10 @@ const HomePage = () => {
       },
     );
     const data = await res.json();
-    if (data.success){
-      console.log("saved");
-    }
-    else {
-      console.log("error");
+    if (data.success) {
+      console.log('saved');
+    } else {
+      console.log('error');
     }
     // 🔥 YOUR API CALL HERE
     // await fetch(`${import.meta.env.VITE_SERVER_URL}/post/save/${postId}`, { method: "POST", credentials: "include" });
@@ -312,7 +311,7 @@ const HomePage = () => {
     setCommentText('');
   };
 
-  const reportComment = async (commentId) => {
+  const reportComment = async commentId => {
     // 🔥 Your API fetch
     const res = await fetch(
       `${import.meta.env.VITE_SERVER_URL}/home/comment_report`,
@@ -320,14 +319,13 @@ const HomePage = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ commentId }), 
-      }
-    )
+        body: JSON.stringify({ commentId }),
+      },
+    );
     const data = await res.json();
-    if (data.success){
-      alert(`${data.message} with id: ${data.reportId}`)
-    }
-    else{
+    if (data.success) {
+      alert(`${data.message} with id: ${data.reportId}`);
+    } else {
       alert(`${data.message}`);
     }
     // console.log(data);
@@ -400,7 +398,6 @@ const HomePage = () => {
                     <video
                       src={post.url}
                       className="post-image"
-                      muted
                       onMouseEnter={e => e.target.play()}
                       onMouseLeave={e => {
                         e.target.pause();
@@ -490,7 +487,7 @@ const HomePage = () => {
         {/* FRIENDS SKELETON */}
         <div className="sidebar-section">
           <div className="card">
-            <h3 className="card-title">Friends</h3>
+            <h3 className="card-title">recent Friends</h3>
 
             {loadingFriends ? (
               <div className="friends-grid">
@@ -506,13 +503,14 @@ const HomePage = () => {
             ) : (
               <div className="friends-grid">
                 {friends.slice(0, 9).map((friend, index) => (
-                  <img
-                    key={index}
-                    src={friend.avatarUrl}
-                    alt={friend.username}
-                    className="friend-avatar"
-                    onClick={() => navigate(`/profile/${friend.username}`)}
-                  />
+                  <div key={index} className="friend-item" onClick={() => navigate(`/profile/${friend.username}`)}>
+                    <img
+                      src={friend.avatarUrl}
+                      alt={friend.username}
+                      className="friend-avatar"
+                    />
+                    <p className="friend-name">{friend.username}</p>
+                  </div>
                 ))}
               </div>
             )}
