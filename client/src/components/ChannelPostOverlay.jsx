@@ -259,28 +259,30 @@ export default function ChannelPostOverlay({ id: propId, onClose }) {
             )}
 
             <div className="channel-post-overlay-actions">
-              <button
-                onClick={handleLike}
-                className={liked ? 'liked' : 'unliked'}
-                title={liked ? 'Unlike' : 'Like'}
-              >
-                {liked ? '❤️' : '🤍'} {post.likes}
+              <button onClick={handleLike} className={liked ? 'liked' : ''}>
+                <img
+                  src={liked ? '/Images/liked.svg' : '/Images/unliked.svg'}
+                  className="overlay-action-icon"
+                />
+                <span>{post.likes}</span>
               </button>
 
-              <button onClick={() => setShowEmoji(!showEmoji)} title="Comment">
-                💬
+              <button onClick={() => setShowEmoji(!showEmoji)}>
+                <img
+                  src="/Images/comment.svg"
+                  className="overlay-action-icon"
+                />
               </button>
 
-              <button
-                onClick={handleSave}
-                className={saved ? 'saved' : 'unsaved'}
-                title={saved ? 'Unsave' : 'Save'}
-              >
-                {saved ? '💾' : '📁'}
+              <button onClick={handleSave}>
+                <img
+                  src={saved ? '/Images/saved.svg' : '/Images/unsaved.svg'}
+                  className="overlay-action-icon"
+                />
               </button>
 
-              <button onClick={handleShare} title="Share">
-                🔗
+              <button onClick={handleShare}>
+                <img src="/Images/share.svg" className="overlay-action-icon" />
               </button>
             </div>
 

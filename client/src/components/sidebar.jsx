@@ -34,7 +34,7 @@ function Sidebar() {
   };
 
   const { username, channelName, profileUrl, type, isPremium } = userData || {};
-  
+
   // Sidebar items
   const allItems = [
     { name: "Home", href: "/home", icon: "/Images/Home.svg" },
@@ -47,6 +47,12 @@ function Sidebar() {
     { name: "Game", href: "/games", icon: "/Images/Game.svg" },
     { name: "Premium", href: "/payment", icon: "/Images/Premium.svg" },
   ];
+
+  // Filter out Premium if user is already premium
+  const filteredNormalItems = allItems.filter(item => {
+    if (item.name === "Premium" && isPremium) return false;
+    return true;
+  });
 
   const channelItems = [
     { name: "Home", href: "/channelhome", icon: "/Images/Home.svg" },
@@ -63,7 +69,7 @@ function Sidebar() {
 
   // Select which items to show
   const filteredItems =
-    type === "Kids" ? kidsItems : type === "Channel" ? channelItems : allItems;
+    type === "Kids" ? kidsItems : type === "Channel" ? channelItems : filteredNormalItems;
 
   // Determine profile link
   const profileLink =
@@ -138,7 +144,6 @@ function Sidebar() {
             <a href="/delacc">Delete Account</a>
           </div>
         )}
-
       </div>
 
       {/* Logout Modal */}
