@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
-  MoreHorizontal,
+  AlertTriangle,
   File,
   MessageCircle,
   Heart,
   Share2,
+  Bookmark,
 } from 'lucide-react';
 import '../styles/Landing.css';
 import { useUserData } from '../providers/userData.jsx';
@@ -18,6 +19,8 @@ const WinkuSocial = () => {
 
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [loadingFriends, setLoadingFriends] = useState(true);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState(null);
 
   const navigate = useNavigate();
 
@@ -81,7 +84,57 @@ const WinkuSocial = () => {
 
   // console.log(allAds);
 
-  const toggleLike = async (postId) => {
+  const toggleSave = async postId => {
+    // Instant UI update
+    setAllPosts(prev =>
+      prev.map(p => (p.id === postId ? { ...p, saved: !p.saved } : p)),
+    );
+
+    const res = await fetch(
+      `${import.meta.env.VITE_SERVER_URL}/post/saved/${postId}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      },
+    );
+    // 🔥 YOUR API CALL HERE
+    // await fetch(`${import.meta.env.VITE_SERVER_URL}/post/save/${postId}`, { method: "POST", credentials: "include" });
+  };
+
+  const selectReason = async (reason) => {
+    setShowReportModal(false);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/report_post`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            reason,
+            post_id: selectedPostId
+          }),
+        }
+      );
+  
+      const data = await res.json();
+  
+      if (data.success) {
+        alert(`Post reported - id: ${data.reportId}`);
+      } else {
+        alert(data.message || "Something went wrong");
+      }
+  
+    } catch (err) {
+      console.log("Error reporting post:", err);
+    }
+  
+  };  
+
+  const toggleLike = async postId => {
     setAllPosts(prev =>
       prev.map(p => {
         if (p.id === postId) {
@@ -97,11 +150,34 @@ const WinkuSocial = () => {
 
     // 🔥 YOUR API CALL HERE
     // fetch(`/like/toggle/${postId}`, { method: "POST" })
-    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/post/liked/${postId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include'
-    });
+    const res = await fetch(
+      `${import.meta.env.VITE_SERVER_URL}/post/liked/${postId}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      },
+    );
+  };
+
+  const handleShare = async postId => {
+    const url = `http://localhost:5173/post/${postId}`;
+
+    // ✔ If Web Share API is supported
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Check this post!',
+          url,
+        });
+      } catch (err) {
+        console.log('Share cancelled', err);
+      }
+    } else {
+      // ✔ Fallback (copies URL to clipboard)
+      await navigator.clipboard.writeText(url);
+      alert('Link copied to clipboard!');
+    }
   };
 
   function timeAgo(date) {
@@ -152,17 +228,30 @@ const WinkuSocial = () => {
                       className="post-avatar"
                     />
                     <div className="post-author">
-                      <h3 className="post-author-name">{post.author}</h3>
+                      <h3
+                        className="post-author-name"
+                        onClick={() => navigate(`/profile/${post.author}`)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        {post.author}
+                      </h3>
                       <p className="post-timestamp">
                         {timeAgo(new Date(post.createdAt))}
                       </p>
                     </div>
-                    <button className="icon-button">
-                      <MoreHorizontal
+                    <button
+                      className="icon-button"
+                      onClick={() => {
+                        setSelectedPostId(post.id);
+                        setShowReportModal(true);
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <AlertTriangle
                         style={{
                           width: '20px',
                           height: '20px',
-                          color: '#6b7280',
+                          color: '#ef4444', // red
                         }}
                       />
                     </button>
@@ -184,7 +273,7 @@ const WinkuSocial = () => {
                   )}
 
                   <div className="post-stats">
-                    <div className="post-stat">
+                    <div className="post-stat" style={{ cursor: 'pointer' }}>
                       <MessageCircle
                         style={{ width: '16px', height: '16px' }}
                       />
@@ -206,7 +295,27 @@ const WinkuSocial = () => {
                       )}
                       <span>{post.likes}</span>
                     </div>
-                    <button className="icon-button post-stat-auto">
+                    <div
+                      className="post-stat"
+                      onClick={() => toggleSave(post.id)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {post.saved ? (
+                        <Bookmark
+                          fill="blue"
+                          color="blue"
+                          style={{ width: '16px', height: '16px' }}
+                        />
+                      ) : (
+                        <Bookmark style={{ width: '16px', height: '16px' }} />
+                      )}
+                    </div>
+
+                    <button
+                      className="icon-button post-stat-auto"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => handleShare(post.id)}
+                    >
                       <Share2 style={{ width: '16px', height: '16px' }} />
                     </button>
                   </div>
@@ -292,6 +401,37 @@ const WinkuSocial = () => {
           <div></div>
         )}
       </aside>
+      {showReportModal && (
+        <div className="report-modal-overlay">
+          <div className="report-modal">
+            <p className="modal-title">Why are you reporting this post?</p>
+
+            <ul className="report-options">
+              {[
+                "I just don't like it",
+                'Bullying or unwanted contact',
+                'Suicide, self-injury or eating disorders',
+                'Violence, hate or exploitation',
+                'Selling or promoting restricted items',
+                'Nudity or sexual activity',
+                'Scam, fraud or spam',
+                'False information',
+              ].map((reason, i) => (
+                <li key={i} onClick={() => selectReason(reason)}>
+                  {reason} <span>&#8250;</span>
+                </li>
+              ))}
+            </ul>
+
+            <button
+              className="close-modal-btn"
+              onClick={() => setShowReportModal(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
