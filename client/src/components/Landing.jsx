@@ -14,6 +14,7 @@ const WinkuSocial = () => {
   const { userData } = useUserData();
   const [allPosts, setAllPosts] = useState([]);
   const [friends, setFriends] = useState([]);
+  const [allAds, setAds] = useState([]);
 
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [loadingFriends, setLoadingFriends] = useState(true);
@@ -40,7 +41,7 @@ const WinkuSocial = () => {
     getAllPosts();
   }, []);
 
-  console.log(allPosts);
+  // console.log(allPosts);
 
   const getFriends = async () => {
     const res = await fetch(
@@ -61,6 +62,47 @@ const WinkuSocial = () => {
   useEffect(() => {
     getFriends();
   }, []);
+
+  const getAds = async () => {
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/home/ads`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    const data = await res.json();
+    // console.log(data)
+    if (data.success) {
+      setAds(data.allAds);
+    }
+  };
+
+  useEffect(() => {
+    getAds();
+  }, []);
+
+  // console.log(allAds);
+
+  const toggleLike = async (postId) => {
+    setAllPosts(prev =>
+      prev.map(p => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            liked: !p.liked,
+            likes: p.liked ? p.likes - 1 : p.likes + 1,
+          };
+        }
+        return p;
+      }),
+    );
+
+    // 🔥 YOUR API CALL HERE
+    // fetch(`/like/toggle/${postId}`, { method: "POST" })
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/post/liked/${postId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+  };
 
   function timeAgo(date) {
     const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -148,8 +190,20 @@ const WinkuSocial = () => {
                       />
                       <span>{post.comments.length}</span>
                     </div>
-                    <div className="post-stat">
-                      <Heart style={{ width: '16px', height: '16px' }} />
+                    <div
+                      className="post-stat"
+                      onClick={() => toggleLike(post.id)} // <— click toggles
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {post.liked ? (
+                        <Heart
+                          fill="red"
+                          color="red"
+                          style={{ width: '16px', height: '16px' }}
+                        />
+                      ) : (
+                        <Heart style={{ width: '16px', height: '16px' }} />
+                      )}
                       <span>{post.likes}</span>
                     </div>
                     <button className="icon-button post-stat-auto">
@@ -169,13 +223,12 @@ const WinkuSocial = () => {
 
       {/* RIGHT SIDEBAR */}
       <aside className="right-sidebar">
+        <br />
         <div className="sidebar-section">
           {/* Create Page Card */}
           <div className="create-page-card">
             <div className="create-page-icon">
-              <File
-                style={{ width: '24px', height: '24px', color: 'white' }}
-              />
+              <File style={{ width: '24px', height: '24px', color: 'white' }} />
             </div>
             <h3 className="create-page-title">
               CREATE YOUR OWN FAVOURITE CHANNEL.
@@ -183,6 +236,7 @@ const WinkuSocial = () => {
             <button className="create-page-button">Start Now!</button>
           </div>
         </div>
+        <br />
 
         {/* FRIENDS SKELETON */}
         <div className="sidebar-section">
@@ -215,6 +269,28 @@ const WinkuSocial = () => {
             )}
           </div>
         </div>
+        <br />
+        {!userData.isPremium ? (
+          <div className="sidebar-section">
+            <div className="card2">
+              {allAds.map((ad, index) => (
+                <div key={index} className="single_ad">
+                  <a href={ad.url}>
+                    <video
+                      src={ad.ad_url}
+                      className="post-image2"
+                      autoPlay
+                      muted
+                      loop
+                    ></video>
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div></div>
+        )}
       </aside>
     </div>
   );

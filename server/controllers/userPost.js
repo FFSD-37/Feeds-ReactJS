@@ -227,12 +227,18 @@ const suggestedPost2 = async (req, res) => {
         const user=await User.findOne({username:userDetails.data[0]}).lean();
         posts = await Promise.all(
             posts.map(async (post) => {
-              if (user.likedPostsIds?.includes(post._id.toString())) {
+              if (user.likedPostsIds?.includes(post.id.toString())) {
                 post.liked = true;
               }
+              else{
+                post.liked = false;
+              }
       
-              if (user.savedPostsIds?.includes(post._id.toString())) {
+              if (user.savedPostsIds?.includes(post.id.toString())) {
                 post.saved = true;
+              }
+              else {
+                post.saved = false;
               }
       
               post.authorAvatar = await getAuthorAvatar(post.author);

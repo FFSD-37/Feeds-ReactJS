@@ -1,4 +1,5 @@
 import User from "../../models/users_schema.js";
+import Adpost from "../../models/ad_schema.js"
 
 const getFriends = async (req, res) => {
     const { data } = req.userDetails;
@@ -20,4 +21,9 @@ const getFriends = async (req, res) => {
     return res.status(200).json({ success: true, friends });
 };
 
-export { getFriends };
+const handlegetads = async (req, res) => {
+    const ads = await Adpost.find({}).lean();
+    return res.json({ success:true, allAds: ads });
+  };
+
+export { getFriends, handlegetads };

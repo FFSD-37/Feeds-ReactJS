@@ -66,6 +66,19 @@
   padding: 16px;
 }
 
+.card2{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px;
+  width: 100%;
+}
+
+.single_ad{
+  border: 1px solid black;
+  border-radius: 10px;
+  background-color: rgb(223, 219, 219);
+}
+
 .card-title {
   font-weight: 600;
   color: #1f2937;
@@ -256,6 +269,12 @@
   max-height: 600px;
   border-radius: 8px;
   margin-bottom: 16px;
+}
+
+.post-image2{
+  width: 100%;
+  max-height: 100px;
+  border-radius: 8px;
 }
 
 .post-stats {

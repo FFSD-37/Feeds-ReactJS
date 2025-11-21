@@ -2283,7 +2283,7 @@ const handlereportpost = async (req, res) => {
 
 const handlegetads = async (req, res) => {
   const ads = await Adpost.find({}).lean();
-  return res.json({ allAds: ads });
+  return res.json({ success:true, allAds: ads });
 };
 
 const handlelikecomment = async (req, res) => {
