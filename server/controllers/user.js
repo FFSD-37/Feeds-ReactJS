@@ -533,7 +533,7 @@ const handleContact = async (req, res) => {
     const folderPath = path.resolve(`responses/${subject}`);
     const filePath = path.join(folderPath, `${email.replace(/[@.]/g, "_")}.json`);
     fs.mkdirSync(folderPath, { recursive: true });
-    fs.writeFile(filePath, JSON.stringify({ name, email, subject, message }, null, 2), () => {});
+    fs.writeFile(filePath, JSON.stringify({ name, email, subject, message }, null, 2), () => { });
 
     return res.status(200).json({
       success: true,
@@ -2284,7 +2284,7 @@ const handlereportpost = async (req, res) => {
 
 const handlegetads = async (req, res) => {
   const ads = await Adpost.find({}).lean();
-  return res.json({ success:true, allAds: ads });
+  return res.json({ success: true, allAds: ads });
 };
 
 const handlelikecomment = async (req, res) => {
@@ -2538,14 +2538,12 @@ const handleGetEditChannel = async (req, res) => {
 const updateChannelProfile = async (req, res) => {
   try {
     const { data } = req.userDetails; // [channelName, adminName, channelLogo, "Channel", true]
-    const { logo, logoUrl, channelDescription, channelCategory } = req.body;
+    const { logo, logoUrl, channelDescription } = req.body;
 
     const updatedFields = {
       channelDescription,
-      channelCategory: Array.isArray(channelCategory)
-        ? channelCategory
-        : JSON.parse(channelCategory || "[]"),
     };
+
 
     if (logo && logo !== "") {
       updatedFields.channelLogo = logoUrl;
