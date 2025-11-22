@@ -42,7 +42,7 @@ const handleGetConnect = async (req, res) => {
         type: "Channel",
         name: c.channelName,
         logo: c.channelLogo,
-        category: c.channelCategory,
+        category: Array.isArray(c.channelCategory) ? c.channelCategory[0] : c.channelCategory,
         members: Array.isArray(c.channelMembers) ? c.channelMembers.length : 0,
         isFollowing: followedChannelNames.includes(c.channelName),
       }));
@@ -59,7 +59,7 @@ const handleGetConnect = async (req, res) => {
         type: "Channel",
         name: c.channelName,
         logo: c.channelLogo,
-        category: c.channelCategory,
+        category: Array.isArray(c.channelCategory) ? c.channelCategory[0] : c.channelCategory,
         members: (c.channelMembers || []).length,
         isFollowing: followedChannelNames.includes(c.channelName),
       }));
@@ -78,7 +78,7 @@ const handleGetConnect = async (req, res) => {
           type: "Channel",
           name: c.channelName,
           logo: c.channelLogo,
-          category: c.channelCategory,
+          category: Array.isArray(c.channelCategory) ? c.channelCategory[0] : c.channelCategory,
           members: (c.channelMembers || []).length,
           isFollowing: true,
         }));
@@ -148,7 +148,9 @@ const getSearch = async (req, res) => {
     // 🔹 CHANNEL SEARCH
     if (type === "channel") {
       const filter = { channelName: regex };
-      if (category && category !== "All") filter.channelCategory = category;
+      if (category && category !== "All") {
+        filter.channelCategory = category; 
+      }
 
       const channels = await Channel.find(filter).limit(50).lean();
       const followedChannelNames = channelFollowings.map((c) => c.channelName);
@@ -159,7 +161,7 @@ const getSearch = async (req, res) => {
           type: "Channel",
           name: c.channelName,
           logo: c.channelLogo,
-          category: c.channelCategory,
+          category: Array.isArray(c.channelCategory) ? c.channelCategory[0] : c.channelCategory,
           members: Array.isArray(c.channelMembers) ? c.channelMembers.length : 0,
           isFollowing: followedChannelNames.includes(c.channelName),
         })),
@@ -197,7 +199,6 @@ const getSearch = async (req, res) => {
       requested: requestedUsernames.includes(u.username),
     }));
 
-    console.log("✅ Search completed successfully, items:", users.length);
     return res.status(200).json({ success: true, items: users });
   } catch (err) {
     console.error("❌ Error in getSearch:", err);
@@ -218,37 +219,98 @@ const followEntity = async (req, res) => {
     const [username] = data;
     const { target, targetType } = req.body;
 
+    // FOLLOWING A CHANNEL
     if (targetType === "Channel") {
       const channel = await Channel.findOne({ channelName: target });
+
       if (!channel)
         return res.status(404).json({ success: false, message: "Channel not found" });
 
       await Promise.all([
-        User.updateOne({ username }, { $addToSet: { channelFollowings: { channelName: target } } }),
-        Channel.updateOne({ channelName: target }, { $addToSet: { channelMembers: { username } } }),
+        User.updateOne(
+          { username },
+          { $addToSet: { channelFollowings: { channelName: target } } }
+        ),
+        Channel.updateOne(
+          { channelName: target },
+          { $addToSet: { channelMembers: { username } } }
+        ),
       ]);
 
-      return res.json({ success: true, status: "following", message: `Following ${target}` });
+      await ActivityLog.create({
+        username,
+        id: `#${Date.now()}`,
+        message: `You started following #${target}!!`,
+      });
+
+      await Notification.create({
+        mainUser: target,
+        msgSerial: 1,
+        userInvolved: username,
+        coin: 0,
+      });
+
+      return res.json({ success: true, status: "following" });
     }
 
+    // FOLLOWING A NORMAL USER
     const me = await User.findOne({ username });
     const other = await User.findOne({ username: target });
 
-    if (!other) return res.status(404).json({ success: false, message: "User not found" });
+    if (!other)
+      return res.status(404).json({ success: false, message: "User not found" });
 
+    // PRIVATE USER → SEND REQUEST
     if (other.visibility === "Private") {
-      await User.updateOne({ username }, { $addToSet: { requested: { username: target } } });
-      return res.json({ success: true, status: "requested", message: "Follow request sent" });
+      // REQUEST SHOULD GO TO OTHER USER
+      await User.updateOne(
+        { username: target },
+        { $addToSet: { requested: { username } } }
+      );
+
+      await Notification.create({
+        mainUser: target,
+        msgSerial: 4, 
+        userInvolved: username,
+        coin: 0,
+      });
+
+      await ActivityLog.create({
+        username,
+        id: `#${Date.now()}`,
+        message: `You requested to follow #${target}!!`,
+      });
+
+      return res.json({ success: true, status: "requested" });
     }
 
+    // PUBLIC USER → FOLLOW DIRECTLY
     await Promise.all([
-      User.updateOne({ username }, { $addToSet: { followings: { username: target } } }),
-      User.updateOne({ username: target }, { $addToSet: { followers: { username } } }),
+      User.updateOne(
+        { username },
+        { $addToSet: { followings: { username: target } } }
+      ),
+      User.updateOne(
+        { username: target },
+        { $addToSet: { followers: { username } } }
+      ),
     ]);
 
-    return res.json({ success: true, status: "following", message: `Now following @${target}` });
+    await Notification.create({
+      mainUser: target,
+      msgSerial: 1,
+      userInvolved: username,
+      coin: 0,
+    });
+
+    await ActivityLog.create({
+      username,
+      id: `#${Date.now()}`,
+      message: `You started following #${target}!!`,
+    });
+
+    return res.json({ success: true, status: "following" });
   } catch (err) {
-    console.error("❌ followEntity error:", err);
     return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
@@ -259,33 +321,139 @@ const followEntity = async (req, res) => {
 const unfollowEntity = async (req, res) => {
   try {
     const { data } = req.userDetails;
-    const [username] = data;
+    const [username] = data;        // current user (who is unfollowing)
     const { target, targetType } = req.body;
 
+    // ======================================================
+    //  CASE 1 — UNFOLLOW A CHANNEL
+    // ======================================================
     if (targetType === "Channel") {
+      const channel = await Channel.findOne({ channelName: target });
+      if (!channel) {
+        return res.status(404).json({
+          success: false,
+          message: "Channel not found",
+        });
+      }
+
+      // Remove follow
       await Promise.all([
-        User.updateOne({ username }, { $pull: { channelFollowings: { channelName: target } } }),
-        Channel.updateOne({ channelName: target }, { $pull: { channelMembers: { username } } }),
+        User.updateOne(
+          { username },
+          { $pull: { channelFollowings: { channelName: target } } }
+        ),
+        Channel.updateOne(
+          { channelName: target },
+          { $pull: { channelMembers: { username } } }
+        ),
       ]);
 
-      return res.json({ success: true, status: "unfollowed", message: `Unfollowed ${target}` });
+      // Notification to channel admin
+      await Notification.create({
+        mainUser: target,
+        msgSerial: 7, // unfollow
+        userInvolved: username,
+        coin: 0,
+      });
+
+      // Activity log
+      await ActivityLog.create({
+        username,
+        id: `#${Date.now()}`,
+        message: `You have unfollowed #${target}!!`,
+      });
+
+      return res.json({
+        success: true,
+        status: "unfollowed",
+        message: `Unfollowed ${target}`,
+      });
     }
 
-    const me = await User.findOne({ username });
-    if (me.requested.some((r) => r.username === target)) {
-      await User.updateOne({ username }, { $pull: { requested: { username: target } } });
-      return res.json({ success: true, status: "request_canceled", message: "Request canceled" });
+    // ======================================================
+    //  CASE 2 — CANCEL FOLLOW REQUEST
+    // ======================================================
+    const targetUser = await User.findOne({ username: target });
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
 
+    // detect request stored inside targetUser.requested
+    const isRequested = targetUser.requested.some((r) =>
+      typeof r === "string" ? r === username : r.username === username
+    );
+
+    if (isRequested) {
+      // Remove the request from the target user's list
+      await User.updateOne(
+        { username: target },
+        { $pull: { requested: { username } } }
+      );
+
+      // In case old data structure stored raw strings, remove them too
+      await User.updateOne(
+        { username: target },
+        { $pull: { requested: username } }
+      );
+
+      // Remove old request notification
+      await Notification.deleteMany({
+        mainUser: target,
+        userInvolved: username,
+        msgSerial: 4, // follow request
+      });
+
+      return res.json({
+        success: true,
+        status: "request_canceled",
+        message: "Follow request canceled",
+      });
+    }
+
+    // ======================================================
+    //  CASE 3 — NORMAL UNFOLLOW (user → user)
+    // ======================================================
     await Promise.all([
-      User.updateOne({ username }, { $pull: { followings: { username: target } } }),
-      User.updateOne({ username: target }, { $pull: { followers: { username } } }),
+      User.updateOne(
+        { username },
+        { $pull: { followings: { username: target } } }
+      ),
+      User.updateOne(
+        { username: target },
+        { $pull: { followers: { username } } }
+      ),
     ]);
 
-    return res.json({ success: true, status: "unfollowed", message: `Unfollowed @${target}` });
+    // Send notification to unfollowed user
+    await Notification.create({
+      mainUser: target,
+      msgSerial: 7,
+      userInvolved: username,
+      coin: 0,
+    });
+
+    // Log activity
+    await ActivityLog.create({
+      username,
+      id: `#${Date.now()}`,
+      message: `You have unfollowed #${target}!!`,
+    });
+
+    return res.json({
+      success: true,
+      status: "unfollowed",
+      message: `Unfollowed @${target}`,
+    });
+
   } catch (err) {
     console.error("❌ unfollowEntity error:", err);
-    return res.status(500).json({ success: false, message: "Internal Server Error" });
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
   }
 };
 

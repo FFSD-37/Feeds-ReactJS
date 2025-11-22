@@ -1,7 +1,14 @@
+/* FULLY FIXED CONNECT.JSX */
+/* — Requested Button Fixed
+   — Cancel Request Works
+   — Category Filter Works When Search Empty
+   — Empty src Warning Fixed */
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserData } from './../providers/userData.jsx';
 import './../styles/connect.css';
+
 import {
   FaGlobe,
   FaBook,
@@ -51,7 +58,7 @@ const Connect = () => {
 
   const categories = Object.keys(categoryIcons);
 
-  // 🔹 Initialize mode after userData is ready
+  // INITIALIZE MODE
   useEffect(() => {
     if (userData && userData.type) {
       setMode(userData.type === 'Normal' ? 'users' : 'channels');
@@ -59,69 +66,69 @@ const Connect = () => {
     }
   }, [userData]);
 
-  // 🔹 Fetch connections or followed channels based on mode/type
-  useEffect(() => {
-    if (!initialized || !mode) return;
-
-    const fetchConnect = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(
-          `${import.meta.env.VITE_SERVER_URL}/connect?mode=${mode}`,
-          {
-            credentials: 'include',
-          },
-        );
-        const data = await res.json();
-        if (!data.success) throw new Error(data.message);
-        setItems(data.items || []);
-      } catch (err) {
-        console.error('❌ Fetch connect failed:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchConnect();
-  }, [mode, initialized, userData?.type]);
-
-  // 🔹 Search & Filter
-  useEffect(() => {
-    if (!initialized || !mode) return;
-
-    const delay = setTimeout(async () => {
-      if (searchTerm.trim() === '') return;
-
-      try {
-        const params = new URLSearchParams({
-          query: searchTerm,
-          type: mode === 'channels' ? 'channel' : 'user',
-          category: filter,
-        });
-
-        const res = await fetch(
-          `${import.meta.env.VITE_SERVER_URL}/connect/search?${params.toString()}`,
-          { credentials: 'include' },
-        );
-        const data = await res.json();
-        setItems(data.items || []);
-      } catch (err) {
-        console.error('❌ Search failed:', err);
-      }
-    }, 400);
-
-    return () => clearTimeout(delay);
-  }, [searchTerm, filter, mode, initialized]);
-
-  // 🔹 Follow / Unfollow / Requested logic
-  const handleFollowToggle = async (
-    target,
-    targetType,
-    currentState,
-    visibility,
-  ) => {
+  // DEFAULT LOAD
+  const loadDefault = async () => {
     try {
-      const isFollowing = currentState === 'following' || currentState === true;
+      const res = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/connect?mode=${mode}`,
+        { credentials: 'include' },
+      );
+      const data = await res.json();
+      if (data.success) setItems(data.items);
+    } catch (e) {
+      console.error('❌ loadDefault error:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+useEffect(() => {
+  if (!initialized || !mode) return;
+
+  const run = async () => {
+    const queryValue = searchTerm.trim();
+
+    if (mode === "users" && queryValue === "") {
+      setLoading(true);
+      await loadDefault();
+      setLoading(false);
+      return;
+    }
+
+    const params = new URLSearchParams({
+      query: queryValue, 
+      type: mode === "channels" ? "channel" : "user",
+      category: filter,
+    });
+
+    try {
+      setLoading(true);
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/connect/search?${params.toString()}`,
+        { credentials: "include" }
+      );
+
+      const data = await res.json();
+      setItems(data.items || []);
+    } catch (err) {
+      console.error("❌ Search failed:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const delay = setTimeout(run, 300);
+  return () => clearTimeout(delay);
+
+}, [searchTerm, filter, mode, initialized]);
+
+  // FOLLOW LOGIC
+  const handleFollowToggle = async (target, targetType, state) => {
+    try {
+      const isFollowing =
+        state === 'following' || state === true || state === 'requested';
+
       const endpoint = isFollowing
         ? `${import.meta.env.VITE_SERVER_URL}/connect/unfollow`
         : `${import.meta.env.VITE_SERVER_URL}/connect/follow`;
@@ -134,33 +141,32 @@ const Connect = () => {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
 
       setItems(prev =>
         prev.map(i => {
           if (i.username === target || i.name === target) {
             const updated = { ...i };
-            switch (data.status) {
-              case 'requested':
-                updated.requested = true;
-                updated.isFollowing = false;
-                break;
-              case 'request_canceled':
-                updated.requested = false;
-                updated.isFollowing = false;
-                break;
-              case 'following':
-              case 'friend':
-                updated.isFollowing = true;
-                updated.requested = false;
-                break;
-              case 'unfollowed':
-                updated.isFollowing = false;
-                updated.requested = false;
-                break;
-              default:
-                break;
+
+            if (data.status === 'requested') {
+              updated.requested = true;
+              updated.isFollowing = false;
             }
+
+            if (data.status === 'request_canceled') {
+              updated.requested = false;
+              updated.isFollowing = false;
+            }
+
+            if (data.status === 'following') {
+              updated.isFollowing = true;
+              updated.requested = false;
+            }
+
+            if (data.status === 'unfollowed') {
+              updated.isFollowing = false;
+              updated.requested = false;
+            }
+
             return updated;
           }
           return i;
@@ -172,22 +178,14 @@ const Connect = () => {
   };
 
   const getButtonLabel = item =>
-    item.requested
-      ? 'Requested'
-      : item.isFollowing
-        ? 'Following'
-        : item.friend
-          ? 'Friend'
-          : 'Follow';
+    item.requested ? 'Requested' : item.isFollowing ? 'Following' : 'Follow';
 
   const getButtonClass = item =>
     item.requested
       ? 'connect-btn-requested'
       : item.isFollowing
         ? 'connect-btn-following'
-        : item.friend
-          ? 'connect-btn-friend'
-          : 'connect-btn-default';
+        : 'connect-btn-default';
 
   if (!initialized)
     return (
@@ -196,7 +194,6 @@ const Connect = () => {
       </div>
     );
 
-  // 🔹 Navigate to profile or channel
   const handleCardClick = item => {
     if (item.type === 'Channel') navigate(`/channel/${item.name}`);
     else navigate(`/profile/${item.username}`);
@@ -213,16 +210,22 @@ const Connect = () => {
                 : '📺 Discover Channels'
               : '📺 Channels You Follow'}
           </h1>
+
           {userData?.type === 'Normal' && (
             <div className="connect-toggle">
               <button
-                className={`connect-toggle-btn ${mode === 'users' ? 'active' : ''}`}
+                className={`connect-toggle-btn ${
+                  mode === 'users' ? 'active' : ''
+                }`}
                 onClick={() => setMode('users')}
               >
                 People
               </button>
+
               <button
-                className={`connect-toggle-btn ${mode === 'channels' ? 'active' : ''}`}
+                className={`connect-toggle-btn ${
+                  mode === 'channels' ? 'active' : ''
+                }`}
                 onClick={() => setMode('channels')}
               >
                 Channels
@@ -231,7 +234,7 @@ const Connect = () => {
           )}
         </div>
 
-        {/* SEARCH & FILTER */}
+        {/* SEARCH + FILTER */}
         <div className="connect-searchbar">
           <input
             type="text"
@@ -244,6 +247,7 @@ const Connect = () => {
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
+
           {mode === 'channels' && (
             <select
               className="connect-filter"
@@ -260,7 +264,9 @@ const Connect = () => {
         </div>
 
         {/* RESULTS */}
-        <div className={`connect-results ${loading ? '' : 'connect-fade show'}`}>
+        <div
+          className={`connect-results ${loading ? '' : 'connect-fade show'}`}
+        >
           {loading ? (
             <div className="connect-loading">Loading...</div>
           ) : items.length === 0 ? (
@@ -272,40 +278,43 @@ const Connect = () => {
                   key={i}
                   className="connect-item"
                   onClick={() => handleCardClick(item)}
-                  style={{ cursor: 'pointer' }}
                 >
                   <div className="connect-left">
                     <img
-                      src={item.avatarUrl || item.logo}
+                      src={item.avatarUrl || item.logo || null}
                       alt={item.username || item.name}
                       className="connect-avatar"
                     />
+
                     <div className="connect-info">
                       <div className="connect-name">
                         {item.display_name || item.name}
                         {item.category && (
                           <span className="connect-category-icon">
-                            {categoryIcons[item.category[0]]}
+                            {categoryIcons[item.category]}
                           </span>
                         )}
                       </div>
+
                       <div className="connect-username">
                         @{item.username || item.name}
                       </div>
+
                       <div className="connect-stats">
                         {item.type === 'Channel' ? (
                           <span>{item.members} Members</span>
                         ) : (
                           <>
-                            <span>{item.followers || 0} Followers</span>
-                            <span>{item.following || 0} Following</span>
+                            <span>{item.followers} Followers</span>
+                            <span>{item.following} Following</span>
                           </>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  {(userData?.type === 'Normal' || userData?.type === 'Kids') && (
+                  {(userData?.type === 'Normal' ||
+                    userData?.type === 'Kids') && (
                     <button
                       className={`connect-follow-btn ${getButtonClass(item)}`}
                       onClick={e => {
@@ -318,7 +327,6 @@ const Connect = () => {
                             : item.requested
                               ? 'requested'
                               : 'none',
-                          item.visibility,
                         );
                       }}
                     >
