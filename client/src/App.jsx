@@ -17,6 +17,9 @@ import EditChannel from './components/editChannel.jsx';
 import ChannelHome from './components/channelHome.jsx';
 import ChannelPostOverlay from './components/ChannelPostOverlay.jsx';
 import HomePage from './components/Landing.jsx';
+import CreatePost from './components/create_post.jsx';
+import ImageEditor from './components/create_post_2.jsx';
+import FinalizePost from './components/finalize_post.jsx';
 // import { Home } from 'lucide-react';
 
 const AppContent = () => {
@@ -39,8 +42,15 @@ const AppContent = () => {
         <Route path="/channelhome" element={<ChannelHome />} />
         <Route path="/channel/post/:id" element={<ChannelPostOverlay />} />
         <Route path="/home" element={<HomePage />} />
+        <Route path="/create_post" element={<CreatePost />} />
+        <Route path="/edit_post" element={<ImageEditor />} />
+        <Route path="/finalize_post" element={<FinalizePost />} />
       </Routes>
-      {userData?.username ? <Sidebar /> : userData?.channelName ? <Sidebar /> : null}
+      {userData?.username ? (
+        <Sidebar />
+      ) : userData?.channelName ? (
+        <Sidebar />
+      ) : null}
     </>
   );
 };
