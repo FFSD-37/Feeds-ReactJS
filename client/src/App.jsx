@@ -20,6 +20,10 @@ import HomePage from './components/Landing.jsx';
 import CreatePost from './components/create_post.jsx';
 import ImageEditor from './components/create_post_2.jsx';
 import FinalizePost from './components/finalize_post.jsx';
+import TandC from './components/TandC.jsx';
+import Help from  './components/Help.jsx';
+import Contact from './components/Contact.jsx';
+import Reels from './components/Reels.jsx';
 // import { Home } from 'lucide-react';
 
 const AppContent = () => {
@@ -45,6 +49,11 @@ const AppContent = () => {
         <Route path="/create_post" element={<CreatePost />} />
         <Route path="/edit_post" element={<ImageEditor />} />
         <Route path="/finalize_post" element={<FinalizePost />} />
+        <Route path="/help" element={<Help />} />
+        <Route path="/terms" element={<TandC />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/reels" element={<Reels />} />
+          
       </Routes>
       {userData?.username ? (
         <Sidebar />
