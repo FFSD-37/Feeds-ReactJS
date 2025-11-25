@@ -219,7 +219,7 @@ router.post("/postloginchannel", isAuthuser, handleloginchannel);
 
 router.get("/GetAllNotifications", isAuthuser, handlegetallnotifications);
 
-router.get("/profile:username", isAuthuser, handlegetUserPost);
+router.get("/profile/:username", isAuthuser, handlegetUserPost);
 
 router.post("/atin_job", handleloginsecond);
 
