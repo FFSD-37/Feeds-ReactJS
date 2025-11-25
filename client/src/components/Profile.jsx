@@ -3,7 +3,7 @@ import { User, Settings, Grid, Heart, Bookmark, Archive } from 'lucide-react';
 import { UserDataProvider, useUserData } from '../providers/userData.jsx';
 import { useParams } from 'react-router-dom';
 
-const ProfilePage2 = () => {
+const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('posts');
   const { userData } = useUserData();
   const ProfileUsername = useParams();
@@ -23,8 +23,8 @@ const ProfilePage2 = () => {
   };
 
   useEffect(() => {
-    if(username) fetchAll(username);
-  }, [username]);
+    if(ProfileUsername.username) fetchAll(ProfileUsername.username);
+  }, [ProfileUsername.username]);
 
   const posts = [
     {
@@ -460,4 +460,4 @@ styleSheet.textContent = `
 `;
 document.head.appendChild(styleSheet);
 
-export default ProfilePage2;
+export default ProfilePage;

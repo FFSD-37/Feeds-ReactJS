@@ -333,26 +333,33 @@ const HomePage = () => {
   };
 
   // 🔥 Simple skeleton loader UI
-  const PostSkeleton = () => (
-    <div className="post-card skeleton">
-      <div className="skeleton-header"></div>
-      <div className="skeleton-media"></div>
-      <div className="skeleton-text"></div>
-    </div>
-  );
+  // const PostSkeleton = () => (
+  //   <div className="post-card skeleton">
+  //     <div className="skeleton-header"></div>
+  //     <div className="skeleton-media"></div>
+  //     <div className="skeleton-text"></div>
+  //   </div>
+  // );
 
   return (
     <div className="main-layout">
+      {(loadingPosts || loadingFriends) && (
+        <div className="loading-overlay">
+          <div className="loader"></div>
+          <h1>Loading</h1>
+        </div>
+      )}
       <main className="main-content">
         <div className="content-section">
           {/* 🔥 If loading, show skeletons */}
-          {loadingPosts ? (
+          {/* {loadingPosts ? (
             <>
               <PostSkeleton />
               <PostSkeleton />
               <PostSkeleton />
             </>
-          ) : (
+          ) : ( */}
+          {!loadingPosts && (
             <div className="post-card">
               {allPosts.map((post, index) => (
                 <React.Fragment key={index}>

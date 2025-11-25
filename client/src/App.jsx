@@ -35,7 +35,7 @@ const AppContent = () => {
         <Route path="/signup" element={<Register />} />
         <Route path="/dailyUsage" element={<ActivityLog />} />
         <Route path="/stories" element={<Stories />} />
-        <Route path="/profile/VoyagerX21" element={<ProfilePage />} />
+        <Route path="/profile/:username" element={<ProfilePage />} />
         <Route path="/connect" element={<Connect />} />
         <Route path="/edit_profile" element={<EditProfile />} />
         <Route path="/edit_channel" element={<EditChannel />} />
