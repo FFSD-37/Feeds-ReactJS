@@ -11,13 +11,20 @@ import Stories from './components/stories.jsx';
 import ProfilePage from './components/Profile.jsx';
 import Connect from './components/connect.jsx';
 import EditProfile from './components/editProfile.jsx';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { UserDataProvider, useUserData } from './providers/userData.jsx';
+import EditChannel from './components/editChannel.jsx';
+import ChannelHome from './components/channelHome.jsx';
+import ChannelPostOverlay from './components/ChannelPostOverlay.jsx';
+import HomePage from './components/Landing.jsx';
+import CreatePost from './components/create_post.jsx';
+import ImageEditor from './components/create_post_2.jsx';
+import FinalizePost from './components/finalize_post.jsx';
 import TandC from './components/TandC.jsx';
 import Help from  './components/Help.jsx';
 import Contact from './components/Contact.jsx';
 import Reels from './components/Reels.jsx';
-
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { UserDataProvider, useUserData } from './providers/userData.jsx';
+// import { Home } from 'lucide-react';
 
 const AppContent = () => {
   const { userData } = useUserData();
@@ -35,12 +42,24 @@ const AppContent = () => {
         <Route path="/profile/VoyagerX21" element={<ProfilePage />} />
         <Route path="/connect" element={<Connect />} />
         <Route path="/edit_profile" element={<EditProfile />} />
+        <Route path="/edit_channel" element={<EditChannel />} />
+        <Route path="/channelhome" element={<ChannelHome />} />
+        <Route path="/channel/post/:id" element={<ChannelPostOverlay />} />
+        <Route path="/home" element={<HomePage />} />
+        <Route path="/create_post" element={<CreatePost />} />
+        <Route path="/edit_post" element={<ImageEditor />} />
+        <Route path="/finalize_post" element={<FinalizePost />} />
         <Route path="/help" element={<Help />} />
         <Route path="/terms" element={<TandC />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/reels" element={<Reels />} />
+          
       </Routes>
-      {userData?.username ? <Sidebar /> : userData?.channelName ? <Sidebar /> : null}
+      {userData?.username ? (
+        <Sidebar />
+      ) : userData?.channelName ? (
+        <Sidebar />
+      ) : null}
     </>
   );
 };

@@ -33,6 +33,14 @@ const postSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    isArchived: {
+        type: Boolean,
+        default: false
+    },
+    ispublic: {
+        type: Boolean,
+        default: true
+    },
     warnings: {
         type: Number,
         default: 0

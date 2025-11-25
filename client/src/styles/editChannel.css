@@ -1,0 +1,264 @@
+body{
+  width: 100%;
+}
+
+/* ---------- 🌐 GLOBAL CONTAINER ---------- */
+.edit_channel_container {
+  width: 40rem;
+  margin: 3rem auto;
+  padding: 2rem;
+  background: #1e1e1e;
+  color: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 0 2rem rgba(0, 0, 0, 0.35);
+  font-family: "Poppins", sans-serif;
+  transition: all 0.3s ease-in-out;
+}
+
+.edit_channel_heading {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 2rem;
+  color: #ffcc00;
+}
+
+/* ---------- 🖼️ LOGO SECTION ---------- */
+.edit_channel_logo-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.edit_channel_logo {
+  width: 8rem;
+  height: 8rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 0.2rem solid #ffcc00;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.edit_channel_logo:hover {
+  transform: scale(1.05);
+}
+
+.edit_channel_logo-btn {
+  margin-top: 1rem;
+  background-color: #ffcc00;
+  color: #1e1e1e;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  font-size: 1rem;
+}
+
+.edit_channel_logo-btn:hover {
+  background-color: #ffd633;
+}
+
+/* ---------- ✍️ FORM FIELDS ---------- */
+.edit_channel_form h4 {
+  margin-bottom: 0.4rem;
+  font-size: 1.1rem;
+  color: #ccc;
+}
+
+.edit_channel_field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #2c2c2c;
+  padding: 0.8rem 1.2rem;
+  border-radius: 0.6rem;
+  margin-bottom: 1.4rem;
+  transition: background 0.3s ease;
+}
+
+.edit_channel_field input,
+.edit_channel_field textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1.5;
+  resize: none;
+}
+
+.edit_channel_field a {
+  color: #ffcc00;
+  font-size: 0.9rem;
+  cursor: pointer;
+  margin-left: 1rem;
+  transition: color 0.2s ease;
+}
+
+.edit_channel_field a:hover {
+  color: #ffd633;
+}
+
+/* ---------- ⚖️ TERMS SECTION ---------- */
+.edit_channel_terms {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1.6rem 0;
+  text-align: center;
+  font-size: 0.95rem;
+  color: #ccc;
+}
+
+.edit_channel_terms-link {
+  color: #ffcc00;
+  cursor: pointer;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.edit_channel_terms-link:hover {
+  color: #ffd633;
+}
+
+/* ---------- 💾 SAVE BUTTON ---------- */
+.edit_channel_submit-btn {
+  width: 100%;
+  background-color: #ffcc00;
+  color: #1e1e1e;
+  border: none;
+  padding: 1rem 0;
+  border-radius: 0.8rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.edit_channel_submit-btn:hover {
+  background-color: #ffd633;
+}
+
+.edit_channel_submit-btn.saved {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.edit_channel_success-msg {
+  text-align: center;
+  margin-top: 1rem;
+  color: #28a745;
+  font-weight: 500;
+}
+
+/* ---------- 🧾 TERMS OVERLAY ---------- */
+.edit_channel_overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 15, 15, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.edit_channel_overlay-content {
+  background: #1e1e1e;
+  padding: 2rem;
+  border-radius: 1rem;
+  width: min(40rem, 90%);
+  max-height: 85vh;
+  overflow-y: auto;
+  color: #eee;
+  position: relative;
+  box-shadow: 0 0 2rem rgba(255, 204, 0, 0.15);
+  animation: fadeIn 0.3s ease;
+}
+
+.edit_channel_close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  color: #ffcc00;
+  font-size: 1.6rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.edit_channel_close-btn:hover {
+  color: #ffd633;
+}
+
+.edit_channel_overlay-text {
+  margin-top: 1rem;
+  line-height: 1.6;
+}
+
+.edit_channel_overlay-text h2 {
+  color: #ffcc00;
+  margin-top: 1rem;
+  font-size: 1.2rem;
+}
+
+/* ---------- 📱 RESPONSIVE DESIGN ---------- */
+
+/* Tablets */
+@media (max-width: 900px) {
+  .edit_channel_container {
+    width: 30rem;
+    padding: 1.6rem;
+  }
+
+  .edit_channel_logo {
+    width: 7rem;
+    height: 7rem;
+  }
+}
+
+/* Phones */
+@media (max-width: 600px) {
+  .edit_channel_container {
+    width: 25rem;
+    padding: 1.2rem;
+  }
+
+  .edit_channel_heading {
+    font-size: 1.6rem;
+  }
+
+  .edit_channel_field {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.8rem;
+  }
+
+  .edit_channel_field a {
+    margin-top: 0.4rem;
+  }
+
+  .edit_channel_submit-btn {
+    font-size: 1rem;
+    padding: 0.9rem;
+  }
+
+  .edit_channel_logo {
+    width: 6rem;
+    height: 6rem;
+  }
+}
+
+/* Smooth overlay animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-0.5rem); }
+  to { opacity: 1; transform: translateY(0); }
+}

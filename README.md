@@ -105,57 +105,50 @@ You can create **child components** freely under these parent components.
 
 ### 👤 Ayush
 - [✅] Sidebar  
-- [❌] Post Overlay  
-- [✅] Edit Profile  
+- [❌✅] Post Overlay  
+- [✅] Edit Profile/Channel  
 - [✅] Connect  
 - [✅] Channel Profile (Self/Other)
-- [❌] Channel Home(Landing Page)
-- [❌] Channel Connect
-- [❌] Kids Home(Landing Page)
+- [✅] Channel Home
 
 ---
 
 ### 👤 Gourav Khakse
 - [❌] Admin Portal  
-- [❌] Home (Landing Page) + Ads 
-- [✅❌] Profile (Self/Others) 
-- [✅] Notification  
+- [❌] Home (Normal User)
+- [❌] Profile (Self/Other) 
+- [❌] Notification  (Normal, Channel)
 - [✅] Games
-- [❌] Channel Notification  
-- [❌] Channel Stories
+- [❌] Kids Setting
 
 ---
 
 ### 👤 Arnav Ranjan
-- [✅] Payment / Premium  
-- [❌] Chat  
+- [❌] Payment / Premium  
+- [❌] Chat  (Normal, Channel)
 - [❌] Settings
 - [❌] Daily Usage  
-- [❌] Create Post / Reels / Stories 
-- [❌] Channel Create  
-- [❌] Channel Chat  
+- [❌] Create Post / Reels / Stories (Channel, Normal)
+- [❌] Error Page(Incorrect Route)
 
 ---
 
 ### 👤 Atin Chowdhury
-- [✅] Registration Page (All Types)  
+- [✅❌] Registration Page (All Types)  
 - [✅] Login Page (All Types)  
 - [✅] Activity Log  
 - [✅] Stories  
-- [❌] Delete Channel
-- [❌] Channel Settings
-- [❌] Kids Connect 
+- [❌] Delete (Normal, Kids, Channel)
+- [❌] Kids Home(Landing Page)
 
 ---
 
 ### 👤 Vakadani Kavyamrutha
 - [❌] Kids Profile (Self/Other)  
 - [❌] Help / Support  
-- [❌] Reels  
+- [❌] Reels  (Normal, Kids, Channel)
 - [❌] Terms & Conditions  
 - [❌] Contact Us
-- [❌] Edit Channel  
-- [❌] Kids Settings
 
 ---
 
