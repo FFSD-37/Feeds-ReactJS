@@ -1,7 +1,10 @@
-html, body, #root {
+@import 'tailwindcss';
+
+html,
+body,
+#root {
   height: 100%;
   overflow: auto;
-  background-color: white;
 }
 
 #root::-webkit-scrollbar {
