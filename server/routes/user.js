@@ -59,7 +59,10 @@ import {
   updateChannelProfile,
 } from "../controllers/user.js";
 import {
-  handlegetUserPost
+  handlegetUserPost,
+  handlegetBasicDetails,
+  handlegetsensitive,
+  handleisfriend
 } from "../controllers/Gourav/profile.js";
 import { 
   handlegetchannel,
@@ -270,5 +273,11 @@ router.post("/connect/follow", isAuthuser, followEntity);
 router.post("/connect/unfollow", isAuthuser, unfollowEntity);
 
 router.use("/home", homeRouter);
+
+router.get("/profile/getbasic/:username", isAuthuser, handlegetBasicDetails);
+
+router.get("/profile/sensitive/:username", isAuthuser, handlegetsensitive);
+
+router.get("/isfriend/:username", isAuthuser, handleisfriend);
 
 export default router;

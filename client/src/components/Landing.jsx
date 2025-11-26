@@ -345,8 +345,10 @@ const HomePage = () => {
     <div className="main-layout">
       {(loadingPosts || loadingFriends) && (
         <div className="loading-overlay">
-          <div className="loader"></div>
-          <h1>Loading</h1>
+          <div>
+            <div className="loader"></div>
+            <h1>Loading</h1>
+          </div>
         </div>
       )}
       <main className="main-content">
