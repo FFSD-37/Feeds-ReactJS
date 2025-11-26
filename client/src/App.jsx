@@ -24,6 +24,7 @@ import TandC from './components/TandC.jsx';
 import Help from  './components/Help.jsx';
 import Contact from './components/Contact.jsx';
 import Reels from './components/Reels.jsx';
+import ChannelRegistration from './components/channelregistration.jsx';
 // import { Home } from 'lucide-react';
 
 const AppContent = () => {
@@ -37,7 +38,7 @@ const AppContent = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/channel/:channelName" element={<ChannelPage />} />
         <Route path="/signup" element={<Register />} />
-        <Route path="/dailyUsage" element={<ActivityLog />} />
+        <Route path="/activityLog" element={<ActivityLog />} />
         <Route path="/stories" element={<Stories />} />
         <Route path="/profile/:username" element={<ProfilePage />} />
         <Route path="/connect" element={<Connect />} />
@@ -53,6 +54,7 @@ const AppContent = () => {
         <Route path="/terms" element={<TandC />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/reels" element={<Reels />} />
+        <Route path="/channelregistration" element={<ChannelRegistration />} />
           
       </Routes>
       {userData?.username ? (
