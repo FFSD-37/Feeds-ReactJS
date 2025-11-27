@@ -488,7 +488,7 @@ const HomePage = () => {
             <h3 className="create-page-title">
               CREATE YOUR OWN FAVOURITE CHANNEL.
             </h3>
-            <button className="create-page-button">Start Now!</button>
+            <button className="create-page-button" onClick={() => navigate("/channelregistration")}>Start Now!</button>
           </div>
         </div>
         <br />
