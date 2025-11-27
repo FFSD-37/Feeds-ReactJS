@@ -40,8 +40,9 @@ const PaymentPage = ({ coins = 100 }) => {
     const plan_name = plan.name;
 
     try {
-      const res = await fetch('/payment', {
+      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/payment`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan_name, plan_price }),
       });
@@ -62,9 +63,10 @@ const PaymentPage = ({ coins = 100 }) => {
           alert(
             'Payment Successful! Payment ID: ' + response.razorpay_payment_id,
           );
-          fetch('/verify_payment', {
+          fetch(`${import.meta.env.VITE_SERVER_URL}/verify_payment`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
@@ -141,8 +143,12 @@ const PaymentPage = ({ coins = 100 }) => {
             <li style={{ margin: '8px 0' }}>✔️ Ad-free experience</li>
             <li style={{ margin: '8px 0' }}>✔️ Customized Wallpapers</li>
             <li style={{ margin: '8px 0' }}>✔️ Priority customer support</li>
-            <li style={{ margin: '8px 0' }}>✔️ Notification on who viewed your profile</li>
-            <li style={{ margin: '8px 0' }}>✔️ Create unlimited channels (Free users: 3)</li>
+            <li style={{ margin: '8px 0' }}>
+              ✔️ Notification on who viewed your profile
+            </li>
+            <li style={{ margin: '8px 0' }}>
+              ✔️ Create unlimited channels (Free users: 3)
+            </li>
           </ul>
         </div>
       </div>
