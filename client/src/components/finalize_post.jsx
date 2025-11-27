@@ -53,8 +53,8 @@ const FinalizePost = () => {
       const authData = await authResponse.json();
 
       const imagekit = new ImageKit({
-        publicKey: 'public_wbpheuS28ohGGR1W5QtPU+uv/z8=',
-        urlEndpoint: 'https://ik.imagekit.io/lidyx2zxm/',
+        publicKey: 'public_kFHkU6GMQrtHeX9lEvE8hn7bOqM=',
+        urlEndpoint: 'https://ik.imagekit.io/vzp8taxcnc/',
       });
 
       imagekit.upload(
