@@ -105,7 +105,7 @@ You can create **child components** freely under these parent components.
 
 ### 👤 Ayush
 - [✅] Sidebar  
-- [❌✅] Post Overlay  
+- [✅] Post Overlay  
 - [✅] Edit Profile/Channel  
 - [✅] Connect  
 - [✅] Channel Profile (Self/Other)
@@ -115,9 +115,9 @@ You can create **child components** freely under these parent components.
 
 ### 👤 Gourav Khakse
 - [❌] Admin Portal  
-- [❌] Home (Normal User)
-- [❌] Profile (Self/Other) 
-- [❌] Notification  (Normal, Channel)
+- [✅] Home (Normal User)
+- [✅] Profile (Self/Other) 
+- [✅] Notification  (Normal, Channel)
 - [✅] Games
 - [❌] Kids Setting
 
@@ -128,13 +128,13 @@ You can create **child components** freely under these parent components.
 - [❌] Chat  (Normal, Channel)
 - [❌] Settings
 - [❌] Daily Usage  
-- [❌] Create Post / Reels / Stories (Channel, Normal)
+- [✅] Create Post / Reels / Stories (Channel, Normal)
 - [❌] Error Page(Incorrect Route)
 
 ---
 
 ### 👤 Atin Chowdhury
-- [✅❌] Registration Page (All Types)  
+- [✅] Registration Page (All Types)  
 - [✅] Login Page (All Types)  
 - [✅] Activity Log  
 - [✅] Stories  

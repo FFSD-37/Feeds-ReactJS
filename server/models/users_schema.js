@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
     display_name: {
         type: String,
         default: function (){
-            return this.username;
+            return this.fullName;
         }
     },
 

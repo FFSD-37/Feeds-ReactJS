@@ -41,6 +41,10 @@ const channelSchema = new mongoose.Schema({
         required: true
     },
 
+    links: [{
+        type: String
+    }],
+
     channelMembers: [{
         username: {
             type: String,

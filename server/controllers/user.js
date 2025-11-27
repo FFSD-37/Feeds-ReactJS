@@ -966,7 +966,7 @@ const handlegetforgetpass = (req, res) => {
 
 const handlegeteditprofile = async (req, res) => {
   try {
-    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const { data } = req.userDetails;
     const username = data[0];
 
     const user = await User.findOne({ username }).lean();
@@ -994,6 +994,7 @@ const handlegeteditprofile = async (req, res) => {
         isPremium: user.isPremium,
         profilePicture: user.profilePicture,
         visibility: user.visibility,
+        links: Array.isArray(user.links) ? user.links : [],
       },
     });
   } catch (error) {
@@ -1007,12 +1008,18 @@ const handlegeteditprofile = async (req, res) => {
 
 const updateUserProfile = async (req, res) => {
   try {
-    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const { data } = req.userDetails;
     const username = data[0];
-    const { profileImageUrl, display_name, fullName, bio, gender, phone } =
-      req.body;
+    const {
+      profileImageUrl,
+      display_name,
+      fullName,
+      bio,
+      gender,
+      phone,
+      links,
+    } = req.body;
 
-    // Build update object dynamically
     const updateData = {};
     if (display_name) updateData.display_name = display_name.trim();
     if (fullName) updateData.fullName = fullName.trim();
@@ -1021,7 +1028,48 @@ const updateUserProfile = async (req, res) => {
     if (phone) updateData.phone = phone.trim();
     if (profileImageUrl) updateData.profilePicture = profileImageUrl;
 
-    // Apply the update
+    // Validate & process links
+    if (links !== undefined) {
+      let processedLinks = [];
+
+      if (Array.isArray(links)) {
+        processedLinks = links
+          .map((l) => (typeof l === "string" ? l.trim() : ""))
+          .filter(Boolean);
+      } else if (typeof links === "string") {
+        processedLinks = links
+          .split(",")
+          .map((l) => l.trim())
+          .filter(Boolean);
+      }
+
+      // Limit = 3
+      if (processedLinks.length > 3) {
+        return res.status(400).json({
+          success: false,
+          message: "You can add a maximum of 3 links only.",
+        });
+      }
+
+      // URL validation regex
+      const isValidUrl = (str) => {
+        const pattern =
+          /^(https?:\/\/)?([a-zA-Z0-9.-]+|\blocalhost\b|\b\d{1,3}(\.\d{1,3}){3}\b)(:\d+)?(\/.*)?$/i;
+        return pattern.test(str);
+      };
+
+      for (const link of processedLinks) {
+        if (!isValidUrl(link)) {
+          return res.status(400).json({
+            success: false,
+            message: `Invalid link format: ${link}`,
+          });
+        }
+      }
+
+      updateData.links = processedLinks;
+    }
+
     const updatedUser = await User.findOneAndUpdate(
       { username },
       { $set: updateData },
@@ -1035,7 +1083,6 @@ const updateUserProfile = async (req, res) => {
       });
     }
 
-    // Refresh JWT token with updated profile picture
     const newToken = create_JWTtoken(
       [
         username,
@@ -1049,7 +1096,6 @@ const updateUserProfile = async (req, res) => {
     );
     res.cookie("uuid", newToken, { httpOnly: true });
 
-    // Log profile update activity
     await ActivityLog.create({
       username,
       id: `#${Date.now()}`,
@@ -1067,6 +1113,7 @@ const updateUserProfile = async (req, res) => {
         bio: updatedUser.bio,
         gender: updatedUser.gender,
         phone: updatedUser.phone,
+        links: Array.isArray(updatedUser.links) ? updatedUser.links : [],
       },
     });
   } catch (error) {
@@ -2030,7 +2077,8 @@ const handleloginchannel = async (req, res) => {
 
 const handlegetallnotifications = async (req, res) => {
   try {
-    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const { data } = req.userDetails;
+    // data = [username, email, profilePicture, type, isPremium]
 
     if (!data || !data[0]) {
       return res.status(401).json({
@@ -2038,14 +2086,23 @@ const handlegetallnotifications = async (req, res) => {
         message: "Unauthorized access. Please log in again.",
       });
     }
-
     const username = data[0];
+    const userType = data[3]; // Kids / Normal / Channel
+    let allowedSerials = [];
 
-    const notifications = await Notification.find({ mainUser: username })
+    if (userType === "Kids" || userType === "Normal") {
+      allowedSerials = { $gte: 1, $lte: 8 };
+    } else if (userType === "Channel") {
+      allowedSerials = { $gte: 9, $lte: 18 };
+    } else {
+      allowedSerials = { $gte: 1, $lte: 18 };
+    }
+    const notifications = await Notification.find({
+      mainUser: username,
+      msgSerial: allowedSerials,
+    })
       .sort({ createdAt: -1 })
       .lean();
-
-    const total = await Notification.countDocuments({ mainUser: username });
 
     return res.status(200).json({
       success: true,
@@ -2570,6 +2627,13 @@ const handlepostcomment = async (req, res) => {
   }
 };
 
+// RELAXED URL VALIDATION
+const validateUrl = (url) => {
+  const pattern =
+    /^(https?:\/\/)?([a-zA-Z0-9.-]+|\blocalhost\b|\b\d{1,3}(\.\d{1,3}){3}\b)(:\d+)?(\/.*)?$/i;
+  return pattern.test(url);
+};
+
 const handleGetEditChannel = async (req, res) => {
   try {
     const { data } = req.userDetails; // from cuid
@@ -2583,6 +2647,7 @@ const handleGetEditChannel = async (req, res) => {
       img: channel.channelLogo,
       currChannel: channel.channelName,
       CurrentChannel: channel,
+      links: channel.links || [],
       type: data[3],
     });
   } catch (err) {
@@ -2593,13 +2658,48 @@ const handleGetEditChannel = async (req, res) => {
 
 const updateChannelProfile = async (req, res) => {
   try {
-    const { data } = req.userDetails; // [channelName, adminName, channelLogo, "Channel", true]
-    const { logo, logoUrl, channelDescription } = req.body;
+    const { data } = req.userDetails;
+    const { logo, logoUrl, channelDescription, links } = req.body;
 
-    const updatedFields = {
-      channelDescription,
-    };
+    const updatedFields = { channelDescription };
 
+    // Validate and Process Links
+    if (links !== undefined) {
+      let processedLinks = [];
+
+      if (Array.isArray(links)) {
+        processedLinks = links
+          .map((l) => (typeof l === "string" ? l.trim() : ""))
+          .filter(Boolean);
+      } else if (typeof links === "string") {
+        processedLinks = links
+          .split(",")
+          .map((l) => l.trim())
+          .filter(Boolean);
+      }
+
+      // Limit = 3
+      if (processedLinks.length > 3) {
+        return res.status(400).json({
+          success: false,
+          msg: "You can add a maximum of 3 links only.",
+        });
+      }
+
+      // Validate URLs
+      for (const link of processedLinks) {
+        if (!validateUrl(link)) {
+          return res.status(400).json({
+            success: false,
+            msg: `Invalid link format: ${link}`,
+          });
+        }
+      }
+
+      updatedFields.links = processedLinks;
+    }
+
+    // Logo Update
     if (logo && logo !== "") {
       updatedFields.channelLogo = logoUrl;
     }
@@ -2614,10 +2714,11 @@ const updateChannelProfile = async (req, res) => {
       return res.status(404).json({ msg: "Channel not found" });
     }
 
+    // Refresh JWT token
     const token = create_JWTtoken(
       [
         channel.channelName,
-        data[1], // admin name
+        data[1],
         channel.channelLogo || data[2],
         "Channel",
         true,
@@ -2634,7 +2735,7 @@ const updateChannelProfile = async (req, res) => {
       message: "Your Channel Profile has been Updated!!",
     });
 
-    return res.json({ data: true });
+    return res.json({ success: true, msg: "Channel updated successfully!" });
   } catch (err) {
     console.error("❌ Error in updateChannelProfile:", err);
     return res.status(500).json({ msg: "Server Error while updating channel" });

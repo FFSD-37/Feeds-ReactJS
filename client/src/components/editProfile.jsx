@@ -8,21 +8,24 @@ function EditProfile() {
   const [edit_profile_preview, set_edit_profile_preview] = useState('');
   const [edit_profile_termsVisible, set_edit_profile_termsVisible] =
     useState(false);
-  const overlayRef = useRef(null);
+
   const [editableFields, setEditableFields] = useState({});
+  const overlayRef = useRef(null);
+
+  const [links, setLinks] = useState(['']);
+  const [linkErrors, setLinkErrors] = useState([]);
+  const MAX_LINKS = 3;
 
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // Fetch User Data
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const res = await fetch(
           `${import.meta.env.VITE_SERVER_URL}/edit_profile`,
-          {
-            method: 'GET',
-            credentials: 'include',
-          },
+          { method: 'GET', credentials: 'include' },
         );
 
         if (!res.ok) throw new Error('Failed to fetch user details');
@@ -38,7 +41,10 @@ function EditProfile() {
           gender: user.gender || '',
           phone: user.phone || '',
           profilePicture: user.profilePicture || '',
+          type: user.type || 'Normal',
         });
+
+        setLinks(user.links?.length ? user.links : ['']);
       } catch (error) {
         console.error('Error fetching user details:', error);
       }
@@ -47,45 +53,146 @@ function EditProfile() {
     fetchUserData();
   }, []);
 
-  const imagekit = new ImageKit({
-    publicKey: 'public_HU6D7u4KBDv1yJ7t6dpVw2PVDxQ=',
-    urlEndpoint: 'https://ik.imagekit.io/your_imagekit_id',
-    authenticationEndpoint: `${import.meta.env.VITE_SERVER_URL}/api/imagekit/auth`,
+  const [errors, setErrors] = useState({
+    fullName: '',
+    phone: '',
+    photo: '',
   });
 
+  const validateFullName = name => {
+    const pattern = /^[A-Za-z ]+$/;
+    return pattern.test(name);
+  };
+
+  const validatePhone = phone => {
+    return /^[0-9]{10}$/.test(phone);
+  };
+
+  // Improved relaxed URL validation
+  const validateLink = url => {
+    const pattern =
+      /^(https?:\/\/)?([a-zA-Z0-9.-]+|\blocalhost\b|\b\d{1,3}(\.\d{1,3}){3}\b)(:\d+)?(\/.*)?$/i;
+    return pattern.test(url);
+  };
+
+  // Update link field
+  const handleLinkChange = (index, value) => {
+    const updated = [...links];
+    updated[index] = value;
+
+    const updatedErrors = [...linkErrors];
+    if (value.trim() && !validateLink(value)) {
+      updatedErrors[index] = 'Invalid URL format';
+    } else {
+      updatedErrors[index] = '';
+    }
+
+    setLinks(updated);
+    setLinkErrors(updatedErrors);
+  };
+
+  const addLink = () =>
+    (links.length < MAX_LINKS && setLinks([...links, ''])) ||
+    setLinkErrors([...linkErrors, '']);
+
+  const removeLink = index => {
+    const updated = links.filter((_, i) => i !== index);
+    const updatedErr = linkErrors.filter((_, i) => i !== index);
+    setLinks(updated.length ? updated : ['']);
+    setLinkErrors(updatedErr);
+  };
+
+  // Enable field editing
   const edit_profile_enableField = field => {
     setEditableFields(prev => ({ ...prev, [field]: true }));
   };
 
-  // 📸 Handle photo change & preview
-  const edit_profile_handlePhoto = async e => {
+  // Photo handling
+  const edit_profile_handlePhoto = e => {
     const file = e.target.files[0];
     if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrors(prev => ({ ...prev, photo: 'Only image files are allowed' }));
+      return;
+    }
+
+    setErrors(prev => ({ ...prev, photo: '' }));
     set_edit_profile_photo(file);
     set_edit_profile_preview(URL.createObjectURL(file));
   };
 
-  // ❌ Close terms overlay when clicked outside
+  // ImageKit Upload
+  const imagekit = new ImageKit({
+    publicKey: 'public_kFHkU6GMQrtHeX9lEvE8hn7bOqM=',
+    urlEndpoint: 'https://ik.imagekit.io/vzp8taxcnc/',
+    authenticationEndpoint: `${import.meta.env.VITE_SERVER_URL}/api/imagekit/auth`,
+  });
+
+  // Handle Terms Modal closing conditions
   useEffect(() => {
     const handleClickOutside = e => {
       if (overlayRef.current && !overlayRef.current.contains(e.target)) {
         set_edit_profile_termsVisible(false);
       }
     };
+
+    const handleEsc = e => {
+      if (e.key === 'Escape') set_edit_profile_termsVisible(false);
+    };
+
     if (edit_profile_termsVisible) {
       document.addEventListener('mousedown', handleClickOutside);
-    } else {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEsc);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
   }, [edit_profile_termsVisible]);
 
-  // 💾 Handle form submit with visual feedback
+  // Handle Form Submit
   const edit_profile_handleSubmit = async e => {
     e.preventDefault();
-    let edit_profile_profileImageUrl = '';
+
+    let newErrors = { fullName: '', phone: '', photo: '' };
+    let hasError = false;
+
+    // Full Name must be only letters + spaces
+    if (!validateFullName(edit_profile_user.fullName)) {
+      newErrors.fullName = 'Name must contain only letters and spaces';
+      hasError = true;
+    }
+
+    // Phone must be exactly 10 digits
+    if (!validatePhone(edit_profile_user.phone)) {
+      newErrors.phone = 'Phone number must be exactly 10 digits';
+      hasError = true;
+    }
+
+    // Image file validation is already handled in handlePhoto
+    if (errors.photo.length > 0) {
+      hasError = true;
+    }
+
+    setErrors(newErrors);
+
+    if (hasError) {
+      return; // Stop submit if any validation fails
+    }
+
+    // Validate URLs before submit
+    for (let i = 0; i < links.length; i++) {
+      if (links[i].trim() && !validateLink(links[i])) {
+        alert(`Invalid link: ${links[i]}`);
+        return;
+      }
+    }
+
     setIsSaving(true);
 
+    let edit_profile_profileImageUrl = '';
     try {
       if (edit_profile_photo) {
         const uploadResponse = await imagekit.upload({
@@ -99,18 +206,20 @@ function EditProfile() {
         `${import.meta.env.VITE_SERVER_URL}/updateUserDetails`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
             photo: edit_profile_photo ? 'yes' : '',
             profileImageUrl: edit_profile_profileImageUrl,
             display_name: edit_profile_user.display_name,
-            name: edit_profile_user.fullName,
+            fullName: edit_profile_user.fullName,
             bio: edit_profile_user.bio,
             gender: edit_profile_user.gender,
             phone: edit_profile_user.phone,
+            links:
+              edit_profile_user.type === 'Kids'
+                ? []
+                : links.filter(l => l.trim() !== ''),
             terms: true,
           }),
         },
@@ -118,7 +227,6 @@ function EditProfile() {
 
       if (!response.ok) throw new Error('Failed to update profile');
 
-      // ✅ Visual confirmation
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (error) {
@@ -154,6 +262,7 @@ function EditProfile() {
             style={{ display: 'none' }}
             onChange={edit_profile_handlePhoto}
           />
+          {errors.photo && <p className="edit-profile_error">{errors.photo}</p>}
           <button
             type="button"
             className="edit-profile_photo-btn"
@@ -196,6 +305,10 @@ function EditProfile() {
               })
             }
           />
+          {errors.fullName && (
+            <p className="edit-profile_error">{errors.fullName}</p>
+          )}
+
           <a onClick={() => edit_profile_enableField('fullName')}>EDIT</a>
         </div>
 
@@ -249,8 +362,51 @@ function EditProfile() {
               })
             }
           />
+          {errors.phone && <p className="edit-profile_error">{errors.phone}</p>}
           <a onClick={() => edit_profile_enableField('phone')}>EDIT</a>
         </div>
+
+        {/* Links Section — HIDDEN for Kids */}
+        {edit_profile_user.type !== 'Kids' && (
+          <>
+            <h4>Links (Max 3)</h4>
+            <div className="edit-profile_links">
+              {links.map((link, i) => (
+                <div key={i} className="edit-profile_field">
+                  <input
+                    type="text"
+                    value={link}
+                    onChange={e => handleLinkChange(i, e.target.value)}
+                    placeholder="https://yourlink.com"
+                  />
+                  {linkErrors[i] && (
+                    <p className="edit-profile_error">{linkErrors[i]}</p>
+                  )}
+
+                  {links.length > 1 && (
+                    <button
+                      type="button"
+                      className="edit-profile_removeLink"
+                      onClick={() => removeLink(i)}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              {links.length < MAX_LINKS && (
+                <button
+                  type="button"
+                  onClick={addLink}
+                  className="edit-profile_addLink"
+                >
+                  + Add Link
+                </button>
+              )}
+            </div>
+          </>
+        )}
 
         {/* Terms */}
         <div className="edit-profile_terms">
@@ -280,7 +436,7 @@ function EditProfile() {
         )}
       </form>
 
-      {/* Terms Overlay */}
+      {/* TERMS OVERLAY */}
       {edit_profile_termsVisible && (
         <div className="edit-profile_overlay">
           <div className="edit-profile_overlay-content" ref={overlayRef}>
@@ -290,7 +446,9 @@ function EditProfile() {
             >
               X
             </button>
+
             <h1>Terms & Conditions</h1>
+
             <div className="edit-profile_overlay-text">
               <h2>1. Introduction</h2>
               <p>
@@ -300,7 +458,7 @@ function EditProfile() {
 
               <h2>2. User Responsibilities</h2>
               <ul>
-                <li>You must be at least 13 years old to use this platform.</li>
+                <li>You must be at least 2 years old to use this platform.</li>
                 <li>Do not post offensive or illegal content.</li>
                 <li>
                   Respect other users and maintain a friendly environment.
@@ -326,7 +484,8 @@ function EditProfile() {
               </p>
 
               <p>
-                <strong>Last Updated: February 2025</strong>
+                <strong>Last Updated:</strong> February 2025{' '}
+                <a href="/contact">@admin</a>
               </p>
             </div>
           </div>
