@@ -2002,7 +2002,8 @@ const handleloginchannel = async (req, res) => {
 
 const handlegetallnotifications = async (req, res) => {
   try {
-    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const { data } = req.userDetails; 
+    // data = [username, email, profilePicture, type, isPremium]
 
     if (!data || !data[0]) {
       return res.status(401).json({
@@ -2010,20 +2011,32 @@ const handlegetallnotifications = async (req, res) => {
         message: "Unauthorized access. Please log in again.",
       });
     }
-
     const username = data[0];
+    const userType = data[3]; // Kids / Normal / Channel
+    let allowedSerials = [];
 
-    const notifications = await Notification.find({ mainUser: username })
+    if (userType === "Kids" || userType === "Normal") {
+      allowedSerials = { $gte: 1, $lte: 8 };
+    } 
+    else if (userType === "Channel") {
+      allowedSerials = { $gte: 9, $lte: 18 };
+    } 
+    else {
+      allowedSerials = { $gte: 1, $lte: 18 };
+    }
+    const notifications = await Notification.find({
+      mainUser: username,
+      msgSerial: allowedSerials
+    })
       .sort({ createdAt: -1 })
       .lean();
-
-    const total = await Notification.countDocuments({ mainUser: username });
 
     return res.status(200).json({
       success: true,
       message: "Notifications fetched successfully.",
-      notifications
+      notifications,
     });
+
   } catch (error) {
     console.error("❌ Error in handlegetallnotifications:", error);
     return res.status(500).json({

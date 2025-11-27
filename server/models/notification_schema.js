@@ -1,9 +1,15 @@
 import mongoose from "mongoose";
 
 const notificationSchema = new mongoose.Schema({
-    mainUser:{
+    mainUser: {
         type: String,
         required: true
+    },
+
+    mainUserType: {
+        type: String,
+        enum: ["Kids", "Normal", "Channel"],
+        default: 'Normal'
     },
 
     msgSerial: {
@@ -18,7 +24,7 @@ const notificationSchema = new mongoose.Schema({
         type: Number,
         required: true
     }
-}, { timestamps: true }); 
+}, { timestamps: true });
 
 const Notification = mongoose.model("Notification", notificationSchema);
 
