@@ -1014,7 +1014,7 @@ const updateUserProfile = async (req, res) => {
 
       // URL validation regex
       const isValidUrl = (str) => {
-        const pattern = /^(https?:\/\/)?([\w.-]+)\.([a-z]{2,})(\/\S*)?$/i;
+        const pattern = /^(https?:\/\/)?([a-zA-Z0-9.-]+|\blocalhost\b|\b\d{1,3}(\.\d{1,3}){3}\b)(:\d+)?(\/.*)?$/i;
         return pattern.test(str);
       };
 
@@ -2540,6 +2540,13 @@ const handlepostcomment = async (req, res) => {
   }
 };
 
+// RELAXED URL VALIDATION
+const validateUrl = (url) => {
+  const pattern =
+    /^(https?:\/\/)?([a-zA-Z0-9.-]+|\blocalhost\b|\b\d{1,3}(\.\d{1,3}){3}\b)(:\d+)?(\/.*)?$/i;
+  return pattern.test(url);
+};
+
 const handleGetEditChannel = async (req, res) => {
   try {
     const { data } = req.userDetails; // from cuid
@@ -2553,6 +2560,7 @@ const handleGetEditChannel = async (req, res) => {
       img: channel.channelLogo,
       currChannel: channel.channelName,
       CurrentChannel: channel,
+      links: channel.links || [], 
       type: data[3],
     });
   } catch (err) {
@@ -2563,14 +2571,46 @@ const handleGetEditChannel = async (req, res) => {
 
 const updateChannelProfile = async (req, res) => {
   try {
-    const { data } = req.userDetails; // [channelName, adminName, channelLogo, "Channel", true]
-    const { logo, logoUrl, channelDescription } = req.body;
+    const { data } = req.userDetails; 
+    const { logo, logoUrl, channelDescription, links } = req.body;
 
-    const updatedFields = {
-      channelDescription,
-    };
+    const updatedFields = { channelDescription };
 
+    // Validate and Process Links
+    if (links !== undefined) {
+      let processedLinks = [];
 
+      if (Array.isArray(links)) {
+        processedLinks = links.map((l) => (typeof l === "string" ? l.trim() : "")).filter(Boolean);
+      } else if (typeof links === "string") {
+        processedLinks = links
+          .split(",")
+          .map((l) => l.trim())
+          .filter(Boolean);
+      }
+
+      // Limit = 3
+      if (processedLinks.length > 3) {
+        return res.status(400).json({
+          success: false,
+          msg: "You can add a maximum of 3 links only.",
+        });
+      }
+
+      // Validate URLs
+      for (const link of processedLinks) {
+        if (!validateUrl(link)) {
+          return res.status(400).json({
+            success: false,
+            msg: `Invalid link format: ${link}`,
+          });
+        }
+      }
+
+      updatedFields.links = processedLinks;
+    }
+
+    // Logo Update
     if (logo && logo !== "") {
       updatedFields.channelLogo = logoUrl;
     }
@@ -2585,10 +2625,11 @@ const updateChannelProfile = async (req, res) => {
       return res.status(404).json({ msg: "Channel not found" });
     }
 
+    // Refresh JWT token
     const token = create_JWTtoken(
       [
         channel.channelName,
-        data[1], // admin name
+        data[1], 
         channel.channelLogo || data[2],
         "Channel",
         true,
@@ -2605,7 +2646,7 @@ const updateChannelProfile = async (req, res) => {
       message: "Your Channel Profile has been Updated!!",
     });
 
-    return res.json({ data: true });
+    return res.json({ success: true, msg: "Channel updated successfully!" });
   } catch (err) {
     console.error("❌ Error in updateChannelProfile:", err);
     return res.status(500).json({ msg: "Server Error while updating channel" });

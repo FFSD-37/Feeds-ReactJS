@@ -7,10 +7,20 @@ function EditChannel() {
   const [edit_channel_logo, set_edit_channel_logo] = useState("");
   const [edit_channel_preview, set_edit_channel_preview] = useState("");
   const [edit_channel_termsVisible, set_edit_channel_termsVisible] = useState(false);
-  const overlayRef = useRef(null);
   const [editableFields, setEditableFields] = useState({});
+  const [links, setLinks] = useState([""]);
+  const [linkErrors, setLinkErrors] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const overlayRef = useRef(null);
+
+  const MAX_LINKS = 3;
+
+  const validate = (url) => {
+    const pattern =
+      /^(https?:\/\/)?([a-zA-Z0-9.-]+|\blocalhost\b|\b\d{1,3}(\.\d{1,3}){3}\b)(:\d+)?(\/.*)?$/i;
+    return pattern.test(url);
+  };
 
   useEffect(() => {
     const fetchChannelData = async () => {
@@ -19,8 +29,6 @@ function EditChannel() {
           method: "GET",
           credentials: "include",
         });
-
-        if (!res.ok) throw new Error("Failed to fetch channel details");
 
         const data = await res.json();
         const { CurrentChannel } = data;
@@ -31,6 +39,7 @@ function EditChannel() {
           channelLogo: CurrentChannel.channelLogo || "",
         });
 
+        setLinks(CurrentChannel.links?.length ? CurrentChannel.links : [""]);
       } catch (error) {
         console.error("Error fetching channel details:", error);
       }
@@ -40,16 +49,14 @@ function EditChannel() {
   }, []);
 
   const imagekit = new ImageKit({
-    publicKey: "public_HU6D7u4KBDv1yJ7t6dpVw2PVDxQ=",
-    urlEndpoint: "https://ik.imagekit.io/your_imagekit_id",
+    publicKey: "public_kFHkU6GMQrtHeX9lEvE8hn7bOqM=",
+    urlEndpoint: "https://ik.imagekit.io/vzp8taxcnc/",
     authenticationEndpoint: `${import.meta.env.VITE_SERVER_URL}/api/imagekit/auth`,
   });
 
-  const enableField = (field) => {
-    setEditableFields((prev) => ({ ...prev, [field]: true }));
-  };
+  const enable = (field) => setEditableFields((p) => ({ ...p, [field]: true }));
 
-  const handleLogo = async (e) => {
+  const handleLogo = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     set_edit_channel_logo(file);
@@ -63,39 +70,87 @@ function EditChannel() {
       }
     };
 
+    const handleEsc = (e) => {
+      if (e.key === "Escape") set_edit_channel_termsVisible(false);
+    };
+
     if (edit_channel_termsVisible) {
       document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleEsc);
     }
 
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEsc);
+    };
   }, [edit_channel_termsVisible]);
+
+  useEffect(() => {
+  if (edit_channel_termsVisible) {
+    document.body.classList.add("modal-open");
+  } else {
+    document.body.classList.remove("modal-open");
+  }
+}, [edit_channel_termsVisible]);
+
+  const updateLink = (i, v) => {
+    const u = [...links];
+    const e = [...linkErrors];
+    u[i] = v;
+    e[i] = v.trim() && !validate(v) ? "Invalid URL" : "";
+    setLinks(u);
+    setLinkErrors(e);
+  };
+
+  const addLink = () => {
+    if (links.length < MAX_LINKS) {
+      setLinks([...links, ""]);
+      setLinkErrors([...linkErrors, ""]);
+    }
+  };
+
+  const removeLink = (i) => {
+    const u = links.filter((_, x) => x !== i);
+    const e = linkErrors.filter((_, x) => x !== i);
+    setLinks(u.length ? u : [""]);
+    setLinkErrors(e);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    for (let i = 0; i < links.length; i++) {
+      if (links[i].trim() && !validate(links[i])) {
+        alert("Invalid link: " + links[i]);
+        return;
+      }
+    }
+
     setIsSaving(true);
     let logoUrl = "";
 
     try {
       if (edit_channel_logo) {
-        const uploadResponse = await imagekit.upload({
+        const upload = await imagekit.upload({
           file: edit_channel_logo,
           fileName: edit_channel_logo.name,
         });
-        logoUrl = uploadResponse.url;
+        logoUrl = upload.url;
       }
 
-      const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/updateChannelDetails`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          logo: edit_channel_logo ? "yes" : "",
-          logoUrl,
-          channelDescription: edit_channel_data.channelDescription,
-        }),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/updateChannelDetails`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            logo: edit_channel_logo ? "yes" : "",
+            logoUrl,
+            channelDescription: edit_channel_data.channelDescription,
+            links: links.filter((l) => l.trim() !== ""),
+          }),
+        }
+      );
 
       if (!response.ok) throw new Error("Failed to update channel");
 
@@ -113,15 +168,18 @@ function EditChannel() {
       <h2 className="edit_channel_heading">Edit Channel</h2>
 
       <form className="edit_channel_form" onSubmit={handleSubmit}>
-        
-        {/* Channel Logo */}
         <div className="edit_channel_logo-section">
           <img
-            src={edit_channel_preview || edit_channel_data.channelLogo || "/Images/default_user.jpeg"}
+            src={
+              edit_channel_preview ||
+              edit_channel_data.channelLogo ||
+              "/Images/default_user.jpeg"
+            }
             alt="Channel Logo"
             className="edit_channel_logo"
             onClick={() => document.getElementById("edit_channel_logoInput").click()}
           />
+
           <input
             type="file"
             id="edit_channel_logoInput"
@@ -139,13 +197,11 @@ function EditChannel() {
           </button>
         </div>
 
-        {/* Channel Name */}
         <h4>Channel Name</h4>
         <div className="edit_channel_field">
           <input type="text" value={edit_channel_data.channelName || ""} readOnly />
         </div>
 
-        {/* Channel Description */}
         <h4>Description</h4>
         <div className="edit_channel_field">
           <textarea
@@ -159,10 +215,47 @@ function EditChannel() {
               })
             }
           />
-          <a onClick={() => enableField("channelDescription")}>EDIT</a>
+          <a onClick={() => enable("channelDescription")}>EDIT</a>
         </div>
 
-        {/* Terms */}
+        <h4>Links (Max 3)</h4>
+        <div className="edit_channel_links">
+          {links.map((l, i) => (
+            <div key={i} className="edit_channel_field">
+              <input
+                type="text"
+                value={l}
+                onChange={(e) => updateLink(i, e.target.value)}
+                placeholder="https://yourlink.com"
+              />
+
+              {linkErrors[i] && (
+                <p className="edit_channel_error">{linkErrors[i]}</p>
+              )}
+
+              {links.length > 1 && (
+                <button
+                  type="button"
+                  className="edit_channel_removeLink"
+                  onClick={() => removeLink(i)}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          ))}
+
+          {links.length < MAX_LINKS && (
+            <button
+              type="button"
+              onClick={addLink}
+              className="edit_channel_addLink"
+            >
+              + Add Link
+            </button>
+          )}
+        </div>
+
         <div className="edit_channel_terms">
           <label>
             <input type="checkbox" required /> I agree to the{" "}
@@ -183,10 +276,11 @@ function EditChannel() {
           {isSaving ? "Saving..." : saved ? "✓ Saved" : "Save Changes"}
         </button>
 
-        {saved && <p className="edit_channel_success-msg">Channel updated successfully!</p>}
+        {saved && (
+          <p className="edit_channel_success-msg">Channel updated successfully!</p>
+        )}
       </form>
 
-      {/* Terms Overlay */}
       {edit_channel_termsVisible && (
         <div className="edit_channel_overlay">
           <div className="edit_channel_overlay-content" ref={overlayRef}>
@@ -196,20 +290,21 @@ function EditChannel() {
             >
               X
             </button>
+
             <h1>Terms & Conditions</h1>
 
             <div className="edit_channel_overlay-text">
               <h2>1. Channel Guidelines</h2>
-              <p>Maintain professionalism, avoid inappropriate content, and follow community rules.</p>
+              <p>Maintain professionalism and avoid inappropriate content.</p>
 
               <h2>2. Data Policy</h2>
-              <p>Feeds collects minimal channel data to enhance discovery and engagement analytics.</p>
+              <p>Feeds collects minimal channel data for discovery and analytics.</p>
 
               <h2>3. Content Rights</h2>
-              <p>You retain ownership of your uploads, but grant Feeds permission to display them publicly.</p>
+              <p>You retain ownership of uploads but grant Feeds permission to display them.</p>
 
               <h2>4. Termination</h2>
-              <p>Violations of policy may lead to channel suspension or removal.</p>
+              <p>Violations may result in channel suspension.</p>
 
               <p><strong>Last Updated: February 2025</strong></p>
             </div>

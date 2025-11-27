@@ -508,6 +508,30 @@
   text-decoration: underline;
 }
 
+.channel-links-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.channel-link-pill {
+  background: rgba(255, 205, 56, 0.15);
+  border: 1px solid rgba(255, 205, 56, 0.35);
+  padding: 0.25rem 0.55rem;
+  font-size: 0.8rem;
+  border-radius: 0.5rem;
+  color: #ffcd38;
+  text-decoration: none;
+  transition: 0.2s ease;
+  white-space: nowrap;
+}
+
+.channel-link-pill:hover {
+  background: #ffcd38;
+  color: #1a1a1a;
+}
+
 /* === RESPONSIVE === */
 @media (max-width: 1024px) {
   .channel-posts-grid {
