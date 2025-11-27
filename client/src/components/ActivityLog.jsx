@@ -6,27 +6,22 @@ export default function ActivityLog() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const totalLogs = async () => {
     setLoading(true);
-    fetch("http://localhost:3000/activityLog", {
-      method: "GET",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        setLogs(data.allogs || []);
-      })
-      .catch((err) => {
-        console.error("ActivityLog fetch error:", err);
-        setError("Could not load activity logs.");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    const res = await fetch(
+      `${import.meta.env.VITE_SERVER_URL}/activityLog`,
+      {
+        method: "GET",
+        credentials: "include"
+      },
+    );
+    const data = await res.json();
+    setLogs(data.logs);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    totalLogs();
   }, []); // Added [] so it runs once
 
   const formatDate = (d) => {
