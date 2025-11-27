@@ -6,13 +6,16 @@ import channelPost from "../../models/channelPost.js";
 const handlegetchannel = async (req, res) => {
   try {
     const { channelName } = req.params;
+
     const channel = await Channel.findOne({
       channelName: { $regex: new RegExp(`^${channelName}$`, 'i') }
     })
       .populate("channelAdmin", "username profilePicture")
       .lean();
 
-    if (!channel) return res.status(404).json({ error: "Channel not found" });
+    if (!channel) {
+      return res.status(404).json({ error: "Channel not found" });
+    }
 
     return res.status(200).json({
       channel_name: channel.channelName,
@@ -26,6 +29,8 @@ const handlegetchannel = async (req, res) => {
       channel_archived: channel.archivedPostsIds || [],
       channel_liked: channel.likedPostsIds || [],
       channel_saved: channel.savedPostsIds || [],
+      channel_links: channel.links || [],
+
       created_at: channel.createdAt,
     });
   } catch (error) {
