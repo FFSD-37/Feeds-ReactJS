@@ -16,7 +16,7 @@ const PostCreation = () => {
   const navigate = useNavigate();
 
   // File validation constants
-  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB for images and videos
+  const MAX_FILE_SIZE = 4 * 1024 * 1024; // 5MB for images and videos
   const ALLOWED_IMAGE_TYPES = [
     'image/jpeg',
     'image/jpg',
@@ -130,7 +130,10 @@ const PostCreation = () => {
         };
       }
       if (file.size > MAX_FILE_SIZE)
-        return { valid: false, error: 'Video size must be less than 5MB' };
+        return {
+          valid: false,
+          error: `Video size must be less than ${MAX_FILE_SIZE / (1024 * 1024)}MB`,
+        };
     } else {
       return {
         valid: false,
@@ -270,48 +273,86 @@ const PostCreation = () => {
   };
 
   return (
-    <div className="min-h-screen w-screen bg-gradient-to-br from-[#1a223d] via-[#2a3f6f] to-[#3f5fa7] flex items-center justify-center p-6">
-      <div className="w-full max-w-lg bg-[#0f172a] rounded-2xl p-6 shadow-2xl border border-white/10">
-        {/* Title */}
-        <h4 className="text-white text-xl font-semibold mb-6 text-center tracking-wide">
-          Create New Post
-        </h4>
+    <div className="min-h-screen w-screen bg-black flex items-center justify-center p-6">
+      <div className="w-full max-w-lg bg-gray-900 rounded-2xl p-6 shadow-2xl border border-gray-700">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-2">
+            Create New Post
+          </h1>
+          <p className="text-gray-400 text-sm">
+            Choose your content type and upload media
+          </p>
+        </div>
 
         {/* Alert */}
         {alertMessage && (
           <div
-            className={`mb-5 flex items-center justify-between rounded-lg px-4 py-3 text-sm ${
+            className={`mb-6 rounded-xl p-4 border ${
               alertType === 'error'
-                ? 'bg-red-500/20 text-red-400 border border-red-500/40'
-                : 'bg-green-500/20 text-green-400 border border-green-500/40'
+                ? 'bg-red-500/10 border-red-500/20 text-red-300'
+                : 'bg-green-500/10 border-green-500/20 text-green-300'
             }`}
           >
-            <span>{alertMessage}</span>
-            <button
-              className="text-lg hover:opacity-70"
-              onClick={() => setAlertMessage('')}
-            >
-              ✕
-            </button>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div
+                  className={`w-2 h-2 rounded-full ${alertType === 'error' ? 'bg-red-400' : 'bg-green-400'}`}
+                ></div>
+                <span className="text-sm font-medium">{alertMessage}</span>
+              </div>
+              <button
+                className="text-gray-400 hover:text-white transition-colors"
+                onClick={() => setAlertMessage('')}
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
           </div>
         )}
 
         {/* Post Type Selector */}
-        <div className="relative mb-5">
+        <div className="relative mb-6">
+          <label className="block text-sm font-medium text-gray-300 mb-3">
+            Post Type
+          </label>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-full bg-[#1e293b] border border-white/10 text-white rounded-lg px-4 py-3 flex items-center justify-between hover:bg-[#24314d] transition"
+            className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-3.5 flex items-center justify-between hover:bg-gray-700 transition-all duration-200 group"
           >
-            <div className="font-medium">{postTypeText}</div>
-            <div
-              className={`transform transition ${isDropdownOpen ? 'rotate-180' : ''}`}
-            >
-              ▼
+            <div className="flex items-center space-x-3">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="font-medium text-white">{postTypeText}</span>
             </div>
+            <svg
+              className={`w-5 h-5 text-gray-400 transform transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
           </button>
 
           {isDropdownOpen && (
-            <div className="absolute left-0 right-0 mt-2 bg-[#1e293b] border border-white/10 rounded-lg shadow-xl z-10 overflow-hidden">
+            <div className="absolute left-0 right-0 mt-2 bg-gray-800 border border-gray-600 rounded-xl shadow-2xl z-10 overflow-hidden">
               {postTypes.map(option => (
                 <button
                   key={option.type}
@@ -322,92 +363,121 @@ const PostCreation = () => {
                       option.label,
                     )
                   }
-                  className="w-full text-left px-4 py-3 text-white hover:bg-[#2a3a60] transition"
+                  className="w-full text-left px-4 py-3.5 text-white hover:bg-gray-700 transition-all duration-200 flex items-center space-x-3 group"
                 >
-                  {option.label}
+                  <div className="w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  <span>{option.label}</span>
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* File Upload Box */}
-        <label
-          htmlFor="file-input"
-          className="relative block w-full h-80 rounded-xl border-2 border-dashed border-white/20 bg-[#1f2937] flex items-center justify-center cursor-pointer overflow-hidden group hover:border-white/40 transition mb-6"
-        >
-          <input
-            ref={fileInputRef}
-            id="file-input"
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="hidden"
-          />
+        {/* File Upload Area */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-300 mb-3">
+            Media Upload
+          </label>
+          <label
+            htmlFor="file-input"
+            className={`relative block w-full aspect-square rounded-xl border-2 border-dashed transition-all duration-300 group cursor-pointer overflow-hidden ${
+              previewSrc
+                ? 'border-gray-600 bg-black'
+                : 'border-gray-600 bg-gray-800 hover:border-gray-500 hover:bg-gray-700'
+            }`}
+          >
+            <input
+              ref={fileInputRef}
+              id="file-input"
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
 
-          {!previewSrc ? (
-            <div className="text-center text-white space-y-3">
-              <div className="text-4xl">📤</div>
-              <p className="font-semibold">Upload your media</p>
-              <p className="text-sm text-white/50">
-                Click to select image or video
-              </p>
-            </div>
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-black">
-              {previewType === 'image' ? (
-                <img
-                  src={previewSrc}
-                  alt="Preview"
-                  className="max-h-full max-w-full object-contain"
-                />
-              ) : (
-                <video
-                  src={previewSrc}
-                  controls
-                  className="max-h-full max-w-full object-contain"
-                />
-              )}
-            </div>
-          )}
-        </label>
+            {!previewSrc ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <svg
+                    className="w-8 h-8 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                </div>
+                <p className="text-white font-medium mb-2">Upload Media</p>
+                <p className="text-gray-400 text-sm">
+                  Drag and drop or click to browse
+                </p>
+                <p className="text-gray-500 text-xs mt-2">
+                  Supports images and videos
+                </p>
+              </div>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-black">
+                {previewType === 'image' ? (
+                  <img
+                    src={previewSrc}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <video
+                    src={previewSrc}
+                    controls
+                    className="w-full h-full object-cover"
+                  />
+                )}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div className="bg-gray-800 backdrop-blur-sm rounded-full p-3">
+                    <svg
+                      className="w-6 h-6 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            )}
+          </label>
+        </div>
 
-        {/* Buttons */}
-        {previewSrc && selectedPostType !== 'story' && (
+        {/* Action Buttons */}
+        {previewSrc && (
           <div className="flex gap-3">
             <button
               onClick={handleContinue}
               disabled={isLoading}
-              className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-lg"
+              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3.5 rounded-xl hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:transform-none shadow-lg"
             >
-              Continue Editing
+              {selectedPostType === 'story'
+                ? isLoading
+                  ? 'Uploading...'
+                  : 'Publish Story'
+                : 'Continue'}
             </button>
 
             <button
               onClick={handleAgainSelect}
-              className="px-6 py-3 rounded-lg bg-[#334155] text-white"
-            >
-              Choose Again
-            </button>
-          </div>
-        )}
-
-        {previewSrc && selectedPostType === 'story' && (
-          <div className="flex gap-3">
-            <button
-              onClick={handleContinue}
-              disabled={isLoading || alertType === 'error'}
-              className="flex-1 bg-green-600 text-white font-semibold py-3 rounded-lg hover:opacity-90 disabled:opacity-60"
-            >
-              {isLoading ? 'Uploading...' : 'Confirm Story'}
-            </button>
-
-            <button
-              onClick={handleAgainSelect}
-              className="px-6 py-3 rounded-lg bg-[#334155] text-white"
               disabled={isLoading}
+              className="px-6 py-3.5 rounded-xl bg-gray-800 text-white font-medium hover:bg-gray-700 transition-all duration-200 disabled:opacity-50 border border-gray-600"
             >
-              Choose Again
+              Change
             </button>
           </div>
         )}

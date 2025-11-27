@@ -1,21 +1,21 @@
-import nodemailer from 'nodemailer';
-import fs from 'fs';
-import path from 'path';
-import { create_JWTtoken } from 'cookie-string-parser';
-import User from '../models/users_schema.js';
-import Post from '../models/postSchema.js';
+import nodemailer from "nodemailer";
+import fs from "fs";
+import path from "path";
+import { create_JWTtoken } from "cookie-string-parser";
+import User from "../models/users_schema.js";
+import Post from "../models/postSchema.js";
 import Report from "../models/reports.js";
 import Payment from "../models/payment.js";
-import ActivityLog from "../models/activityLogSchema.js"
+import ActivityLog from "../models/activityLogSchema.js";
 import ResetPassword from "../models/reset_pass_schema.js";
-import bcrypt, { compare } from 'bcrypt';
-import Feedback from '../models/feedbackForm.js';
-import DelUser from '../models/SoftDelUsers.js';
-import Notification from '../models/notification_schema.js';
-import Channel from "../models/channelSchema.js"
-import channelPost from '../models/channelPost.js';
+import bcrypt, { compare } from "bcrypt";
+import Feedback from "../models/feedbackForm.js";
+import DelUser from "../models/SoftDelUsers.js";
+import Notification from "../models/notification_schema.js";
+import Channel from "../models/channelSchema.js";
+import channelPost from "../models/channelPost.js";
 import Story from "../models/storiesSchema.js";
-import Comment from '../models/comment_schema.js';
+import Comment from "../models/comment_schema.js";
 // import Adpost from "../models/ad_schema.js";
 
 async function storeOtp(email, otp) {
@@ -72,10 +72,7 @@ const handleSignup = async (req, res) => {
       message: "You Registered Successfully!!",
     });
 
-    await User.updateOne(
-      { username: user.username },
-      { $inc: { coins: 10 } }
-    );
+    await User.updateOne({ username: user.username }, { $inc: { coins: 10 } });
 
     return res.status(201).json({
       success: true,
@@ -117,13 +114,17 @@ const handledelacc = async (req, res) => {
     const user = await User.findOne({ username: data[0] });
 
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     // Password verification
     const isMatch = await bcrypt.compare(req.body.password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ success: false, message: "Incorrect password" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Incorrect password" });
     }
 
     // Backup user data in Soft Deleted Users collection
@@ -218,8 +219,8 @@ Team FEEDS`,
 // };
 
 function generateOTP() {
-  const characters = '0123456789';
-  let otp = '';
+  const characters = "0123456789";
+  let otp = "";
   for (let i = 0; i < 6; i++) {
     otp += characters.charAt(Math.floor(Math.random() * characters.length));
   }
@@ -490,11 +491,18 @@ const updatepass = async (req, res) => {
   }
 };
 
-
 const handlelogout = async (req, res) => {
   try {
-    res.clearCookie("uuid", { httpOnly: true, sameSite: "strict", secure: true });
-    res.clearCookie("cuid", { httpOnly: true, sameSite: "strict", secure: true });
+    res.clearCookie("uuid", {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: true,
+    });
+    res.clearCookie("cuid", {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: true,
+    });
 
     return res.status(200).json({
       success: true,
@@ -531,9 +539,16 @@ const handleContact = async (req, res) => {
 
     // Optional: Save to local file for admin log (non-blocking)
     const folderPath = path.resolve(`responses/${subject}`);
-    const filePath = path.join(folderPath, `${email.replace(/[@.]/g, "_")}.json`);
+    const filePath = path.join(
+      folderPath,
+      `${email.replace(/[@.]/g, "_")}.json`
+    );
     fs.mkdirSync(folderPath, { recursive: true });
-    fs.writeFile(filePath, JSON.stringify({ name, email, subject, message }, null, 2), () => { });
+    fs.writeFile(
+      filePath,
+      JSON.stringify({ name, email, subject, message }, null, 2),
+      () => {}
+    );
 
     return res.status(200).json({
       success: true,
@@ -560,7 +575,10 @@ const handleadminlogin = async (req, res) => {
     }
 
     // Validate admin credentials
-    if (username !== process.env.adminUsername || password !== process.env.adminPass) {
+    if (
+      username !== process.env.adminUsername ||
+      password !== process.env.adminPass
+    ) {
       return res.status(401).json({
         success: false,
         message: "Incorrect credentials",
@@ -622,7 +640,7 @@ const fetchOverlayUser = async (req, res) => {
   const { user_id, username, email } = req.body;
   const user = await User.findOne({ username: username });
   return res.json(user);
-}
+};
 
 const handlegetHome = async (req, res) => {
   try {
@@ -762,7 +780,10 @@ const handlegetprofile = async (req, res) => {
 
     // Fetch posts created by this user
     const postIds = profileUser.postIds || [];
-    const posts = await Post.find({ _id: { $in: postIds }, isArchived: false }).lean();
+    const posts = await Post.find({
+      _id: { $in: postIds },
+      isArchived: false,
+    }).lean();
 
     // Fetch saved, liked, and archived posts
     const savedIds = profileUser.savedPostsIds || [];
@@ -777,8 +798,12 @@ const handlegetprofile = async (req, res) => {
 
     // Relationship info
     const loggedUser = await User.findOne({ username: loggedInUser }).lean();
-    const isFollowing = loggedUser.followings.some((f) => f.username === username);
-    const isFollowedBy = loggedUser.followers.some((f) => f.username === username);
+    const isFollowing = loggedUser.followings.some(
+      (f) => f.username === username
+    );
+    const isFollowedBy = loggedUser.followers.some(
+      (f) => f.username === username
+    );
     const isFriend = isFollowing && isFollowedBy;
     const isFollower = isFollowedBy && !isFollowing;
     const isRequested = isFollowing && !isFollowedBy;
@@ -836,32 +861,29 @@ const handlegetprofile = async (req, res) => {
   }
 };
 
-
 const handlegetterms = (req, res) => {
   const { data } = req.userDetails;
   return res.render("tandc", { img: data[2], currUser: data[0] });
-}
+};
 
 const handlegetcontact = (req, res) => {
   const { data } = req.userDetails;
   return res.render("contact", { img: data[2], msg: null, currUser: data[0] });
-}
-
-
+};
 
 const handlegetgames = (req, res) => {
   const { data } = req.userDetails;
   return res.render("games", { img: data[2], currUser: data[0] });
-}
+};
 
 const handlegetdelacc = (req, res) => {
   const { data } = req.userDetails;
   return res.render("delacc", { img: data[2], msg: null, currUser: data[0] });
-}
+};
 
 const handlegetadmin = (req, res) => {
   return res.render("admin", { msg: null });
-}
+};
 
 const handlegetreels = async (req, res) => {
   try {
@@ -897,7 +919,8 @@ const handlegetreels = async (req, res) => {
           ...reel,
           authorProfile: {
             username: author?.username || "Unknown",
-            profilePicture: author?.profilePicture || process.env.DEFAULT_USER_IMG,
+            profilePicture:
+              author?.profilePicture || process.env.DEFAULT_USER_IMG,
           },
           liked: likedIds.includes(reel.id),
         };
@@ -925,15 +948,21 @@ const handlegetreels = async (req, res) => {
 const handlegethelp = (req, res) => {
   const { data } = req.userDetails;
   return res.render("help", { img: data[2], currUser: data[0] });
-}
+};
 
 const handlegetsignup = (req, res) => {
   return res.render("Registration", { msg: null });
-}
+};
 
 const handlegetforgetpass = (req, res) => {
-  res.render("Forgot_pass", { msg: null, newpass: "NO", otpsec: "NO", emailsec: "YES", title: "Forgot Password" });
-}
+  res.render("Forgot_pass", {
+    msg: null,
+    newpass: "NO",
+    otpsec: "NO",
+    emailsec: "YES",
+    title: "Forgot Password",
+  });
+};
 
 const handlegeteditprofile = async (req, res) => {
   try {
@@ -980,7 +1009,8 @@ const updateUserProfile = async (req, res) => {
   try {
     const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
     const username = data[0];
-    const { profileImageUrl, display_name, fullName, bio, gender, phone } = req.body;
+    const { profileImageUrl, display_name, fullName, bio, gender, phone } =
+      req.body;
 
     // Build update object dynamically
     const updateData = {};
@@ -1007,7 +1037,13 @@ const updateUserProfile = async (req, res) => {
 
     // Refresh JWT token with updated profile picture
     const newToken = create_JWTtoken(
-      [username, updatedUser.email, updatedUser.profilePicture, updatedUser.type, updatedUser.isPremium],
+      [
+        username,
+        updatedUser.email,
+        updatedUser.profilePicture,
+        updatedUser.type,
+        updatedUser.isPremium,
+      ],
       process.env.USER_SECRET,
       "30d"
     );
@@ -1044,12 +1080,16 @@ const updateUserProfile = async (req, res) => {
 
 const handlegetpostoverlay = (req, res) => {
   return res.render("post_overlay");
-}
+};
 
 const handlegetcreatepost = (req, res) => {
   const { data } = req.userDetails;
-  return res.render("create_post", { img: data[2], currUser: data[0], msg: null });
-}
+  return res.render("create_post", {
+    img: data[2],
+    currUser: data[0],
+    msg: null,
+  });
+};
 
 const handlecreatepost = async (req, res) => {
   try {
@@ -1112,9 +1152,13 @@ const handlecreatepost = async (req, res) => {
 };
 
 const handlegetcreatepost2 = (req, res) => {
-  const { data } = req.userDetails
-  return res.render("create_post_second", { img2: 'https://ik.imagekit.io/FFSD0037/esrpic-609a6f96bb3031_OvyeHGHcB.jpg?updatedAt=1744145583878', currUser: data[0], img: data[2] });
-}
+  const { data } = req.userDetails;
+  return res.render("create_post_second", {
+    img2: "https://ik.imagekit.io/FFSD0037/esrpic-609a6f96bb3031_OvyeHGHcB.jpg?updatedAt=1744145583878",
+    currUser: data[0],
+    img: data[2],
+  });
+};
 
 const followSomeone = async (req, res) => {
   try {
@@ -1326,7 +1370,9 @@ const unfollowSomeone = async (req, res) => {
     }
 
     // 🧩 Case 2: Unfollow someone you follow
-    const isFollowing = me.followings.some((f) => f.username === targetUsername);
+    const isFollowing = me.followings.some(
+      (f) => f.username === targetUsername
+    );
     if (isFollowing) {
       await Promise.all([
         User.updateOne(
@@ -1567,9 +1613,20 @@ const registerChannel = async (req, res) => {
   try {
     const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
     const username = data[0];
-    const { channelName, channelDescription, channelCategory, channelPassword, profileImageUrl } = req.body;
+    const {
+      channelName,
+      channelDescription,
+      channelCategory,
+      channelPassword,
+      profileImageUrl,
+    } = req.body;
 
-    if (!channelName || !channelDescription || !channelPassword || !channelCategory) {
+    if (
+      !channelName ||
+      !channelDescription ||
+      !channelPassword ||
+      !channelCategory
+    ) {
       return res.status(400).json({
         success: false,
         message: "All required fields must be filled.",
@@ -1781,7 +1838,7 @@ const uploadFinalPost = async (req, res) => {
     // Create post object
     const postObj = {
       id: postId,
-      type: type === "Img" ? "Img" : "Reel",
+      type: type === "Img" ? "Img" : "Reels",
       url: avatar,
       content: caption || "",
       author: username,
@@ -1808,7 +1865,9 @@ const uploadFinalPost = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: `${post.type === "Reel" ? "Reel" : "Post"} uploaded successfully.`,
+      message: `${
+        post.type === "Reel" ? "Reel" : "Post"
+      } uploaded successfully.`,
       post: {
         id: post.id,
         url: post.url,
@@ -1884,7 +1943,7 @@ const reportAccount = async (req, res) => {
 const handlegetloginchannel = async (req, res) => {
   const { data } = req.userDetails;
   return res.render("channellogin", { img: data[2], currUser: data[0] });
-}
+};
 
 const handleloginchannel = async (req, res) => {
   try {
@@ -1929,7 +1988,13 @@ const handleloginchannel = async (req, res) => {
 
     // Generate a new JWT token for channel login
     const token = create_JWTtoken(
-      [channel.channelName, user.username, channel.channelLogo, "Channel", true],
+      [
+        channel.channelName,
+        user.username,
+        channel.channelLogo,
+        "Channel",
+        true,
+      ],
       process.env.USER_SECRET,
       "30d"
     );
@@ -1985,7 +2050,7 @@ const handlegetallnotifications = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Notifications fetched successfully.",
-      notifications
+      notifications,
     });
   } catch (error) {
     console.error("❌ Error in handlegetallnotifications:", error);
@@ -2184,7 +2249,9 @@ const handlelikereel = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: hasLiked ? "Reel unliked successfully." : "Reel liked successfully.",
+      message: hasLiked
+        ? "Reel unliked successfully."
+        : "Reel liked successfully.",
       likes: updatedPost.likes,
     });
   } catch (error) {
@@ -2533,7 +2600,6 @@ const updateChannelProfile = async (req, res) => {
       channelDescription,
     };
 
-
     if (logo && logo !== "") {
       updatedFields.channelLogo = logoUrl;
     }
@@ -2633,5 +2699,5 @@ export {
   handleunsavepost,
   handlepostcomment,
   handleGetEditChannel,
-  updateChannelProfile
+  updateChannelProfile,
 };
