@@ -1,6 +1,5 @@
 import './App.css';
 import PaymentPage from './components/payment.jsx';
-import Sidebar from './components/sidebar.jsx';
 import Games from './components/games.jsx';
 import Notifications from './components/Notifications.jsx';
 import Login from './components/login.jsx';
@@ -25,7 +24,9 @@ import Help from  './components/Help.jsx';
 import Contact from './components/Contact.jsx';
 import Reels from './components/Reels.jsx';
 import ChannelRegistration from './components/channelregistration.jsx';
+import Settings from './components/settings.jsx';
 // import { Home } from 'lucide-react';
+import Sidebar from './components/Sidebar.jsx';
 
 const AppContent = () => {
   const { userData } = useUserData();
@@ -55,6 +56,7 @@ const AppContent = () => {
         <Route path="/contact" element={<Contact />} />
         <Route path="/reels" element={<Reels />} />
         <Route path="/channelregistration" element={<ChannelRegistration />} />
+        <Route path="/settings" element={<Settings />} />
           
       </Routes>
       {userData?.username ? (

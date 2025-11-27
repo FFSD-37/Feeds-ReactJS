@@ -1,12 +1,19 @@
 @import 'tailwindcss';
 
+/* FIX ROOT CLIPPING ISSUE */
 html,
-body,
-#root {
+body {
   height: 100%;
   overflow: auto;
 }
 
+#root {
+  min-height: 100%;
+  overflow: visible !important; /* allow modals to escape */
+  position: relative;           /* prevent stacking bugs */
+}
+
+/* (optional) keep hiding scrollbar if needed */
 #root::-webkit-scrollbar {
-  display: none; /* Hides the scrollbar */
+  display: none;
 }

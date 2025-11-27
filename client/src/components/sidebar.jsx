@@ -105,6 +105,7 @@ function Sidebar() {
               className="icon-img"
               width="30"
               height="30"
+              style={{cursor: 'pointer'}}
             />
           </div>
           <span className="sidebar_tooltip">Menu</span>

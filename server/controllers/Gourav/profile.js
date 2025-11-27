@@ -14,6 +14,7 @@ const handlegetUserPost = async (req, res) => {
 const handlegetBasicDetails = async (req, res) => {
     const { data } = req.userDetails;
     const userAsking = req.params.username;
+    console.log(req.params);
     const user = await User.findOne({ username: userAsking });
     const result = {
         full_name: user.fullName,
@@ -27,7 +28,9 @@ const handlegetBasicDetails = async (req, res) => {
         type: user.type,
         visibility: user.visibility,
         links: user.links,
-        display_name: user.display_name
+        display_name: user.display_name,
+        coins: user.coins,
+        createdAt: user.createdAt
     }
     return res.json({ success: true, details: result });
 }
