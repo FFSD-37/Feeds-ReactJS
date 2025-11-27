@@ -937,7 +937,7 @@ const handlegetforgetpass = (req, res) => {
 
 const handlegeteditprofile = async (req, res) => {
   try {
-    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const { data } = req.userDetails;
     const username = data[0];
 
     const user = await User.findOne({ username }).lean();
@@ -965,6 +965,7 @@ const handlegeteditprofile = async (req, res) => {
         isPremium: user.isPremium,
         profilePicture: user.profilePicture,
         visibility: user.visibility,
+        links: Array.isArray(user.links) ? user.links : [],
       },
     });
   } catch (error) {
@@ -978,11 +979,10 @@ const handlegeteditprofile = async (req, res) => {
 
 const updateUserProfile = async (req, res) => {
   try {
-    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const { data } = req.userDetails;
     const username = data[0];
-    const { profileImageUrl, display_name, fullName, bio, gender, phone } = req.body;
+    const { profileImageUrl, display_name, fullName, bio, gender, phone, links } = req.body;
 
-    // Build update object dynamically
     const updateData = {};
     if (display_name) updateData.display_name = display_name.trim();
     if (fullName) updateData.fullName = fullName.trim();
@@ -991,7 +991,45 @@ const updateUserProfile = async (req, res) => {
     if (phone) updateData.phone = phone.trim();
     if (profileImageUrl) updateData.profilePicture = profileImageUrl;
 
-    // Apply the update
+    // Validate & process links
+    if (links !== undefined) {
+      let processedLinks = [];
+
+      if (Array.isArray(links)) {
+        processedLinks = links.map(l => (typeof l === "string" ? l.trim() : "")).filter(Boolean);
+      } else if (typeof links === "string") {
+        processedLinks = links
+          .split(",")
+          .map(l => l.trim())
+          .filter(Boolean);
+      }
+
+      // Limit = 3
+      if (processedLinks.length > 3) {
+        return res.status(400).json({
+          success: false,
+          message: "You can add a maximum of 3 links only.",
+        });
+      }
+
+      // URL validation regex
+      const isValidUrl = (str) => {
+        const pattern = /^(https?:\/\/)?([\w.-]+)\.([a-z]{2,})(\/\S*)?$/i;
+        return pattern.test(str);
+      };
+
+      for (const link of processedLinks) {
+        if (!isValidUrl(link)) {
+          return res.status(400).json({
+            success: false,
+            message: `Invalid link format: ${link}`,
+          });
+        }
+      }
+
+      updateData.links = processedLinks;
+    }
+
     const updatedUser = await User.findOneAndUpdate(
       { username },
       { $set: updateData },
@@ -1005,7 +1043,6 @@ const updateUserProfile = async (req, res) => {
       });
     }
 
-    // Refresh JWT token with updated profile picture
     const newToken = create_JWTtoken(
       [username, updatedUser.email, updatedUser.profilePicture, updatedUser.type, updatedUser.isPremium],
       process.env.USER_SECRET,
@@ -1013,7 +1050,6 @@ const updateUserProfile = async (req, res) => {
     );
     res.cookie("uuid", newToken, { httpOnly: true });
 
-    // Log profile update activity
     await ActivityLog.create({
       username,
       id: `#${Date.now()}`,
@@ -1031,6 +1067,7 @@ const updateUserProfile = async (req, res) => {
         bio: updatedUser.bio,
         gender: updatedUser.gender,
         phone: updatedUser.phone,
+        links: Array.isArray(updatedUser.links) ? updatedUser.links : [],
       },
     });
   } catch (error) {
