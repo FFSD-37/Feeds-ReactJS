@@ -189,19 +189,23 @@ function ChannelPage() {
     alert('Reported this channel');
   };
 
-  const handleBlock = async () => {
-    const res = await fetch(
-      `${import.meta.env.VITE_SERVER_URL}/block_channel/${channelData.channel_name}`,
-      { method: 'POST', credentials: 'include' },
-    );
-    const data = await res.json();
-    alert(data.flag === 'blocked' ? 'Channel blocked' : 'Channel unblocked');
-    window.location.href = '/';
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    alert('Channel link copied!');
   };
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    alert('Channel link copied!');
+    const shareUrl = window.location.href;
+
+    if (navigator.share) {
+      navigator.share({
+        title: channelData.channel_name,
+        text: 'Check out this channel!',
+        url: shareUrl,
+      });
+    } else {
+      alert('Sharing not supported on this device.');
+    }
   };
 
   const renderGrid = posts =>
@@ -262,14 +266,12 @@ function ChannelPage() {
               </button>
             ))}
 
-          {!isMyChannel && (
-            <button
-              className="channel-options-btn"
-              onClick={() => setShowOptions(true)}
-            >
-              ⋮
-            </button>
-          )}
+          <button
+            className="channel-options-btn"
+            onClick={() => setShowOptions(true)}
+          >
+            ⋮
+          </button>
           {isMyChannel && (
             <button
               className="channel-edit-btn"
@@ -299,6 +301,20 @@ function ChannelPage() {
           <p className="channel-description">
             {channelData.channel_description}
           </p>
+
+          <div className="channel-links-section">
+            {channelData.channel_links.map((link, i) => (
+              <a
+                key={i}
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="channel-link-pill"
+              >
+                {link}
+              </a>
+            ))}
+          </div>
 
           <div className="channel-admin-section">
             <div
@@ -368,7 +384,7 @@ function ChannelPage() {
       </div>
 
       {/* === MODALS === */}
-      {showOptions && !isMyChannel && (
+      {showOptions && (
         <div className="channel-modal-overlay">
           <div className="channel-modal" ref={optionsRef}>
             <span
@@ -379,9 +395,11 @@ function ChannelPage() {
             </span>
             <h2 className="channel-modal-title">Options</h2>
             <ul className="channel-modal-list">
-              <li onClick={handleReport}>Report Channel</li>
-              <li onClick={handleBlock}>Block / Unblock Channel</li>
-              <li onClick={handleShare}>Copy Channel Link</li>
+              {!isMyChannel && <li onClick={handleReport}>Report Channel</li>}
+
+              <li onClick={handleCopyLink}>Copy Channel Link</li>
+              <li onClick={handleShare}>Share Channel</li>
+
               <li onClick={() => setShowAbout(true)}>About</li>
               <li onClick={() => setShowOptions(false)}>Cancel</li>
             </ul>
