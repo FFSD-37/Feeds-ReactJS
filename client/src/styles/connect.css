@@ -30,7 +30,6 @@ body {
   transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
-/* Smooth fade when switching tabs or searching */
 .connect-container.fade-enter {
   opacity: 0;
   transform: translateY(10px);

@@ -12,50 +12,29 @@ const handleGetConnect = async (req, res) => {
     const [username, , , userType] = data;
     const { mode } = req.query;
 
+    // ===== FETCH CURRENT USER OR CHANNEL =====
     let currentUser = null;
 
-    // 🔹 Determine source model dynamically
     if (userType === "Channel") {
       currentUser = await Channel.findOne({ channelName: username }).lean();
     } else {
-      currentUser = await User.findOne({ username }).lean();
+      currentUser = await User.findOne({ username })
+        .populate("followings")
+        .lean();
     }
 
     if (!currentUser)
       return res.status(404).json({ success: false, message: "User not found" });
 
-    // ✅ Shared variables (safe fallbacks)
-    const followingUsernames = Array.isArray(currentUser.followings)
-      ? currentUser.followings.map((f) => f.username)
-      : [];
-    const requestedUsernames = Array.isArray(currentUser.requested)
-      ? currentUser.requested.map((r) => r.username)
-      : [];
-    const followedChannelNames = Array.isArray(currentUser.channelFollowings)
-      ? currentUser.channelFollowings.map((f) => f.channelName)
-      : [];
+    const followingUsernames = (currentUser.followings || []).map(f => f.username);
+    const requestedUsernames = (currentUser.requested || []).map(r => r.username);
+    const followedChannelNames = (currentUser.channelFollowings || []).map(f => f.channelName);
 
-    // ===== CASE 1: Kids → show ALL channels
+    // 🧒 CASE 1: KIDS → SHOW ALL CHANNELS
     if (userType === "Kids") {
       const allChannels = await Channel.find({}).lean();
-      const formatted = allChannels.map((c) => ({
-        type: "Channel",
-        name: c.channelName,
-        logo: c.channelLogo,
-        category: Array.isArray(c.channelCategory) ? c.channelCategory[0] : c.channelCategory,
-        members: Array.isArray(c.channelMembers) ? c.channelMembers.length : 0,
-        isFollowing: followedChannelNames.includes(c.channelName),
-      }));
-      return res.json({ success: true, mode: "channels", items: formatted });
-    }
 
-    // ===== CASE 2: Channel user → show ALL channels (but not itself)
-    if (userType === "Channel") {
-      const allChannels = await Channel.find({
-        channelName: { $ne: username },
-      }).lean();
-
-      const formatted = allChannels.map((c) => ({
+      const formatted = allChannels.map(c => ({
         type: "Channel",
         name: c.channelName,
         logo: c.channelLogo,
@@ -67,14 +46,33 @@ const handleGetConnect = async (req, res) => {
       return res.json({ success: true, mode: "channels", items: formatted });
     }
 
-    // ===== CASE 3: Normal User
+    // 📺 CASE 2: CHANNEL USER → SHOW ALL CHANNELS EXCEPT SELF
+    if (userType === "Channel") {
+      const allChannels = await Channel.find({
+        channelName: { $ne: username },
+      }).lean();
+
+      const formatted = allChannels.map(c => ({
+        type: "Channel",
+        name: c.channelName,
+        logo: c.channelLogo,
+        category: Array.isArray(c.channelCategory) ? c.channelCategory[0] : c.channelCategory,
+        members: (c.channelMembers || []).length,
+        isFollowing: followedChannelNames.includes(c.channelName),
+      }));
+
+      return res.json({ success: true, mode: "channels", items: formatted });
+    }
+
+    // 👤 CASE 3: NORMAL USER
     if (userType === "Normal") {
+      // CHANNELS MODE
       if (mode === "channels") {
         const followedChannels = await Channel.find({
           channelName: { $in: followedChannelNames },
         }).lean();
 
-        const formattedChannels = followedChannels.map((c) => ({
+        const formattedChannels = followedChannels.map(c => ({
           type: "Channel",
           name: c.channelName,
           logo: c.channelLogo,
@@ -86,14 +84,34 @@ const handleGetConnect = async (req, res) => {
         return res.json({ success: true, mode: "channels", items: formattedChannels });
       }
 
-      const myFollowers = (currentUser.followers || []).map((f) => f.username);
-      const mutualUsernames = followingUsernames.filter((u) =>
-        myFollowers.includes(u)
-      );
+      //    1. Get all people I follow
+      //    2. For each, get their followers
+      //    3. Remove myself
+      //    4. Unique list
+      //    5. Return user objects
 
-      const mutualUsers = await User.find({ username: { $in: mutualUsernames } }).lean();
+      const followings = currentUser.followings || [];
 
-      const formattedUsers = mutualUsers.map((u) => ({
+      // 1. Fetch followers of all my followings
+      const mutualFollowersPromises = followings.map(async (f) => {
+        const followedUser = await User.findOne({ username: f.username })
+          .populate("followers")
+          .lean();
+
+        return followedUser?.followers?.filter(x => x.username !== username) || [];
+      });
+
+      const mutualFollowersArrays = await Promise.all(mutualFollowersPromises);
+
+      // 2. Flatten + unique
+      let mutualUsernames = [
+        ...new Set(mutualFollowersArrays.flat().map(u => u.username))
+      ];
+
+      // 3. Fetch user objects
+      const users = await User.find({ username: { $in: mutualUsernames } }).lean();
+
+      const formattedUsers = users.map(u => ({
         type: "User",
         username: u.username,
         avatarUrl: u.profilePicture,
@@ -108,12 +126,12 @@ const handleGetConnect = async (req, res) => {
       return res.json({ success: true, mode: "users", items: formattedUsers });
     }
 
+    // DEFAULT
     return res.json({ success: true, mode: "users", items: [] });
+
   } catch (error) {
     console.error("❌ Error in handleGetConnect:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 

@@ -1,8 +1,7 @@
 body {
   padding: 20px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: linear-gradient(45deg, #6b48ff, #6b48ff22);
-  transition: background-color 1s ease-in-out;
+  padding-right: 60px !important;
 }
 
 .games_header {
@@ -120,14 +119,12 @@ body {
 
 /* Responsiveness */
 
-/* Medium Desktops (992px–1199px) — 4 columns */
 @media (max-width: 1199px) and (min-width: 992px) {
   .games_game-grid {
     grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
   }
 }
 
-/* Tablets (768px–991px) — 3 columns */
 @media (max-width: 991px) and (min-width: 768px) {
   .games_game-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -140,7 +137,6 @@ body {
   }
 }
 
-/* Small Tablets & Large Phones (480px–767px) — 2 columns */
 @media (max-width: 767px) and (min-width: 480px) {
   .games_header {
     flex-direction: column;
@@ -158,7 +154,6 @@ body {
   }
 }
 
-/* Phones (<480px) — 2 columns, tighter spacing */
 @media (max-width: 479px) {
   .games_game-grid {
     grid-template-columns: repeat(2, 1fr);
