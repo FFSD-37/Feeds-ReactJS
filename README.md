@@ -55,24 +55,37 @@ git pull origin main
 
 ---
 
-## 🚀 Running the Project
+# 🚀 Running the Project (Client + Server)
 
-To run the project locally, follow these steps:
+## 1️⃣ Clone the project
+```bash
+git clone <repo-link>
+```
 
-1. Navigate to the **client** folder:
-   ```bash
-   cd client
-   ```
-2. Install all dependencies:
-   ```bash
-   npm i
-   ```
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
+## 2️⃣ Run the Client
+```bash
+cd client
+npm i
+npm run dev
+```
+
+## 3️⃣ Run the Server
+```bash
+cd server
+npm i
+npm start
+```
 
 The project will now be running locally. Open the provided localhost link in your browser to view it.
+
+---
+
+# 📤 How to Push Your Changes
+```bash
+git add .
+git commit -m "your message"
+git push origin branchname
+```
 
 ---
 
@@ -119,16 +132,16 @@ You can create **child components** freely under these parent components.
 - [✅] Profile (Self/Other) 
 - [✅] Notification  (Normal, Channel)
 - [✅] Games
-- [❌] Kids Setting
+- [✅] Setting
 
 ---
 
 ### 👤 Arnav Ranjan
 - [❌] Payment / Premium  
 - [❌] Chat  (Normal, Channel)
-- [❌] Settings
+- [❌] Kids Settings
 - [❌] Daily Usage  
-- [✅] Create Post / Reels / Stories (Channel, Normal)
+- [✅❌] Create Post / Reels / Stories (Channel, Normal)
 - [❌] Error Page(Incorrect Route)
 
 ---
