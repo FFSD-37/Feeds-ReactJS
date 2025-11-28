@@ -113,7 +113,7 @@
 
 .profile-dropdown a:hover {
   color: #00aaff;
-  transform: translateX(6px); /* subtle slide to right */
+  transform: translateX(6px); 
 }
 
 .profile-dropdown.show {
@@ -214,7 +214,6 @@
   background-color: #dee2e6;
 }
 
-/* === Responsive Design (Mobile) === */
 @media screen and (max-width: 768px) {
   .sidebar {
     flex-direction: row;
@@ -246,7 +245,6 @@
   }
 }
 
-/* FORCE SIDEBAR TO ALWAYS SHOW UNTIL MOBILE MODE (768px) */
 @media screen and (max-width: 1024px) {
   .sidebar {
     display: flex !important;
