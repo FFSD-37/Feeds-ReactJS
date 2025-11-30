@@ -1,24 +1,7 @@
 :root {
-  --bg: #ffffff;
-  --fg: #000000;
-  --bubble-sent: #4f93f7;
-  --bubble-recv: #e0e0e0;
-}
-
-.dark {
-  --bg: #1e1e1e;
-  --fg: #f5f5f5;
-  --bubble-sent: #d44219;
-  --bubble-recv: #58f609;
-}
-
-body {
-  margin: 0;
-  font-family: sans-serif;
-  background: var(--bg);
-  color: var(--fg);
-  display: flex;
-  height: 100vh;
+  --bg: rgba(255, 255, 255, 0.6);
+  --bubble-sent: rgba(0, 123, 255, 0.8);
+  --bubble-recv: rgba(220, 220, 220, 0.8);
 }
 
 .chatList {
@@ -26,10 +9,6 @@ body {
   background: #f0f0f0;
   padding: 10px;
   overflow-y: auto;
-}
-
-.chatList.dark {
-  background: #2a2a2a;
 }
 
 .user {
@@ -44,12 +23,6 @@ body {
   background-color: #d0eaff;
   border-left: 4px solid #007bff;
   font-weight: bold;
-}
-
-.chatList.dark .user.active {
-  background-color: #374151;
-  border-left: 4px solid #3b82f6;
-  color: #f5f5f5;
 }
 
 .user img {
@@ -68,7 +41,7 @@ body {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
-  background-image: url("https://img.freepik.com/free-vector/night-ocean-landscape-full-moon-stars-shine_107791-7397.jpg?semt=ais_hybrid&w=740");
+  background-image: url('https://img.freepik.com/free-vector/night-ocean-landscape-full-moon-stars-shine_107791-7397.jpg?semt=ais_hybrid&w=740');
   background-size: cover;
 }
 
@@ -131,32 +104,14 @@ body {
   cursor: pointer;
 }
 
-.toggle-dark {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: #444;
-  color: white;
-  padding: 5px 10px;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-}
-
 .back-button {
-    display: block;
-    text-align: center;
-    margin-top: auto;
-    padding: 10px;
-    background: #ddd;
-    color: #000;
-    text-decoration: none;
-    border-radius: 8px;
-    font-weight: bold;
-  }
-  
-  .chatList.dark .back-button {
-    background: #444;
-    color: #fff;
-  }
-  
+  display: block;
+  text-align: center;
+  margin-top: auto;
+  padding: 10px;
+  background: #ddd;
+  color: #000;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: bold;
+}

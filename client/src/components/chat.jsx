@@ -1,21 +1,15 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import io from 'socket.io-client';
-import 'emoji-picker-element';
 import '../styles/chat.css';
 import { useUserData } from '../providers/userData';
+import socket from '../socket';
 
 export default function ChatPage() {
   const { userData } = useUserData();
-
   const [activeUser, setActiveUser] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [themeDark, setThemeDark] = useState(false);
   const [input, setInput] = useState('');
   const [friends, setFriends] = useState([]);
-
   const chatBoxRef = useRef(null);
-  const emojiPickerRef = useRef(null);
-  const socket = useRef(null);
 
   const scrollBottom = useCallback(() => {
     const el = chatBoxRef.current;
@@ -23,18 +17,12 @@ export default function ChatPage() {
   }, []);
 
   useEffect(() => {
-    socket.current = io(import.meta.env.VITE_SERVER_URL, {
-      withCredentials: true,
-    });
-
-    socket.current.on('receiveMessage', msg => {
+    socket.on('receiveMessage', msg => {
       if (msg.from === activeUser) {
         setMessages(prev => [...prev, msg]);
         scrollBottom();
       }
     });
-
-    return () => socket.current.disconnect();
   }, [activeUser, scrollBottom]);
 
   // Load friend list only once
@@ -43,6 +31,9 @@ export default function ChatPage() {
       try {
         const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/friends`, {
           credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
         });
 
         const data = await res.json();
@@ -61,9 +52,12 @@ export default function ChatPage() {
 
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/chat/${username}`,
+        `${import.meta.env.VITE_SERVER_URL}/chat/${username}`,
         {
           credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
         },
       );
 
@@ -96,7 +90,7 @@ export default function ChatPage() {
       time,
     };
 
-    socket.current.emit('sendMessage', {
+    socket.emit('sendMessage', {
       to: activeUser,
       text: input,
       time,
@@ -107,25 +101,10 @@ export default function ChatPage() {
     scrollBottom();
   };
 
-  // Emoji picker binding
-  useEffect(() => {
-    if (!emojiPickerRef.current) return;
-
-    const picker = emojiPickerRef.current;
-    const onEmojiClick = e => setInput(prev => prev + e.detail.unicode);
-
-    picker.addEventListener('emoji-click', onEmojiClick);
-
-    return () => picker.removeEventListener('emoji-click', onEmojiClick);
-  }, []);
-
   return (
-    <div
-      className={themeDark ? 'dark' : ''}
-      style={{ display: 'flex', height: '100vh' }}
-    >
+    <div style={{ display: 'flex', height: '100vh', width: '90vw' }}>
       {/* Sidebar */}
-      <div className={`chatList ${themeDark ? 'dark' : ''}`}>
+      <div className="chatList">
         <div className="me">{userData.username}</div>
 
         {friends.map(friend => (
@@ -149,13 +128,23 @@ export default function ChatPage() {
         <div className="messages" ref={chatBoxRef}>
           {!activeUser ? (
             <div
-              style={{ textAlign: 'center', marginTop: '50px', opacity: 0.5 }}
+              style={{
+                textAlign: 'center',
+                marginTop: '50px',
+                opacity: 0.5,
+                color: 'white',
+              }}
             >
               Select a user to start chatting
             </div>
           ) : messages.length === 0 ? (
             <div
-              style={{ textAlign: 'center', marginTop: '50px', opacity: 0.5 }}
+              style={{
+                textAlign: 'center',
+                marginTop: '50px',
+                opacity: 0.5,
+                color: 'white',
+              }}
             >
               No messages yet. Start the conversation.
             </div>
@@ -184,39 +173,11 @@ export default function ChatPage() {
                 onKeyDown={e => e.key === 'Enter' && sendMessage()}
               />
 
-              <button
-                onClick={() => {
-                  const picker = emojiPickerRef.current;
-                  picker.style.display =
-                    picker.style.display === 'none' ? 'block' : 'none';
-                }}
-              >
-                😊
-              </button>
-
               <button onClick={sendMessage}>Send</button>
             </div>
-
-            <emoji-picker
-              ref={emojiPickerRef}
-              style={{
-                position: 'absolute',
-                bottom: '60px',
-                right: '100px',
-                display: 'none',
-              }}
-            />
           </div>
         )}
       </div>
-
-      <button
-        className="toggle-dark"
-        onClick={() => setThemeDark(prev => !prev)}
-        style={{ position: 'absolute', top: 10, right: 10 }}
-      >
-        🌙
-      </button>
     </div>
   );
 }

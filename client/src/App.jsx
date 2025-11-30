@@ -10,7 +10,12 @@ import Stories from './components/stories.jsx';
 import ProfilePage from './components/Profile.jsx';
 import Connect from './components/connect.jsx';
 import EditProfile from './components/editProfile.jsx';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  useNavigate,
+} from 'react-router-dom';
 import { UserDataProvider, useUserData } from './providers/userData.jsx';
 import EditChannel from './components/editChannel.jsx';
 import ChannelHome from './components/channelHome.jsx';
@@ -28,9 +33,20 @@ import Settings from './components/settings.jsx';
 // import { Home } from 'lucide-react';
 import Sidebar from './components/Sidebar.jsx';
 import ChatPage from './components/chat.jsx';
+import { useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { connectSocket, disconnectSocket } from './redux/slices/socketSlice.js';
 
 const AppContent = () => {
   const { userData } = useUserData();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    dispatch(connectSocket());
+    return () => dispatch(disconnectSocket());
+  }, [navigate, dispatch]);
+
   return (
     <>
       <Routes>
