@@ -42,6 +42,7 @@ function ChannelPage() {
   const [showMembers, setShowMembers] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
+  const [activePost, setActivePost] = useState(null);
 
   const isViewerUser = userData?.type === 'Normal' || userData?.type === 'Kids';
   const isMyChannel =
@@ -208,26 +209,92 @@ function ChannelPage() {
     }
   };
 
+  const handleArchivePost = async postId => {
+    const res = await fetch(
+      `${import.meta.env.VITE_SERVER_URL}/channel/archive/${postId}`,
+      { method: 'POST', credentials: 'include' },
+    );
+
+    if (res.ok) {
+      // move post from posts → archived
+      setPostsData(prev => ({
+        ...prev,
+        posts: prev.posts.filter(p => p.id !== postId),
+        archived: [...prev.archived, prev.posts.find(p => p.id === postId)],
+      }));
+      setActivePost(null);
+    } else alert('Failed to archive');
+  };
+
+  const handleUnarchivePost = async postId => {
+    const res = await fetch(
+      `${import.meta.env.VITE_SERVER_URL}/channel/unarchive/${postId}`,
+      { method: 'POST', credentials: 'include' },
+    );
+
+    if (res.ok) {
+      setPostsData(prev => ({
+        ...prev,
+        archived: prev.archived.filter(p => p.id !== postId),
+        posts: [...prev.posts, prev.archived.find(p => p.id === postId)],
+      }));
+      setActivePost(null);
+    } else alert('Failed to unarchive');
+  };
+
+  const handleDeletePost = async postId => {
+    const res = await fetch(
+      `${import.meta.env.VITE_SERVER_URL}/channel/delete/${postId}`,
+      { method: 'DELETE', credentials: 'include' },
+    );
+
+    if (res.ok) {
+      // Remove from all lists
+      setPostsData(prev => ({
+        ...prev,
+        posts: prev.posts.filter(p => p.id !== postId),
+        archived: prev.archived.filter(p => p.id !== postId),
+        liked: prev.liked.filter(p => p.id !== postId),
+        saved: prev.saved.filter(p => p.id !== postId),
+      }));
+      setActivePost(null);
+    } else alert('Deletion failed');
+  };
+
   const renderGrid = posts =>
     posts && posts.length > 0 ? (
       posts.map((post, i) => (
-        <div
-          className="channel-post"
-          key={i}
-          onClick={() => openPostOverlay(post.id || post._id)}
-        >
-          {post.type === 'Img' ? (
-            <img src={post.url} alt="Post" className="channel-post-img" />
-          ) : (
-            <video
-              src={post.url}
-              controls
-              muted
-              loop
-              playsInline
-              className="channel-post-video"
-            />
-          )}
+        <div className="channel-post-wrapper" key={i}>
+          {isMyChannel &&
+            (activeTab === 'posts' || activeTab === 'archive') && (
+              <div
+                className="post-options-btn"
+                onClick={e => {
+                  e.stopPropagation();
+                  setActivePost(post);
+                }}
+              >
+                ⋮
+              </div>
+            )}
+
+          <div
+            className="channel-post"
+            onClick={() => openPostOverlay(post.id || post._id)}
+          >
+            {post.type === 'Img' ? (
+              <img src={post.url} alt="Post" className="channel-post-img" />
+            ) : (
+              <video
+                src={post.url}
+                controls
+                muted
+                loop
+                playsInline
+                className="channel-post-video"
+              />
+            )}
+          </div>
         </div>
       ))
     ) : (
@@ -504,6 +571,40 @@ function ChannelPage() {
                 })}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {activePost && (
+        <div className="channel-modal-overlay">
+          <div className="channel-modal">
+            <span className="channel-close" onClick={() => setActivePost(null)}>
+              ×
+            </span>
+            <h2 className="channel-modal-title">Post Options</h2>
+
+            <ul className="channel-modal-list">
+              {/* Archive / Unarchive */}
+              {activeTab !== 'archive' ? (
+                <li onClick={() => handleArchivePost(activePost.id)}>
+                  Archive Post
+                </li>
+              ) : (
+                <li onClick={() => handleUnarchivePost(activePost.id)}>
+                  Unarchive Post
+                </li>
+              )}
+
+              {/* Delete */}
+              <li
+                onClick={() => handleDeletePost(activePost.id)}
+                style={{ color: 'red' }}
+              >
+                Delete Post
+              </li>
+
+              <li onClick={() => setActivePost(null)}>Cancel</li>
+            </ul>
           </div>
         </div>
       )}

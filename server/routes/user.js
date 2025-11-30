@@ -69,6 +69,9 @@ import {
   getChannelPosts,
   followChannel,
   unfollowChannel,
+  archivePost,
+  unarchivePost,
+  deletePost,
 } from "../controllers/Ayush/channel.js";
 import {
   getAllChannelPosts,
@@ -267,6 +270,12 @@ router.post("/channel/comment", isAuthuser, commentOnChannelPost);
 router.post("/follow_channel/:channelName", isAuthuser, followChannel);
 
 router.post("/unfollow_channel/:channelName", isAuthuser, unfollowChannel);
+
+router.post("/channel/archive/:postId", isAuthuser, archivePost);
+
+router.post("/channel/unarchive/:postId", isAuthuser, unarchivePost);
+
+router.delete("/channel/delete/:postId", isAuthuser, deletePost);
 
 router.post("/connect/follow", isAuthuser, followEntity);
 
