@@ -428,6 +428,7 @@ const ProfilePage = () => {
           <div style={styles.modalBox}>
 
             <h2>{overlayType === "followers" ? "Followers" : "Following"}</h2>
+            <button style={styles.closeBtn} onClick={closeOverlay}>X</button>
 
             {(overlayType === "followers" ? followers : followings).map((user, index) => (
               <div
@@ -441,7 +442,6 @@ const ProfilePage = () => {
               </div>
             ))}
 
-            <button style={styles.closeBtn} onClick={closeOverlay}>Close</button>
           </div>
         </div>
       )}
@@ -667,6 +667,7 @@ const styles = {
 
   // ---- MODAL POPUP BOX ----
   modalBox: {
+    position: 'relative',
     backgroundColor: '#fff',
     width: '350px',
     maxHeight: '70vh',
@@ -693,15 +694,19 @@ const styles = {
 
   // ---- CLOSE BUTTON ----
   closeBtn: {
-    marginTop: '16px',
-    padding: '10px 18px',
-    backgroundColor: '#000',
-    color: '#fff',
+    position: 'absolute',
+    top: '10px',
+    right: '10px',
+    width: '32px',
+    height: '32px',
+    backgroundColor: 'transparent',
+    color: '#000',
     border: 'none',
-    borderRadius: '8px',
+    fontSize: '20px',
     cursor: 'pointer',
-    fontWeight: '600',
-    width: '100%',
+    fontWeight: 'bold',
+    lineHeight: '32px',
+    textAlign: 'center',
   },
   loaderOverlay: {
     position: "fixed",
