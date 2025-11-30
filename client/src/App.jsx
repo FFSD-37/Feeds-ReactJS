@@ -37,6 +37,7 @@ import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { connectSocket, disconnectSocket } from './redux/slices/socketSlice.js';
 import DailyUsagePage from './components/dailyUsage.jsx';
+import NotFound from './components/error.jsx';
 
 const AppContent = () => {
   const { userData } = useUserData();
@@ -77,6 +78,7 @@ const AppContent = () => {
         <Route path="/settings" element={<Settings />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/dailyUsage" element={<DailyUsagePage />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
       {userData?.username ? (
         <Sidebar />
