@@ -20,13 +20,14 @@ import CreatePost from './components/create_post.jsx';
 import ImageEditor from './components/create_post_2.jsx';
 import FinalizePost from './components/finalize_post.jsx';
 import TandC from './components/TandC.jsx';
-import Help from  './components/Help.jsx';
+import Help from './components/Help.jsx';
 import Contact from './components/Contact.jsx';
 import Reels from './components/Reels.jsx';
 import ChannelRegistration from './components/channelregistration.jsx';
 import Settings from './components/settings.jsx';
 // import { Home } from 'lucide-react';
 import Sidebar from './components/Sidebar.jsx';
+import ChatPage from './components/chat.jsx';
 
 const AppContent = () => {
   const { userData } = useUserData();
@@ -57,7 +58,7 @@ const AppContent = () => {
         <Route path="/reels" element={<Reels />} />
         <Route path="/channelregistration" element={<ChannelRegistration />} />
         <Route path="/settings" element={<Settings />} />
-          
+        <Route path="/chat" element={<ChatPage />} />
       </Routes>
       {userData?.username ? (
         <Sidebar />
