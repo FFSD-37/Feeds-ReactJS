@@ -34,8 +34,14 @@ export const UserDataProvider = ({ children }) => {
           // console.log(data);
 
           setUserData(data);
-          if (pathname === '/login' || pathname === '/signup')
-            navigate('/home');
+          if (pathname === '/login' || pathname === '/signup') {
+            if (
+              data.type === 'Channel' ||
+              (data.type === 'Channel' && pathname === '/home')
+            )
+              navigate('/channelhome');
+            else navigate('/home');
+          }
         } else throw new Error('Unauthorized');
         // eslint-disable-next-line no-unused-vars
       } catch (error) {
