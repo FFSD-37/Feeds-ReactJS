@@ -102,18 +102,21 @@
   z-index: 999;
 }
 
-.profile-dropdown a {
+.profile-dropdown a,
+.profile-dropdown button {
   text-decoration: none;
   color: white;
   display: block;
   padding: 10px 20px;
   transition: all 0.25s ease;
   white-space: nowrap;
+  cursor: pointer;
 }
 
-.profile-dropdown a:hover {
+.profile-dropdown a:hover,
+.profile-dropdown button:hover {
   color: #00aaff;
-  transform: translateX(6px); 
+  transform: translateX(6px);
 }
 
 .profile-dropdown.show {
@@ -240,7 +243,9 @@
     border-radius: 10px;
   }
 
-  .profile-dropdown a {
+  .profile-dropdown a,
+  .profile-dropdown button {
+    cursor: pointer;
     padding: 8px 16px;
   }
 }
