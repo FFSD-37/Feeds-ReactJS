@@ -33,6 +33,11 @@ export const UserDataProvider = ({ children }) => {
           }
           // console.log(data);
 
+          if (pathname === '/') {
+            if (data.type === 'Channel') navigate('/channelhome');
+            else navigate('/home');
+          }
+
           setUserData(data);
           if (pathname === '/login' || pathname === '/signup') {
             if (

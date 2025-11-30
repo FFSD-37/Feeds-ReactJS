@@ -33,6 +33,11 @@ const setSession = async (username) => {
 const getDailyusage = async (req, res) => {
   try {
     const { data } = req.userDetails;
+    if (data[3] === "Channel")
+      return res
+        .status(404)
+        .json({ error: "Channels do not have session data" });
+
     const user = await seasonSchema
       .find({ username: data[0] })
       .sort({ createdAt: -1 });
