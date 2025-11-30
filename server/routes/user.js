@@ -62,31 +62,31 @@ import {
   handlegetUserPost,
   handlegetBasicDetails,
   handlegetsensitive,
-  handleisfriend
+  handleisfriend,
 } from "../controllers/Gourav/profile.js";
-import { 
+import {
   handlegetchannel,
   getChannelPosts,
   followChannel,
   unfollowChannel,
 } from "../controllers/Ayush/channel.js";
-import{
+import {
   getAllChannelPosts,
   likeChannelPost,
   saveChannelPost,
   commentOnChannelPost,
   getSingleChannelPost,
-} from "../controllers/Ayush/home.js"
-import{
+} from "../controllers/Ayush/home.js";
+import {
   handleGetConnect,
   getSearch,
   followEntity,
   unfollowEntity,
-} from "../controllers/Ayush/connect.js"
+} from "../controllers/Ayush/connect.js";
 import { handleimagKitauth } from "../services/imagKit.js";
 import { isAuthuser } from "../middleware/isAuthuser.js";
 import { checkOut, verify_payment } from "../controllers/payment.js";
-import { getChat, getChatpage } from "../controllers/chat.js";
+import { getChat, getFriendList } from "../controllers/chat.js";
 import { getDailyusage } from "../controllers/timout.js";
 import { handlegetstories } from "../controllers/userStory.js";
 import homeRouter from "./home.js";
@@ -194,7 +194,7 @@ router.post("/unfollow/:username", isAuthuser, unfollowSomeone);
 
 router.get("/chat/:username", isAuthuser, getChat);
 
-router.get("/chat", isAuthuser, getChatpage);
+router.get("/friends", isAuthuser, getFriendList);
 
 router.get("/connect/search", isAuthuser, getSearch);
 
@@ -228,7 +228,7 @@ router.post("/atin_job", handleloginsecond);
 
 router.post("/posts/like", isAuthuser, handlelikereel);
 
-router.post("/comment",isAuthuser, handlepostcomment);
+router.post("/comment", isAuthuser, handlepostcomment);
 
 router.post("/report_post", isAuthuser, handlereportpost);
 

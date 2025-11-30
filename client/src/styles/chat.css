@@ -1,0 +1,117 @@
+:root {
+  --bg: rgba(255, 255, 255, 0.6);
+  --bubble-sent: rgba(0, 123, 255, 0.8);
+  --bubble-recv: rgba(220, 220, 220, 0.8);
+}
+
+.chatList {
+  width: 25%;
+  background: #f0f0f0;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.user.active {
+  background-color: #d0eaff;
+  border-left: 4px solid #007bff;
+  font-weight: bold;
+}
+
+.user img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.messages {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  background-image: url('https://img.freepik.com/free-vector/night-ocean-landscape-full-moon-stars-shine_107791-7397.jpg?semt=ais_hybrid&w=740');
+  background-size: cover;
+}
+
+.message {
+  max-width: 60%;
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  border-radius: 16px;
+  word-break: break-word;
+  backdrop-filter: blur(3px);
+}
+
+.sent {
+  align-self: flex-end;
+  background: var(--bubble-sent);
+  color: white;
+  margin-left: auto;
+}
+
+.received {
+  align-self: flex-start;
+  background: var(--bubble-recv);
+  color: black;
+  margin-right: auto;
+}
+
+.timestamp {
+  font-size: 10px;
+  opacity: 0.6;
+  text-align: right;
+}
+
+.input-area {
+  display: flex;
+  padding: 10px;
+  background: var(--bg);
+  border-top: 1px solid #ccc;
+}
+
+.input-area button#emoji-btn {
+  background: none;
+  font-size: 20px;
+  padding: 0 10px;
+}
+
+.input-area input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+}
+
+.input-area button {
+  padding: 10px 20px;
+  border: none;
+  margin-left: 10px;
+  background: var(--bubble-sent);
+  color: white;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.back-button {
+  display: block;
+  text-align: center;
+  margin-top: auto;
+  padding: 10px;
+  background: #ddd;
+  color: #000;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: bold;
+}
