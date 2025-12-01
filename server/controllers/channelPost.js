@@ -3,7 +3,6 @@ import channelPost from "../models/channelPost.js";
 import Channel from "../models/channelSchema.js";
 
 const categories = [
-  "All",
   "Entertainment",
   "Education",
   "Animations",
@@ -38,10 +37,9 @@ const handlechannelPostupload = async (req, res) => {
       channelName: data[0],
     }).lean();
 
-    let allowedCatogary =
-      channelDetails?.channelCategory === "All"
-        ? categories
-        : channelDetails?.channelCategory;
+    let allowedCatogary = channelDetails?.channelCategory.includes("All")
+      ? categories
+      : channelDetails?.channelCategory;
     if (!allowedCatogary.includes(req.body.category))
       return res.status(400).json({ err: "Invalid category selected" });
 
@@ -68,7 +66,14 @@ const handlechannelPostupload = async (req, res) => {
       message: `You uploaded a new ${post.type === "Reel" ? "reel" : "post"}!`,
     });
 
-    return res.status(200).json({ msg: "Post uploaded successfully" });
+    return res
+      .status(200)
+      .json({
+        success: true,
+        message: `${
+          post.type === "Reel" ? "Reel" : "Post"
+        } uploaded successfully.`,
+      });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ err: error.message });
@@ -83,10 +88,9 @@ const handleGetcategories = async (req, res) => {
     if (!channelDetails?.channelName?.length)
       return res.status(404).json({ err: "Channel not found" });
     return res.status(200).json({
-      category:
-        channelDetails?.channelCategory === "All"
-          ? categories
-          : channelDetails?.channelCategory,
+      category: channelDetails?.channelCategory.includes("All")
+        ? categories
+        : channelDetails?.channelCategory,
     });
   } catch (error) {
     console.log(error);

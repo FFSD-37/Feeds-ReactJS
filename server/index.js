@@ -17,8 +17,6 @@ import { clearSession, setSession } from "./controllers/timout.js";
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-
 const app = express();
 const server = http.createServer(app);
 

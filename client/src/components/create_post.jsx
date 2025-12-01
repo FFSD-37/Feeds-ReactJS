@@ -1,8 +1,10 @@
 import ImageKit from 'imagekit-javascript';
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUserData } from '../providers/userData';
 
 const PostCreation = () => {
+  const { userData } = useUserData();
   const [selectedPostType, setSelectedPostType] = useState('image');
   const [postTypeText, setPostTypeText] = useState('Image Post');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -31,11 +33,16 @@ const PostCreation = () => {
     'video/quicktime',
   ];
 
-  const postTypes = [
+  let postTypes = [
     { type: 'image', accept: 'image/*', label: 'Image Post' },
     { type: 'reel', accept: 'video/*', label: 'Reel Post' },
-    { type: 'story', accept: 'image/*, video/*', label: 'Story Post' },
   ];
+  if (userData?.type !== 'Channel')
+    postTypes.push({
+      type: 'story',
+      accept: 'image/*, video/*',
+      label: 'Story',
+    });
 
   const uploadToImageKit = async file => {
     const authRes = await fetch(
