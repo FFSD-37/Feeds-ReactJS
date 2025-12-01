@@ -13,23 +13,30 @@ const faqs = [
 ];
 
 const Help = () => (
-  <main className="help-card">
-    <h1 className="help-title">Help & Support</h1>
-    <section>
-      <h2 className="help-subtitle">Frequently Asked Questions</h2>
-      <ul>
-        {faqs.map((item, idx) => (
-          <li key={idx} className="help-faq-item">
-            <b>{item.q}</b><br />
-            <span>{item.a}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-    <p className="help-footer">
-      Still need help? <a className="help-link" href="/contact">Contact us</a>.
-    </p>
-  </main>
+  /* Added the Container for the Blue Sky Background */
+  <div className="help-container">
+    
+    {/* The Glass Card */}
+    <main className="help-card">
+      <h1 className="help-title">Help & Support</h1>
+      
+      <section>
+        <h2 className="help-subtitle">Frequently Asked Questions</h2>
+        <ul className="help-faq-list">
+          {faqs.map((item, idx) => (
+            <li key={idx} className="help-faq-item">
+              <b>{item.q}</b>
+              <span>{item.a}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+      
+      <p className="help-footer">
+        Still need help? <a className="help-link" href="/contact">Contact us</a>
+      </p>
+    </main>
+  </div>
 );
 
 export default Help;

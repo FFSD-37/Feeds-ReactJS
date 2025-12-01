@@ -2,30 +2,35 @@ import React from "react";
 import "../styles/TandC.css";
 
 const TandC = () => (
-  <main className="tandc-card">
-    <h1 className="tandc-title">Terms &amp; Conditions</h1>
-    <ol className="tandc-list">
-      <li>
-        <b>Use of Service:</b><br />
-        By registering, you agree to use Feeds responsibly and ethically.
-      </li>
-      <li>
-        <b>Privacy:</b><br />
-        Your data stays private with us and is used only according to our Privacy Policy.
-      </li>
-      <li>
-        <b>Content Ownership:</b><br />
-        You keep your rights, but we can display your content on Feeds.
-      </li>
-      <li>
-        <b>Updates:</b><br />
-        We may update terms at any time. Please review this page regularly.
-      </li>
-    </ol>
-    <div className="tandc-footer">
-      Questions? <a className="tandc-link" href="/contact">Contact support</a>.
-    </div>
-  </main>
+  <div className="tandc-container">
+    <main className="tandc-card">
+      <h1 className="tandc-title">Terms &amp; Conditions</h1>
+      
+      <div className="tandc-content">
+        {/* Section 1 */}
+        <div className="tandc-section">
+          <h2>1. Introduction</h2>
+          <p>
+            Welcome to Feeds! By using our platform, you agree to these terms.
+          </p>
+        </div>
+
+        {/* Section 2 */}
+        <div className="tandc-section">
+          <h2>2. User Responsibilities</h2>
+          <ul>
+            <li>You must be at least 13 years old to use this platform.</li>
+            <li>Do not post offensive or illegal content.</li>
+            <li>Respect other users and maintain a friendly environment.</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div className="tandc-footer">
+        Questions? <a className="tandc-link" href="/contact">Contact support</a>
+      </div>
+    </main>
+  </div>
 );
 
 export default TandC;

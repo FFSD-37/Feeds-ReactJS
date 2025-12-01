@@ -3,7 +3,12 @@ import "./../styles/stories.css";
 
 /**
  * Stories component
- * Professional UI Overhaul
+ *
+ * Props:
+ *  - initialStories: optional array of stories preloaded from server
+ *      each story: { _id, username, avatarUrl, url, createdAt, liked? }
+ *  - currentUser: optional current logged-in username
+ *  - fetchUrl: optional url to fetch stories if initialStories not provided (default '/stories')
  */
 export default function Stories({
   initialStories = null,
@@ -17,14 +22,15 @@ export default function Stories({
   // viewer state
   const [viewerOpen, setViewerOpen] = useState(false);
   const [activeUsername, setActiveUsername] = useState(null);
-  const [activeStories, setActiveStories] = useState([]);
+  const [activeStories, setActiveStories] = useState([]); // stories of active user
   const [activeIndex, setActiveIndex] = useState(0);
-  const [progressPercents, setProgressPercents] = useState([]);
+  const [progressPercents, setProgressPercents] = useState([]); // per-story percent 0..100
   const [isPaused, setIsPaused] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
 
   const progressIntervalRef = useRef(null);
-  const storyMediaRefs = useRef({});
-  const defaultDuration = 5000;
+  const storyMediaRefs = useRef({}); // store refs by index for media elements
+  const defaultDuration = 5000; // ms for images or fallback
   const [progressDuration, setProgressDuration] = useState(defaultDuration);
 
   // Build a map of username -> list of stories
@@ -49,7 +55,9 @@ export default function Stories({
       fetch(fetchUrl, {
         method: "GET",
         credentials: "include",
-        headers: { Accept: "application/json" },
+        headers: {
+          Accept: "application/json",
+        },
       })
         .then((res) => {
           if (!res.ok) throw new Error(`Fetch failed ${res.status}`);
@@ -67,6 +75,7 @@ export default function Stories({
     }
   }, [initialStories, fetchUrl]);
 
+  // Open viewer for a username
   function openStory(username) {
     const arr = usersMap[username]?.stories || [];
     if (!arr.length) return;
@@ -76,6 +85,7 @@ export default function Stories({
     setProgressPercents(new Array(arr.length).fill(0));
     setViewerOpen(true);
     setIsPaused(false);
+    setIsBuffering(false);
     setProgressDuration(defaultDuration);
     setTimeout(() => startProgress(0), 50);
   }
@@ -150,7 +160,8 @@ export default function Stories({
     setIsPaused(false);
     const media = storyMediaRefs.current[activeIndex];
     if (media && media.tagName === "VIDEO") {
-      media.play().catch(() => {});
+      setIsBuffering(true);
+      media.play().then(() => setIsBuffering(false)).catch(() => setIsBuffering(false));
     }
     startProgress(activeIndex);
   }
@@ -162,6 +173,7 @@ export default function Stories({
       try { prevMedia.pause(); } catch (e) {}
     }
     setActiveIndex(index);
+    setIsBuffering(false);
     setProgressPercents((prev) => {
       const next = prev.slice();
       for (let i = 0; i < next.length; i++) {
@@ -211,7 +223,8 @@ export default function Stories({
     if (!media) return;
     if (media.tagName === "VIDEO") {
       if (media.paused) {
-        media.play().catch(() => {});
+        setIsBuffering(true);
+        media.play().then(() => setIsBuffering(false)).catch(() => setIsBuffering(false));
         resumeProgress();
       } else {
         media.pause();
@@ -262,6 +275,8 @@ export default function Stories({
     if (!el) return;
     storyMediaRefs.current[index] = el;
     if (el.tagName === "VIDEO") {
+      el.addEventListener("waiting", () => setIsBuffering(true));
+      el.addEventListener("playing", () => setIsBuffering(false));
       el.addEventListener("loadedmetadata", () => {
         if (index === activeIndex) {
           stopProgress();
@@ -275,138 +290,230 @@ export default function Stories({
 
   const uniqueUsers = useMemo(() => Object.values(usersMap).map((u) => ({ username: u.username, avatar: u.avatar })), [usersMap]);
 
-  // Professional Apple-style Spinner
+  // Professional spinner with gradient
   const Spinner = () => (
-    <div className="stories-spinner-container">
-      <svg className="stories-spinner" viewBox="0 0 50 50">
-        <circle className="path" cx="25" cy="25" r="20" fill="none" strokeWidth="4"></circle>
-      </svg>
-      <span className="loading-text">Updating feed...</span>
+    <div className="spinner-container">
+      <div className="spinner">
+        <div className="spinner-gradient"></div>
+      </div>
+      <div className="spinner-text">Loading stories...</div>
     </div>
   );
 
   const NoStories = () => (
     <div className="no-stories-container">
-      <div className="no-stories-icon">😴</div>
-      <h3>All caught up</h3>
-      <p>No stories available at the moment.</p>
+      <div className="no-stories-icon">✨</div>
+      <div className="no-stories-title">No stories available</div>
+      <div className="no-stories-subtitle">When users post stories, they'll appear here</div>
     </div>
   );
 
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffHours = diffMs / (1000 * 60 * 60);
+    
+    if (diffHours < 24) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (diffHours < 48) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+  };
+
   return (
-    <div className="stories-wrapper">
+    <div className="stories-app">
+      <div className="stories-header">
+        <h1 className="stories-title">Stories</h1>
+        <div className="stories-subtitle">See what's happening with people you follow</div>
+      </div>
+
       {loading ? (
-        <Spinner />
+        <div className="loading-container">
+          <Spinner />
+        </div>
       ) : error ? (
-        <div className="stories-error">{error}</div>
+        <div className="error-container">
+          <div className="error-icon">⚠️</div>
+          <div className="error-message">{error}</div>
+          <button className="error-retry" onClick={() => window.location.reload()}>Try Again</button>
+        </div>
       ) : uniqueUsers.length === 0 ? (
         <NoStories />
       ) : (
         <>
-          <div className="stories-tray">
+          <div className="stories-grid">
             {uniqueUsers.map((user) => (
-              <button
+              <div
                 key={user.username}
-                className="story-trigger"
+                className="story-user-card"
                 onClick={() => openStory(user.username)}
-                aria-label={`View story by ${user.username}`}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") openStory(user.username);
+                }}
               >
-                <div className="avatar-ring">
-                  <div className="avatar-gap">
-                    <img 
-                      src={user.avatar || "/api/placeholder/80/80"} 
-                      alt="" 
-                      className="tray-avatar" 
-                    />
+                <div className="story-avatar-wrapper">
+                  <div className="story-avatar-glow"></div>
+                  <img 
+                    src={user.avatar || "/api/placeholder/96/96"} 
+                    alt={user.username} 
+                    className="story-avatar" 
+                    loading="lazy"
+                  />
+                  <div className="story-indicator"></div>
+                </div>
+                <div className="story-user-info">
+                  <div className="story-username">{user.username}</div>
+                  <div className="story-count">
+                    {usersMap[user.username]?.stories.length || 0} story
+                    {usersMap[user.username]?.stories.length !== 1 ? 's' : ''}
                   </div>
                 </div>
-                <span className="tray-username">{user.username}</span>
-              </button>
+              </div>
             ))}
           </div>
 
-          {/* Viewer Overlay */}
-          <div className={`story-overlay ${viewerOpen ? "open" : ""}`} aria-hidden={!viewerOpen}>
-            <div className="story-backdrop" onClick={closeStory}></div>
+          {/* Viewer Modal */}
+          <div className={`story-viewer ${viewerOpen ? 'open' : ''}`} id="story-viewer" aria-hidden={!viewerOpen}>
+            <div className="viewer-backdrop" onClick={closeStory}></div>
             
-            <div className="story-modal">
-              {viewerOpen && (
-                <>
-                  <div className="progress-container">
-                    {(activeStories || []).map((s, i) => (
-                      <div className="progress-track" key={s._id || i}>
-                        <div 
-                          className="progress-fill" 
-                          style={{ width: `${progressPercents[i] || 0}%` }} 
-                        />
-                      </div>
-                    ))}
+            <div className="viewer-content">
+              {/* Progress Bars */}
+              <div className="story-progress" id="story-progress-container">
+                {(activeStories || []).map((s, i) => (
+                  <div className="progress-track" key={s._id || i}>
+                    <div 
+                      className="progress-fill" 
+                      id={`progress-${i}`} 
+                      style={{ width: `${progressPercents[i] || 0}%` }}
+                    />
                   </div>
+                ))}
+              </div>
 
-                  <div className="modal-header">
-                    <div className="header-left">
-                      <img 
-                        src={activeStories[0]?.avatarUrl || "/api/placeholder/64/64"} 
-                        alt="" 
-                        className="header-avatar" 
-                      />
-                      <div className="header-text">
-                        <span className="header-username">{activeUsername}</span>
-                        <span className="header-time">
-                          {activeStories[activeIndex] ? new Date(activeStories[activeIndex].createdAt).toLocaleString(undefined, { hour: 'numeric', minute: 'numeric' }) : ""}
-                        </span>
-                      </div>
+              {/* Header */}
+              <div className="story-header">
+                <div className="user-info" id="story-user-info">
+                  <div className="user-avatar-container">
+                    <img 
+                      src={activeStories[0]?.avatarUrl || "/api/placeholder/40/40"} 
+                      alt={activeUsername} 
+                      className="user-avatar" 
+                    />
+                  </div>
+                  <div className="user-details">
+                    <div className="username" id="story-username">{activeUsername}</div>
+                    <div className="post-time" id="story-time">
+                      {activeStories[activeIndex] ? formatTime(activeStories[activeIndex].createdAt) : ''}
                     </div>
-                    
-                    <button className="close-btn" onClick={closeStory} aria-label="Close">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </button>
                   </div>
+                </div>
+                <div className="header-actions">
+                  <button 
+                    className="action-button pause-resume" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isPaused) resumeProgress(); else pauseProgress();
+                    }}
+                    aria-label={isPaused ? "Resume story" : "Pause story"}
+                  >
+                    {isPaused ? '▶️' : '⏸️'}
+                  </button>
+                  <button 
+                    className="action-button close" 
+                    onClick={closeStory}
+                    aria-label="Close story"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
 
-                  {/* Navigation Click Areas */}
-                  <div className="nav-area left" onClick={(e) => { e.stopPropagation(); previousStory(); }}></div>
-                  <div className="nav-area right" onClick={(e) => { e.stopPropagation(); nextStory(); }}></div>
-
-                  <div className="media-stage" onClick={handleMediaClick}>
-                    {(activeStories || []).map((story, i) => {
-                      const isActive = i === activeIndex;
-                      const type = story.url && story.url.toLowerCase().includes(".mp4") ? "video" : "image";
-                      return (
-                        <div 
-                          key={story._id || i} 
-                          className={`media-slide ${isActive ? "active" : ""}`}
-                        >
-                          {type === "image" ? (
-                            <img
-                              src={story.url}
-                              alt=""
-                              className="story-content"
-                              ref={(el) => {
-                                if (isActive) attachMediaRef(i, el);
-                                else storyMediaRefs.current[i] = storyMediaRefs.current[i] || null;
-                              }}
-                            />
-                          ) : (
-                            <video 
-                              src={story.url} 
-                              className="story-content" 
-                              ref={(el) => attachMediaRef(i, el)} 
-                              playsInline 
-                              muted 
-                              autoPlay={isActive} 
-                            />
-                          )}
-                          
-                          <StoryLikeButton 
-                            story={story} 
-                            onToggle={(setLocal) => toggleLike(story._id || story.id, !!story.liked, setLocal)} 
-                          />
+              {/* Story Content */}
+              <div className="story-content" id="story-view-container" onClick={handleMediaClick}>
+                {(activeStories || []).map((story, i) => {
+                  const isActive = i === activeIndex;
+                  const type = story.url && story.url.toLowerCase().includes(".mp4") ? "video" : "image";
+                  return (
+                    <div 
+                      key={story._id || i} 
+                      id={`story-image-${i}`} 
+                      className={`story-media-wrapper ${isActive ? 'active' : ''}`}
+                    >
+                      {type === "image" ? (
+                        <img
+                          src={story.url}
+                          alt={`Story by ${activeUsername}`}
+                          className="story-media"
+                          ref={(el) => {
+                            if (isActive) attachMediaRef(i, el);
+                            else {
+                              storyMediaRefs.current[i] = storyMediaRefs.current[i] || null;
+                            }
+                          }}
+                          loading="eager"
+                        />
+                      ) : (
+                        <video 
+                          src={story.url} 
+                          className="story-media" 
+                          ref={(el) => attachMediaRef(i, el)} 
+                          playsInline 
+                          muted 
+                          autoPlay={isActive}
+                        />
+                      )}
+                      
+                      {isActive && isBuffering && (
+                        <div className="buffering-overlay">
+                          <div className="buffering-spinner"></div>
+                          <span>Buffering...</span>
                         </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
+                      )}
+                      
+                      {isActive && isPaused && !isBuffering && (
+                        <div className="paused-overlay">
+                          <div className="pause-icon">⏸️</div>
+                          <span>Story Paused</span>
+                        </div>
+                      )}
+
+                      <StoryLikeButton story={story} onToggle={(setLocal) => toggleLike(story._id || story.id, !!story.liked, setLocal)} />
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Navigation */}
+              <div className="navigation-controls">
+                <button 
+                  className="nav-button prev" 
+                  onClick={(e) => { e.stopPropagation(); previousStory(); }}
+                  aria-label="Previous story"
+                >
+                  <svg viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                  </svg>
+                </button>
+                <button 
+                  className="nav-button next" 
+                  onClick={(e) => { e.stopPropagation(); nextStory(); }}
+                  aria-label="Next story"
+                >
+                  <svg viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                  </svg>
+                </button>
+              </div>
+
+              {/* Story Counter */}
+              <div className="story-counter">
+                {activeIndex + 1} / {activeStories.length}
+              </div>
             </div>
           </div>
         </>
@@ -415,20 +522,50 @@ export default function Stories({
   );
 }
 
+// ... (keep all imports and main component code the same until the StoryLikeButton component)
+
 /* Subcomponent for the like button */
 function StoryLikeButton({ story, onToggle }) {
   const [liked, setLiked] = useState(!!story.liked);
+  const [animating, setAnimating] = useState(false);
+
   useEffect(() => setLiked(!!story.liked), [story.liked]);
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    const newLikedState = !liked;
+    setLiked(newLikedState);
+    setAnimating(true);
+    onToggle(newLikedState); // Pass the new state directly
+    setTimeout(() => setAnimating(false), 600);
+  };
 
   return (
     <button 
-      className={`glass-like-btn ${liked ? "is-liked" : ""}`} 
+      className={`story-like-button ${liked ? 'liked' : ''} ${animating ? 'animating' : ''}`} 
       type="button" 
-      onClick={(e) => { e.stopPropagation(); onToggle(setLiked); }}
+      aria-pressed={liked} 
+      title={liked ? "Unlike" : "Like"} 
+      onClick={handleClick}
     >
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path className="heart-path" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+      <svg viewBox="0 0 24 24" className="heart-icon" width="24" height="24" aria-hidden="true" focusable="false">
+        <path 
+          className="heart-outline" 
+          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
+          fill={liked ? "#ef4444" : "none"} 
+          stroke={liked ? "#ef4444" : "currentColor"} 
+          strokeWidth="1.5"
+        />
+        <path 
+          className="heart-filled" 
+          d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3z" 
+          fill="#ef4444" 
+          opacity={liked ? 1 : 0}
+        />
       </svg>
+      <span className="like-particles">
+        {[...Array(8)].map((_, i) => <span key={i} className="particle" style={{ '--i': i }}></span>)}
+      </span>
     </button>
   );
 }
