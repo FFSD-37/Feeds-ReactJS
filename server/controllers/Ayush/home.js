@@ -252,10 +252,87 @@ const getSingleChannelPost = async (req, res) => {
   }
 };
 
+
+// KIDS HOME POSTS
+const getKidsHomePosts = async (req, res) => {
+  try {
+    const { data } = req.userDetails;
+    const username = data[0];
+    const userType = data[3];
+
+    if (userType !== "Kids") {
+      return res.status(403).json({
+        success: false,
+        message: "Only Kids can access Kids Home",
+      });
+    }
+
+    const kid = await User.findOne({ username }).lean();
+    if (!kid) {
+      return res.status(404).json({
+        success: false,
+        message: "Kids user not found",
+      });
+    }
+
+    const categories = kid.kidPreferredCategories || [];
+
+    if (!categories.length) {
+      return res.status(200).json({
+        success: true,
+        posts: [],
+        totalCount: 0,
+        hasMore: false,
+      });
+    }
+
+    const skip = parseInt(req.query.skip) || 0;
+    const limit = parseInt(req.query.limit) || 10;
+
+    const likedPosts = kid.likedPostsIds || [];
+    const savedPosts = kid.savedPostsIds || [];
+
+    const posts = await channelPost
+      .find({
+        isArchived: false,
+        category: { $in: categories },
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const enrichedPosts = posts.map((post) => ({
+      ...post,
+      liked: likedPosts.includes(post._id.toString()),
+      saved: savedPosts.includes(post._id.toString()),
+    }));
+
+    const totalCount = await channelPost.countDocuments({
+      isArchived: false,
+      category: { $in: categories },
+    });
+
+    return res.status(200).json({
+      success: true,
+      posts: enrichedPosts,
+      totalCount,
+      hasMore: skip + limit < totalCount,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching kids home posts:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
 export {
   getAllChannelPosts,
   likeChannelPost,
   saveChannelPost,
   commentOnChannelPost,
   getSingleChannelPost,
+  getKidsHomePosts,
 };
