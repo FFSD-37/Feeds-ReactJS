@@ -154,7 +154,7 @@ router.get("/signup", isAuthuser, handlegetsignup);
 
 // router.post("/login", isAuthuser, handleLogin);
 
-router.post("/signup", isAuthuser, handleSignup);
+router.post("/signup", handleSignup);
 
 router.post("/contact", isAuthuser, handleContact);
 
