@@ -279,6 +279,13 @@ body.modal-open {
   color: #ffcd38;
 }
 
+.edit_channel_error {
+  color: #ff4d4d;
+  font-size: 13px;
+  margin-top: 4px;
+  font-weight: bold;
+}
+
 /* Scrollbar */
 .edit_channel_overlay-content::-webkit-scrollbar {
   width: 8px;

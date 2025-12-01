@@ -161,7 +161,7 @@ const PaymentPage = () => {
               ✔️ Notification on who viewed your profile
             </li>
             <li style={{ margin: '8px 0' }}>
-              ✔️ Create unlimited channels (Free users: 3)
+              ✔️ Create unlimited channels
             </li>
           </ul>
         </div>
