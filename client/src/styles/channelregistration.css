@@ -2,16 +2,8 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
-
-body {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(45deg, #6b48ff, #6b48ff22);
-  padding: 2rem;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .register-container {
@@ -47,7 +39,7 @@ body {
   font-weight: 500;
 }
 
-.form-group input:not([type="radio"]),
+.form-group input:not([type='radio']),
 .form-group textarea,
 .form-group select {
   width: 100%;
@@ -279,7 +271,7 @@ body {
   background-color: #e1ecf4;
 }
 
-.option input[type="checkbox"] {
+.option input[type='checkbox'] {
   cursor: pointer;
 }
 
