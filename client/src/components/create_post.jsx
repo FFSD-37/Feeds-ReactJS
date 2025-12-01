@@ -280,11 +280,11 @@ const PostCreation = () => {
   };
 
   return (
-    <div className="min-h-screen w-screen bg-black flex items-center justify-center p-6">
-      <div className="w-full max-w-lg bg-gray-900 rounded-2xl p-6 shadow-2xl border border-gray-700">
+    <div className="min-h-screen bg-black flex items-center justify-center !p-6">
+      <div className="w-full max-w-lg bg-gray-900 rounded-2xl !p-6 shadow-2xl border border-gray-700">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-2">
+        <div className="text-center !mb-8">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent !mb-2">
             Create New Post
           </h1>
           <p className="text-gray-400 text-sm">
@@ -295,7 +295,7 @@ const PostCreation = () => {
         {/* Alert */}
         {alertMessage && (
           <div
-            className={`mb-6 rounded-xl p-4 border ${
+            className={`!mb-6 rounded-xl !p-4 border ${
               alertType === 'error'
                 ? 'bg-red-500/10 border-red-500/20 text-red-300'
                 : 'bg-green-500/10 border-green-500/20 text-green-300'
@@ -331,13 +331,13 @@ const PostCreation = () => {
         )}
 
         {/* Post Type Selector */}
-        <div className="relative mb-6">
+        <div className="relative !mb-6">
           <label className="block text-sm font-medium text-gray-300 mb-3">
             Post Type
           </label>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-3.5 flex items-center justify-between hover:bg-gray-700 transition-all duration-200 group"
+            className="w-full bg-gray-800 border border-gray-600 rounded-xl !px-4 !py-3.5 flex items-center justify-between hover:bg-gray-700 transition-all duration-200 group"
           >
             <div className="flex items-center space-x-3">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -370,7 +370,7 @@ const PostCreation = () => {
                       option.label,
                     )
                   }
-                  className="w-full text-left px-4 py-3.5 text-white hover:bg-gray-700 transition-all duration-200 flex items-center space-x-3 group"
+                  className="w-full text-left !px-4 !py-3.5 text-white hover:bg-gray-700 transition-all duration-200 flex items-center space-x-3 group"
                 >
                   <div className="w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
                   <span>{option.label}</span>
@@ -381,8 +381,8 @@ const PostCreation = () => {
         </div>
 
         {/* File Upload Area */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-3">
+        <div className="!mb-6">
+          <label className="block text-sm font-medium text-gray-300 !mb-3">
             Media Upload
           </label>
           <label
@@ -403,7 +403,7 @@ const PostCreation = () => {
             />
 
             {!previewSrc ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
+              <div className="absolute inset-0 flex flex-col items-center justify-center !p-8 text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                   <svg
                     className="w-8 h-8 text-white"
@@ -443,7 +443,7 @@ const PostCreation = () => {
                   />
                 )}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <div className="bg-gray-800 backdrop-blur-sm rounded-full p-3">
+                  <div className="bg-gray-800 backdrop-blur-sm rounded-full !p-3">
                     <svg
                       className="w-6 h-6 text-white"
                       fill="none"
@@ -470,7 +470,7 @@ const PostCreation = () => {
             <button
               onClick={handleContinue}
               disabled={isLoading}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3.5 rounded-xl hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:transform-none shadow-lg"
+              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold !py-3.5 rounded-xl hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:transform-none shadow-lg"
             >
               {selectedPostType === 'story'
                 ? isLoading
@@ -482,7 +482,7 @@ const PostCreation = () => {
             <button
               onClick={handleAgainSelect}
               disabled={isLoading}
-              className="px-6 py-3.5 rounded-xl bg-gray-800 text-white font-medium hover:bg-gray-700 transition-all duration-200 disabled:opacity-50 border border-gray-600"
+              className="!px-6 !py-3.5 rounded-xl bg-gray-800 text-white font-medium hover:bg-gray-700 transition-all duration-200 disabled:opacity-50 border border-gray-600"
             >
               Change
             </button>

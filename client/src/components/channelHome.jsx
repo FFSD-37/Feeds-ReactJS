@@ -16,7 +16,7 @@ function ChannelHome() {
   const [reportPostId, setReportPostId] = useState(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [playingVideoId, setPlayingVideoId] = useState(null);
-  const [activePostId, setActivePostId] = useState(null); 
+  const [activePostId, setActivePostId] = useState(null);
 
   const observerRef = useRef();
   const dropdownRef = useRef();
@@ -206,7 +206,7 @@ function ChannelHome() {
         </div>
         <div className="channel_home_footer">
           <a href="/contact">About</a> • <a href="/help">Help</a> •{' '}
-          <a href="/tandc">Terms</a> •{' '}
+          <a href="/terms">Terms</a> •{' '}
           <a
             href="https://www.google.com/maps/place/Indian+Institute+of+Information+Technology,+Sri+City,+Chittoor/"
             target="_blank"
