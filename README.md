@@ -151,7 +151,7 @@ You can create **child components** freely under these parent components.
 - [✅] Login Page (All Types)  
 - [✅] Activity Log  
 - [✅] Stories  
-- [❌] Delete (Normal, Kids, Channel)
+- [✅] Delete (Normal, Kids, Channel)
 - [❌] Kids Home(Landing Page)
 
 ---

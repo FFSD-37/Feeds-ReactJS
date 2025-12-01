@@ -149,6 +149,7 @@ export default function Register() {
   };
 
   const handleSubmit = async () => {
+    // 1) validate inputs (your validators)
     const newErrors = {};
     if (!validateFullName(values.fullName)) newErrors.fullName = true;
     if (!validateUsername(values.username)) newErrors.username = true;
@@ -168,28 +169,79 @@ export default function Register() {
       return;
     }
 
+    // 2) Build FormData properly
     const formData = new FormData();
-    Object.entries(values).forEach(([k, v]) => {
-      formData.append(k, typeof v === 'boolean' ? String(v) : v);
-    });
 
-    if (fileRef.current?.files?.[0]) {
-      formData.append('pfp', fileRef.current.files[0]);
+    // Helper to append values (stringify arrays/objects, convert booleans)
+    function appendValue(key, val) {
+      if (val === undefined || val === null) return;
+      if (val instanceof File) {
+        formData.append(key, val);
+      } else if (typeof val === 'boolean') {
+        formData.append(key, String(val));
+      } else if (typeof val === 'object') {
+        // arrays/objects -> stringify (server must parse JSON)
+        formData.append(key, JSON.stringify(val));
+      } else {
+        formData.append(key, String(val));
+      }
     }
 
+    Object.entries(values).forEach(([k, v]) => appendValue(k, v));
+
+    // Append profile picture file if provided
+    if (fileRef?.current?.files?.[0]) {
+      appendValue('pfp', fileRef.current.files[0]);
+    }
+
+    // 3) Debug: print FormData contents (console.log(formData) is not helpful)
+    console.log('FormData entries:');
+    for (const [name, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(name, '=> File:', value.name, value.type, value.size);
+      } else {
+        console.log(name, '=>', value);
+      }
+    }
+
+    // 4) Send FormData with fetch
     try {
-      console.log("Submitting signup form with values:", formData);
       const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/signup`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-        credentials: 'include',
+        // IMPORTANT: DO NOT set Content-Type header when sending FormData.
+        // The browser will set multipart/form-data with boundary automatically.
+        body: formData,
+        credentials: 'include', // keep if you need cookies
       });
-      const data = await res.json();
+
+      // If server returns non-JSON or non-OK status, handle gracefully
+      const contentType = res.headers.get('content-type') || '';
+      let data = null;
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        // fallback: read text for debugging
+        const text = await res.text();
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = { rawText: text };
+        }
+      }
+
+      if (!res.ok) {
+        console.error('Signup failed:', res.status, data);
+        showAlert(
+          data?.message || data?.reason || `Signup failed (${res.status})`,
+        );
+        return;
+      }
+
+      // success branch
       if (data && data.success) {
         window.location.href = data.redirect || '/login';
       } else {
-        showAlert(data.message || data.reason || 'Signup failed. Try again.');
+        showAlert(data?.message || data?.reason || 'Signup failed. Try again.');
       }
     } catch (err) {
       console.error('Signup error:', err);
