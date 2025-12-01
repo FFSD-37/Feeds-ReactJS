@@ -1,5 +1,6 @@
 import Post from "../../models/postSchema.js";
 import User from "../../models/users_schema.js";
+import Channel from "../../models/channelSchema.js";
 
 const handlegetUserPost = async (req, res) => {
     const { data } = req.userDetails;
@@ -88,32 +89,44 @@ const handleisfriend = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Now check correct way (array of objects)
+    // Is main following side?
     const mainFollowsSide = mainUser.followings.some(
       (u) => u.username === sideUser.username
     );
 
+    // Did main send follow request to side?
+    const mainRequestedSide = mainUser.requested.some(
+      (u) => u.username === sideUser.username
+    );
+
+    // Does side follow main?
     const sideFollowsMain = sideUser.followings.some(
       (u) => u.username === mainUser.username
     );
 
     let relationship = "";
-    let href="";
+    let href = "";
 
-    if (!sideFollowsMain && mainFollowsSide) {
+    if (mainRequestedSide) {
+      // Follow request sent
       relationship = "Requested";
-      href=`/unrequest/${sideUser.username}`;
+      href = `/unrequest/${sideUser.username}`;
     } 
-    else if (!sideFollowsMain && !mainFollowsSide) {
+    else if (!mainRequestedSide && !mainFollowsSide) {
+      // No follow / no request
       relationship = "Follow";
-      href=`/follow/${sideUser.username}`;
+      href = `/follow/${sideUser.username}`;
     } 
-    else if (sideFollowsMain && mainFollowsSide) {
+    else if (mainFollowsSide) {
+      // Already follow
       relationship = "Unfollow";
-      href=`/unfollow/${sideUser.username}`;
-    } 
-    else if (sideFollowsMain && !mainFollowsSide) {
+      href = `/unfollow/${sideUser.username}`;
+    }
+
+    if (sideFollowsMain && !mainFollowsSide) {
+      // They follow you, you don’t follow them
       relationship = "Follow back";
+      href = `/follow/${sideUser.username}`;
     }
 
     return res.status(200).json({ relationship, href });
@@ -124,11 +137,26 @@ const handleisfriend = async (req, res) => {
   }
 };
 
+const getCoins = async (req, res) => {
+  const { data } = req.userDetails;
+  const user = await User.findOne({ username: data[0] });
+  return res.json({ coins: user.coins });
+}
+
+const getChannels = async (req, res) => {
+  const { data } = req.userDetails;
+  const user = await User.findOne({ username: data[0] });
+  const channels = user.channelFollowings.map((channel) => channel.channelName);
+  const channelsData = await Channel.find({ channelName: { $in: channels } });
+  return res.json({ success: true, channels: channelsData });
+}
 
 export {
     handlegetUserPost,
     handlegetBasicDetails,
     handlegetsensitive,
     handleisfriend,
-    handleCheckParentalPass
+    handleCheckParentalPass,
+    getCoins,
+    getChannels,
 }

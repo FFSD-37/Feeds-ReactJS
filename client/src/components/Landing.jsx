@@ -311,6 +311,23 @@ const HomePage = () => {
     setCommentText('');
   };
 
+  const fetchChannels = async () => {
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/home/getChannels`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (data.success) {
+      setChannels(data.channels);
+    }
+  };
+  useEffect(() => {
+    fetchChannels();
+  }, []);
+  const [channels, setChannels] = useState([]);
+
+  console.log(channels);
+
   const reportComment = async commentId => {
     // 🔥 Your API fetch
     const res = await fetch(
@@ -477,21 +494,35 @@ const HomePage = () => {
       </main>
 
       {/* RIGHT SIDEBAR */}
+
       <aside className="right-sidebar">
         <br />
-        <div className="sidebar-section">
-          {/* Create Page Card */}
-          <div className="create-page-card">
-            <div className="create-page-icon">
-              <File style={{ width: '24px', height: '24px', color: 'white' }} />
+        {!userData.isPremium ? (
+          <div></div>
+        ) : (
+          <div>
+            <div className="sidebar-section">
+              {/* Create Page Card */}
+              <div className="create-page-card">
+                <div className="create-page-icon">
+                  <File
+                    style={{ width: '24px', height: '24px', color: 'white' }}
+                  />
+                </div>
+                <h3 className="create-page-title">
+                  CREATE YOUR OWN FAVOURITE CHANNEL.
+                </h3>
+                <button
+                  className="create-page-button"
+                  onClick={() => navigate('/channelregistration')}
+                >
+                  Start Now!
+                </button>
+              </div>
             </div>
-            <h3 className="create-page-title">
-              CREATE YOUR OWN FAVOURITE CHANNEL.
-            </h3>
-            <button className="create-page-button" onClick={() => navigate("/channelregistration")}>Start Now!</button>
+            <br />
           </div>
-        </div>
-        <br />
+        )}
 
         {/* FRIENDS SKELETON */}
         <div className="sidebar-section">
@@ -512,7 +543,11 @@ const HomePage = () => {
             ) : (
               <div className="friends-grid">
                 {friends.slice(0, 9).map((friend, index) => (
-                  <div key={index} className="friend-item" onClick={() => navigate(`/profile/${friend.username}`)}>
+                  <div
+                    key={index}
+                    className="friend-item"
+                    onClick={() => navigate(`/profile/${friend.username}`)}
+                  >
                     <img
                       src={friend.avatarUrl}
                       alt={friend.username}
@@ -525,6 +560,30 @@ const HomePage = () => {
             )}
           </div>
         </div>
+        {(userData.type === "Normal") ? (
+          <div className="sidebar-section">
+          <div className="card">
+            <h3 className="card-title">Channels you follow</h3>
+            {channels.length > 0 ? (
+              <div className="friends-grid">
+                {channels.slice(0, 9).map((channel) => (
+                  <div key={channel._id}
+                    className="friend-item"
+                    onClick={() => navigate(`/channel/${channel.channelName}`)}
+                  >
+                    <img
+                      src={channel.channelLogo}
+                      alt={channel.channelName}
+                      className="friend-avatar"
+                    />
+                    <p className="friend-name">{channel.channelName}</p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+        ) : <div></div>}
         <br />
         {!userData.isPremium ? (
           <div className="sidebar-section">

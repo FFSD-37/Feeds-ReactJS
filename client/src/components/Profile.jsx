@@ -60,6 +60,9 @@ const ProfilePage = () => {
   const [overlayType, setOverlayType] = useState("");
   const [relationship, setRelationship] = useState("");
   const [href, setHref] = useState("");
+  const [mainFollowsSide, setMainFollowsSide] = useState(false);
+  const [sideFollowsMain, setSideFollowsMain] = useState(false);
+  const [sideUser, setSideUser] = useState({});
   const [loading, setLoading] = useState(true);
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -175,7 +178,7 @@ const ProfilePage = () => {
       },
     );
     const data = await res.json();
-    // console.log(data);
+    console.log(data);
     setRelationship(data.relationship);
     setHref(data.href);
   }
@@ -225,9 +228,11 @@ const ProfilePage = () => {
 
 
   const Action = async () => {
+    console.log(href);
     const res = await fetch(`${import.meta.env.VITE_SERVER_URL}${href}`, {
       method: "POST",
       credentials: "include",
+      body: JSON.stringify({})
     });
 
     const data = await res.json();

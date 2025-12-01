@@ -1364,6 +1364,57 @@ const followSomeone = async (req, res) => {
   }
 };
 
+const unRequestSomeone = async (req, res) => {
+  try {
+    const { data } = req.userDetails;
+    const unrequesterUsername = data[0];
+    const { username: targetUsername } = req.params;
+    const [me, targetUser] = await Promise.all([
+      User.findOne({ username: unrequesterUsername }),
+      User.findOne({ username: targetUsername }),
+    ]);
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+    console.log(me.requested);
+    console.log(targetUsername);
+    if (me.requested.some((r) => r.username === targetUsername)) {
+      await User.updateOne(
+        { username: unrequesterUsername },
+        { $pull: { requested: { username: targetUsername } } }
+      );
+      await ActivityLog.create({
+        username: unrequesterUsername,
+        id: `#${Date.now()}`,
+        message: `You canceled your follow request to @${targetUsername}`,
+      });
+      await User.updateOne(
+        { username: unrequesterUsername },
+        { $inc: { coins: -1 } }
+      );
+      return res.status(200).json({
+        success: true,
+        status: "request_canceled",
+        message: `You canceled your follow request to @${targetUsername}`,
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      message: `You haven't requested to follow @${targetUsername}.`,
+    }); 
+  }
+  catch (error) {
+    console.error("❌ Error in unRequestSomeone:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while unrequesting user",
+    });
+  }
+}
+
 const unfollowSomeone = async (req, res) => {
   try {
     const { data } = req.userDetails;
@@ -2801,4 +2852,5 @@ export {
   handlepostcomment,
   handleGetEditChannel,
   updateChannelProfile,
+  unRequestSomeone
 };

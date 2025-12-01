@@ -2,7 +2,21 @@ import React, { useEffect, useState } from 'react';
 import '../styles/payment.css';
 import { useRazorpay } from 'react-razorpay';
 
-const PaymentPage = ({ coins = 100 }) => {
+const PaymentPage = () => {
+  const [coins, setCoins] = useState(0);
+
+  useEffect(() => {
+    const fetchCoins = async () => {
+      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/getCoins`, {
+        credentials: 'include',
+      });
+      const data = await res.json();
+      // 100 coins = 1 rupee 
+      const coins = data.coins / 100;
+      setCoins(coins);
+    };
+    fetchCoins();
+  }, []);
   const { Razorpay } = useRazorpay();
   const [selectedPlanIndex, setSelectedPlanIndex] = useState(1);
   const [amountInfo, setAmountInfo] = useState({
