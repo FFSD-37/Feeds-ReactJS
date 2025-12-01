@@ -5,12 +5,12 @@ const getFriendList = async (req, res) => {
   const { data } = req.userDetails;
   const user = await User.findOne({ username: data[0] });
 
-  let friends = user.followings.filter((f) =>
+  let friends = user?.followings?.filter((f) =>
     user.followers.some((fr) => fr.username === f.username)
   );
 
   friends = await User.find({
-    username: { $in: friends.map((f) => f.username) },
+    username: { $in: friends?.map((f) => f.username) },
   })
     .select("username profilePicture -_id")
     .lean()

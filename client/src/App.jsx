@@ -10,7 +10,7 @@ import Stories from './components/stories.jsx';
 import ProfilePage from './components/Profile.jsx';
 import Connect from './components/connect.jsx';
 import EditProfile from './components/editProfile.jsx';
-import KidsProfile from "./components/KidsProfile";
+import KidsProfile from './components/KidsProfile';
 import {
   BrowserRouter as Router,
   Route,
@@ -41,6 +41,7 @@ import DailyUsagePage from './components/dailyUsage.jsx';
 import NotFound from './components/error.jsx';
 import KidsSettings from './components/KidsSettings.jsx';
 import DeleteAccount from './components/DeleteAccount.jsx';
+import KidsHome from './components/kidsHome.jsx';
 
 const AppContent = () => {
   const { userData } = useUserData();
@@ -67,9 +68,20 @@ const AppContent = () => {
         <Route path="/connect" element={<Connect />} />
         <Route path="/edit_profile" element={<EditProfile />} />
         <Route path="/edit_channel" element={<EditChannel />} />
-        <Route path="/channelhome" element={<ChannelHome />} />
         <Route path="/channel/post/:id" element={<ChannelPostOverlay />} />
-        <Route path="/home" element={<HomePage />} />
+        <Route
+          path="/home"
+          element={
+            userData?.type &&
+            (userData?.type === 'Channel' ? (
+              <ChannelHome />
+            ) : userData?.type === 'Kids' ? (
+              <KidsHome />
+            ) : (
+              <HomePage />
+            ))
+          }
+        />
         <Route path="/create_post" element={<CreatePost />} />
         <Route path="/edit_post" element={<ImageEditor />} />
         <Route path="/finalize_post" element={<FinalizePost />} />

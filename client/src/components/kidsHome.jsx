@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import "../styles/kidsHome.css";
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import '../styles/kidsHome.css';
 
 function KidsHome() {
   const navigate = useNavigate();
@@ -27,24 +27,24 @@ function KidsHome() {
     try {
       const res = await fetch(
         `${import.meta.env.VITE_SERVER_URL}/kidshome?skip=${skip}&limit=6`,
-        { credentials: "include" }
+        { credentials: 'include' },
       );
       const data = await res.json();
 
       if (data.success && data.posts.length > 0) {
-        setPosts((prev) => {
-          const existing = new Set(prev.map((p) => p.id));
-          const newOnes = data.posts.filter((p) => !existing.has(p.id));
+        setPosts(prev => {
+          const existing = new Set(prev.map(p => p.id));
+          const newOnes = data.posts.filter(p => !existing.has(p.id));
           return [...prev, ...newOnes];
         });
 
-        setSkip((prev) => prev + data.posts.length);
+        setSkip(prev => prev + data.posts.length);
         setHasMore(data.hasMore);
       } else {
         setHasMore(false);
       }
     } catch (err) {
-      console.error("❌ Error fetching kids posts:", err);
+      console.error('❌ Error fetching kids posts:', err);
     } finally {
       setLoading(false);
     }
@@ -60,12 +60,12 @@ function KidsHome() {
     if (loading || !hasMore) return;
 
     const observer = new IntersectionObserver(
-      (entries) => {
+      entries => {
         if (entries[0].isIntersecting && hasMore && !loading) {
           fetchKidsPosts();
         }
       },
-      { threshold: 0.9 }
+      { threshold: 0.9 },
     );
 
     if (observerRef.current) observer.observe(observerRef.current);
@@ -73,7 +73,7 @@ function KidsHome() {
   }, [fetchKidsPosts, loading, hasMore]);
 
   // Time ago helper
-  const timeAgo = (dateString) => {
+  const timeAgo = dateString => {
     const date = new Date(dateString);
     const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
     const intervals = {
@@ -87,14 +87,14 @@ function KidsHome() {
 
     for (const [unit, sec] of Object.entries(intervals)) {
       const count = Math.floor(seconds / sec);
-      if (count >= 1) return `${count} ${unit}${count > 1 ? "s" : ""} ago`;
+      if (count >= 1) return `${count} ${unit}${count > 1 ? 's' : ''} ago`;
     }
 
-    return "just now";
+    return 'just now';
   };
 
   // Play / Pause Video
-  const handleVideoClick = (id) => {
+  const handleVideoClick = id => {
     const video = document.getElementById(`kids_video-${id}`);
     if (!video) return;
 
@@ -108,65 +108,63 @@ function KidsHome() {
   };
 
   // Like Post
-  const handleLike = async (postId) => {
+  const handleLike = async postId => {
     try {
       const res = await fetch(
         `${import.meta.env.VITE_SERVER_URL}/channel/like`,
         {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ postId }),
-        }
+        },
       );
 
       const data = await res.json();
 
       if (data.success) {
-        setPosts((prev) =>
-          prev.map((p) =>
+        setPosts(prev =>
+          prev.map(p =>
             p._id === postId
               ? { ...p, likes: data.likes, liked: data.liked }
-              : p
-          )
+              : p,
+          ),
         );
       }
     } catch (err) {
-      console.error("❌ Error liking post:", err);
+      console.error('❌ Error liking post:', err);
     }
   };
 
   // Save Post
-  const handleSave = async (postId) => {
+  const handleSave = async postId => {
     try {
       const res = await fetch(
         `${import.meta.env.VITE_SERVER_URL}/channel/save`,
         {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ postId }),
-        }
+        },
       );
 
       const data = await res.json();
       if (data.success) {
-        setPosts((prev) =>
-          prev.map((p) =>
-            p._id === postId ? { ...p, saved: data.saved } : p
-          )
+        setPosts(prev =>
+          prev.map(p => (p._id === postId ? { ...p, saved: data.saved } : p)),
         );
       }
     } catch (err) {
-      console.error("❌ Error saving post:", err);
+      console.error('❌ Error saving post:', err);
     }
   };
 
   // Report option
-  const handleDropdownToggle = (id) =>
-    setDropdownPost((p) => (p === id ? null : id));
+  const handleDropdownToggle = id =>
+    setDropdownPost(p => (p === id ? null : id));
 
-  const handleReportClick = (id) => {
+  const handleReportClick = id => {
     setReportPostId(id);
     setDropdownPost(null);
     setShowReportModal(true);
@@ -177,7 +175,7 @@ function KidsHome() {
     setReportPostId(null);
   };
 
-  const handleReasonSelect = (reason) => {
+  const handleReasonSelect = reason => {
     alert(`Reported post ${reportPostId} for: ${reason}`);
     handleCloseReport();
   };
@@ -186,7 +184,10 @@ function KidsHome() {
     <div className="kids_home_main">
       {/* Left Sidebar */}
       <div className="kids_home_left_section">
-        <div className="kids_home_logo_class" onClick={() => navigate("/kidshome")}>
+        <div
+          className="kids_home_logo_class"
+          onClick={() => navigate('/kidshome')}
+        >
           <img
             className="kids_home_logo"
             src="https://ik.imagekit.io/FFSD0037/logo.jpeg?updatedAt=1746701257780"
@@ -195,8 +196,8 @@ function KidsHome() {
         </div>
 
         <div className="kids_home_footer">
-          <a href="/contact">About</a> • <a href="/help">Help</a> •{" "}
-          <a href="/tandc">Terms</a> •{" "}
+          <a href="/contact">About</a> • <a href="/help">Help</a> •{' '}
+          <a href="/terms">Terms</a> •{' '}
           <a
             href="https://www.google.com/maps/place/IIIT+Sri+City"
             target="_blank"
@@ -217,7 +218,7 @@ function KidsHome() {
         {posts.length === 0 && !loading ? (
           <p className="kids_home_no_posts">No posts available.</p>
         ) : (
-          posts.map((post) => (
+          posts.map(post => (
             <div key={post.id} className="kids_home_post_card">
               {/* Header */}
               <div className="kids_home_post_header">
@@ -254,7 +255,7 @@ function KidsHome() {
               </div>
 
               {/* Media */}
-              {post.type === "Img" ? (
+              {post.type === 'Img' ? (
                 <img
                   className="kids_home_post_media"
                   src={post.url}
@@ -290,14 +291,14 @@ function KidsHome() {
                   className="kids_home_action_item"
                   onClick={() => handleLike(post._id)}
                 >
-                  {post.liked ? "❤️" : "🤍"} {post.likes}
+                  {post.liked ? '❤️' : '🤍'} {post.likes}
                 </div>
 
                 <div
                   className="kids_home_action_item"
                   onClick={() => handleSave(post._id)}
                 >
-                  {post.saved ? "💾" : "📁"}
+                  {post.saved ? '💾' : '📁'}
                 </div>
               </div>
 
@@ -335,12 +336,12 @@ function KidsHome() {
             <ul className="kids_home_report_options">
               {[
                 "I just don't like it",
-                "Bullying or unwanted contact",
-                "Violence or hate",
-                "Inappropriate content",
-                "Spam or scam",
-                "False information",
-              ].map((reason) => (
+                'Bullying or unwanted contact',
+                'Violence or hate',
+                'Inappropriate content',
+                'Spam or scam',
+                'False information',
+              ].map(reason => (
                 <li key={reason} onClick={() => handleReasonSelect(reason)}>
                   {reason} <span>›</span>
                 </li>

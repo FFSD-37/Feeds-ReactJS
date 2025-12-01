@@ -108,7 +108,7 @@ function Sidebar() {
   });
 
   const channelItems = [
-    { name: 'Home', href: '/channelhome', icon: '/Images/Home.svg' },
+    { name: 'Home', href: '/home', icon: '/Images/Home.svg' },
     {
       name: 'Notifications',
       href: '/notifications',
