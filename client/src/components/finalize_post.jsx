@@ -10,6 +10,8 @@ const FinalizePost = () => {
   const [caption, setCaption] = useState('');
   const [mediaPreview, setMediaPreview] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [availCategories, setAvailCategories] = useState([]);
+  const [category, setCategory] = useState('');
   const { state } = useLocation();
 
   const getAuth = async () => {
@@ -36,6 +38,26 @@ const FinalizePost = () => {
       }
     });
   }, []);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const res = await fetch(
+          import.meta.env.VITE_SERVER_URL + '/channel/categories',
+          {
+            method: 'GET',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+          },
+        );
+        const data = await res.json();
+        setAvailCategories(data.category);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      }
+    };
+    if (userData?.type === 'Channel') init();
+  }, [userData?.type]);
 
   const uploadPost = async e => {
     e.preventDefault();
@@ -73,23 +95,36 @@ const FinalizePost = () => {
             return;
           }
 
-          await fetch(import.meta.env.VITE_SERVER_URL + '/shareFinalPost', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              caption,
-              type: !state.selectedPostType ? 'Img' : 'Reels',
-              avatar: result.url,
-            }),
-          })
-            .then(res => res.json())
-            .then(data => {
-              if (data.success) {
-                localStorage.clear();
-                window.location.href = '/home';
-              }
-            });
+          userData?.type === 'Channel'
+            ? await fetch(import.meta.env.VITE_SERVER_URL + '/channel/post', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                  title: caption,
+                  url: result.url,
+                  content: caption,
+                  category,
+                  type: !state.selectedPostType ? 'Img' : 'Reels',
+                }),
+              })
+            : await fetch(import.meta.env.VITE_SERVER_URL + '/shareFinalPost', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                  caption,
+                  type: !state.selectedPostType ? 'Img' : 'Reels',
+                  avatar: result.url,
+                }),
+              })
+                .then(res => res.json())
+                .then(data => {
+                  if (data.success) {
+                    localStorage.clear();
+                    window.location.href = '/home';
+                  }
+                });
 
           setLoading(false);
         },
@@ -103,7 +138,7 @@ const FinalizePost = () => {
 
   return (
     <div className="flex flex-col h-screen w-screen bg-black rounded-xl overflow-hidden">
-      <div className="p-6 flex justify-center items-center border-b border-gray-700 bg-gradient-to-r from-gray-900 to-black">
+      <div className="!p-6 flex justify-center items-center border-b border-gray-700 bg-gradient-to-r from-gray-900 to-black">
         <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
           Create New Post
         </h1>
@@ -111,7 +146,7 @@ const FinalizePost = () => {
 
       <div className="flex flex-1 gap-6 items-center justify-center flex-col lg:flex-row">
         {/* Media Preview Section */}
-        <div className="flex items-center justify-center p-8 bg-gradient-to-br from-gray-900 via-black to-gray-900 relative overflow-hidden">
+        <div className="flex items-center justify-center !p-8 bg-gradient-to-br from-gray-900 via-black to-gray-900 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-blue-900/20"></div>
           {mediaPreview && !state.selectedPostType && (
             <div className="relative z-10 w-full max-w-2xl h-96 rounded-2xl overflow-hidden shadow-2xl border border-gray-700/50">
@@ -138,9 +173,9 @@ const FinalizePost = () => {
           )}
         </div>
 
-        <div className="w-full gap-6 lg:w-96 bg-gray-900 border-l border-gray-700 flex flex-col justify-between p-8 space-y-6">
+        <div className="w-full gap-6 lg:w-96 bg-gray-900 border-l border-gray-700 flex flex-col justify-between !p-8 space-y-6">
           <form onSubmit={uploadPost} className="space-y-6">
-            <div className="flex gap-4 items-center p-4 bg-gray-800 rounded-2xl shadow-lg">
+            <div className="flex gap-4 items-center !p-4 bg-gray-800 rounded-2xl shadow-lg">
               <img
                 src={userData.profileUrl}
                 alt="user"
@@ -154,13 +189,36 @@ const FinalizePost = () => {
               </div>
             </div>
 
+            {userData?.type === 'Channel' && (
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-gray-300 uppercase tracking-wide">
+                  Category
+                </label>
+                <select
+                  className="w-full !p-4 bg-gray-800 border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder-gray-400 shadow-inner transition-all duration-200"
+                  required
+                  value={category}
+                  onChange={e => setCategory(e.target.value)}
+                >
+                  <option value="" disabled>
+                    Select a category
+                  </option>
+                  {availCategories.map(cat => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="space-y-3">
               <label className="text-sm font-semibold text-gray-300 uppercase tracking-wide">
                 Caption
               </label>
               <textarea
                 placeholder="Share your thoughts..."
-                className="w-full h-32 p-4 bg-gray-800 border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder-gray-400 resize-none shadow-inner transition-all duration-200"
+                className="w-full h-32 !p-4 bg-gray-800 border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder-gray-400 resize-none shadow-inner transition-all duration-200"
                 required
                 value={caption}
                 onChange={e => setCaption(e.target.value)}
@@ -171,7 +229,7 @@ const FinalizePost = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-4 px-6 rounded-xl hover:from-purple-700 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold !py-4 !px-6 rounded-xl hover:from-purple-700 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {loading ? 'Sharing...' : 'Share Post'}
               </button>

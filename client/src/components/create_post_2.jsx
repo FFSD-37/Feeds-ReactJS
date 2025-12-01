@@ -160,7 +160,7 @@ const ImageEditor = () => {
       {/* RIGHT FILTER PANEL */}
       <div className="flex flex-col h-screen w-full max-w-sm bg-gray-900 border-l border-gray-700 flex-shrink-0">
         {/* Panel Header */}
-        <div className="flex-none p-6 border-b border-gray-700">
+        <div className="flex-none !p-6 border-b border-gray-700">
           <h2 className="text-xl font-bold text-white mb-1">Edit Image</h2>
           <p className="text-gray-400 text-sm">Adjust filters and effects</p>
         </div>
@@ -174,7 +174,7 @@ const ImageEditor = () => {
                   <label className="text-sm font-medium text-gray-300 capitalize">
                     {filterLabels[key]}
                   </label>
-                  <span className="text-xs text-gray-500 font-mono bg-gray-800 px-2 py-1 rounded">
+                  <span className="text-xs text-gray-500 font-mono bg-gray-800 !px-2 !py-1 rounded">
                     {key === 'blr'
                       ? `${val}px`
                       : key === 'hr'
@@ -209,17 +209,17 @@ const ImageEditor = () => {
         </div>
 
         {/* Action Buttons - Fixed at Bottom */}
-        <div className="flex-none p-6 border-t border-gray-700 bg-gray-900 space-y-3">
+        <div className="flex-none !p-6 border-t border-gray-700 bg-gray-900 space-y-3">
           <button
             onClick={resetFilters}
-            className="w-full py-3.5 px-4 bg-gray-800 text-white rounded-xl hover:bg-gray-700 transition-all duration-200 border border-gray-600 font-medium active:scale-95"
+            className="w-full !py-3.5 !px-4 bg-gray-800 text-white rounded-xl hover:bg-gray-700 transition-all duration-200 border border-gray-600 font-medium active:scale-95"
           >
             Reset All Filters
           </button>
 
           <button
             onClick={exportImage}
-            className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transform transition-all duration-200 font-semibold shadow-lg active:scale-95"
+            className="w-full !py-3.5 !px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transform transition-all duration-200 font-semibold shadow-lg active:scale-95"
           >
             Continue to Finalize
           </button>
