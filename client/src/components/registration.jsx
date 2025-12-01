@@ -178,9 +178,11 @@ export default function Register() {
     }
 
     try {
-      const res = await fetch('/signup', {
+      console.log("Submitting signup form with values:", formData);
+      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/signup`, {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
         credentials: 'include',
       });
       const data = await res.json();
