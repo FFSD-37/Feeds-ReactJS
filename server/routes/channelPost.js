@@ -1,8 +1,13 @@
-import express from 'express';
-import { handlechannelPostupload } from '../controllers/channelPost.js';
+import express from "express";
+import {
+  handlechannelPostupload,
+  handleGetcategories,
+} from "../controllers/channelPost.js";
+import { isAuthuser } from "../middleware/isAuthuser.js";
 
-const router=express.Router();
+const router = express.Router();
 
-router.post('/',handlechannelPostupload);
+router.post("/post", isAuthuser, handlechannelPostupload);
+router.get("/categories", isAuthuser, handleGetcategories);
 
 export default router;

@@ -1,12 +1,10 @@
 import express from "express";
 import router from "./routes/user.js";
 import dotenv from "dotenv";
-import path from "path";
 import { fileURLToPath } from "url";
 import cookieParser from "cookie-parser";
 import { parseCookieString, verify_JWTtoken } from "cookie-string-parser";
 import connectToMongo from "./Db/connection.js";
-import channelRouter from "./routes/channel.js";
 import notificationRouter from "./routes/notification.js";
 import post from "./routes/userPost.js";
 import channelPost from "./routes/channelPost.js";
@@ -20,7 +18,6 @@ import { clearSession, setSession } from "./controllers/timout.js";
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
@@ -47,7 +44,6 @@ app.use(express.urlencoded({ extended: true }));
 // ✅ Routes
 app.use("/", router);
 app.use("/post", post);
-app.use("/channel", channelRouter);
 app.use("/notification", notificationRouter);
 app.use("/channel", channelPost);
 
