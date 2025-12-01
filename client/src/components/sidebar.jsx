@@ -201,7 +201,7 @@ function Sidebar() {
             <a href="/settings">Settings</a>
             <button onClick={toggleLogoutModal}>Logout</button>
             <a href="/help">Help & Support</a>
-            <a href="/delacc">Delete Account</a>
+            <a href="/DeleteAccount">Delete Account</a>
           </div>
         )}
       </div>

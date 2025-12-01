@@ -39,6 +39,7 @@ import { connectSocket, disconnectSocket } from './redux/slices/socketSlice.js';
 import DailyUsagePage from './components/dailyUsage.jsx';
 import NotFound from './components/error.jsx';
 import KidsSettings from './components/KidsSettings.jsx';
+import DeleteAccount from './components/DeleteAccount.jsx';
 
 const AppContent = () => {
   const { userData } = useUserData();
@@ -80,6 +81,7 @@ const AppContent = () => {
         <Route path="/kids_settings" element={<KidsSettings />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/dailyUsage" element={<DailyUsagePage />} />
+        <Route path="/DeleteAccount" element={<DeleteAccount />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {userData?.username ? (
