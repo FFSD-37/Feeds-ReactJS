@@ -63,6 +63,7 @@ import {
   handlegetBasicDetails,
   handlegetsensitive,
   handleisfriend,
+  handleCheckParentalPass
 } from "../controllers/Gourav/profile.js";
 import {
   handlegetchannel,
@@ -288,5 +289,7 @@ router.get("/profile/getbasic/:username", isAuthuser, handlegetBasicDetails);
 router.get("/profile/sensitive/:username", isAuthuser, handlegetsensitive);
 
 router.get("/isfriend/:username", isAuthuser, handleisfriend);
+
+router.post("/checkParentPassword", isAuthuser, handleCheckParentalPass);
 
 export default router;

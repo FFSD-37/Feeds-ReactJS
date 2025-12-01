@@ -5,6 +5,32 @@ import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import '../styles/ProfilePage.css';
 
+const useMediaQuery = (query) => {
+  const [matches, setMatches] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return window.matchMedia(query).matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const mediaQueryList = window.matchMedia(query);
+    const listener = (event) => setMatches(event.matches);
+
+    mediaQueryList.addEventListener('change', listener);
+    setMatches(mediaQueryList.matches);
+
+    return () => mediaQueryList.removeEventListener('change', listener);
+  }, [query]);
+
+  return matches;
+};
+
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('posts');
   const { userData } = useUserData();
@@ -35,6 +61,7 @@ const ProfilePage = () => {
   const [relationship, setRelationship] = useState("");
   const [href, setHref] = useState("");
   const [loading, setLoading] = useState(true);
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   const handleShare = async (username) => {
     const url = `http://localhost:5173/profile/${username}`;
@@ -253,7 +280,7 @@ const ProfilePage = () => {
   };
 
   return (
-    <div style={styles.container}>
+    <div style={{ ...styles.container, width: isMobile ? '100vw' : styles.container.width }}>
       <div style={styles.profileCard}>
         {/* Header with Settings */}
         <div style={styles.header}>
@@ -451,7 +478,7 @@ const ProfilePage = () => {
 
 const styles = {
   container: {
-    width: '100%',
+    width: '90vw',
     minHeight: '100vh',
     backgroundColor: '#fafafa',
     padding: '20px',
@@ -602,8 +629,8 @@ const styles = {
   },
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    maxHeight: '300px',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    maxHeight: '350px',
     overflowY: 'auto',
     gap: '4px',
     padding: '4px',
@@ -613,7 +640,8 @@ const styles = {
     paddingBottom: '100%',
     overflow: 'hidden',
     cursor: 'pointer',
-    border: '1px solid black'
+    border: '1px solid black',
+    borderRadius: '8px',
   },
   gridImage: {
     position: 'absolute',
@@ -728,7 +756,7 @@ const styles = {
     borderTopColor: "#0095f6",
     borderRadius: "50%",
     animation: "spin 0.8s linear infinite",
-  }
+  },
 
 };
 

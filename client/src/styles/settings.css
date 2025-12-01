@@ -3,7 +3,7 @@
   /* min-height: 100vh; */
   background-color: #f9fafb;
   /* display: flex; */
-  width: 50vw;
+  width: 70vw;
   border-radius: 15px;
 }
 
@@ -163,7 +163,7 @@
   text-align: left;
   font-size: 12px;
   font-weight: 500;
-  color: #6b7280;
+  color: #ffffff;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }

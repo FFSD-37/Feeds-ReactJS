@@ -10,8 +10,57 @@ function Sidebar() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const toggleDropdown = () => setShowDropdown(prev => !prev);
+  const toggleDropdown = () => {
+    if (userData.type === 'Kids') {
+      // If dropdown is open → close without password
+      if (showDropdown) {
+        setShowDropdown(false);
+      }
+      // If dropdown is closed → ask for parental password
+      else {
+        setShowPasswordModal(true);
+      }
+    } else {
+      // Normal users
+      setShowDropdown(!showDropdown);
+    }
+  };
+
   const toggleLogoutModal = () => setShowLogoutModal(prev => !prev);
+
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [parentPass, setParentPass] = useState('');
+
+  const checkParentalPassword = async () => {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/checkParentPassword`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: parentPass }),
+          credentials: 'include',
+        },
+      );
+
+      const data = await res.json();
+      console.log(data);
+
+      if (data.success) {
+        setShowPasswordModal(!showPasswordModal);
+        setShowDropdown(!showDropdown);
+        setParentPass('');
+      } else {
+        alert(data.message || 'Incorrect password!');
+        setShowPasswordModal(!showPasswordModal);
+        setParentPass('');
+      }
+    } catch (err) {
+      alert('Error verifying password');
+      setShowPasswordModal(!showPasswordModal);
+      setParentPass('');
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -156,6 +205,26 @@ function Sidebar() {
           </div>
         )}
       </div>
+
+      {showPasswordModal && (
+        <div className="password-modal">
+          <div className="password-box">
+            <h3>Enter Parental Password</h3>
+            <input
+              type="password"
+              placeholder="Parental Password"
+              value={parentPass}
+              onChange={e => setParentPass(e.target.value)}
+            />
+            <div className="btn-row">
+              <button onClick={checkParentalPassword}>Submit</button>
+              <button onClick={() => setShowPasswordModal(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Logout Modal */}
       {showLogoutModal && (

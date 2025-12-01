@@ -11,6 +11,19 @@ const handlegetUserPost = async (req, res) => {
     return res.json({ posts: posts });
 }
 
+const handleCheckParentalPass = async (req, res) => {
+    const { data } = req.userDetails;
+    const { password } = req.body;
+    console.log("password" , password);
+    const user = await User.findOne({ username: data[0] });
+    console.log("user" , user);
+    if (user.parentPassword === password) {
+      return res.json({ success: true, message: "Password is correct" });
+      } else {
+      return res.json({ success: false, message: "Incorrect password" });
+    }
+}
+
 const handlegetBasicDetails = async (req, res) => {
     const { data } = req.userDetails;
     const userAsking = req.params.username;
@@ -116,5 +129,6 @@ export {
     handlegetUserPost,
     handlegetBasicDetails,
     handlegetsensitive,
-    handleisfriend
+    handleisfriend,
+    handleCheckParentalPass
 }

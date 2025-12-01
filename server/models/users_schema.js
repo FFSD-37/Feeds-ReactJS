@@ -148,6 +148,10 @@ const userSchema = new mongoose.Schema({
     channelName:[{
         type: String
     }],
+    parentPassword: {
+        type: String,
+        default: null
+    },
 }, { timestamps: true });
 
 const User = mongoose.model("User", userSchema);
