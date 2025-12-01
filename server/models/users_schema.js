@@ -1,5 +1,11 @@
 import mongoose from 'mongoose';
 
+const validChannelCategories = [
+    "Entertainment", "Education", "Animations", "Games", "Memes",
+    "News", "Tech", "Vlog", "Sports", "Nature", "Music", "Marketing",
+    "Fitness", "Lifestyle"
+];
+
 const userSchema = new mongoose.Schema({
     fullName: {
         type: String,
@@ -16,7 +22,7 @@ const userSchema = new mongoose.Schema({
 
     display_name: {
         type: String,
-        default: function (){
+        default: function () {
             return this.fullName;
         }
     },
@@ -57,31 +63,31 @@ const userSchema = new mongoose.Schema({
     },
 
     followers: [{
-        username:{
-            type:String
+        username: {
+            type: String
         }
     }],
 
     requested: [{
-        username:{
-            type:String
+        username: {
+            type: String
         }
     }],
 
     followings: [{
-        username:{
-            type:String
+        username: {
+            type: String
         }
     }],
 
     channelFollowings: [{
-        channelName:{
-            type:String
+        channelName: {
+            type: String
         }
     }],
 
     blockedUsers: [{
-        type:String
+        type: String
     }],
 
     bio: {
@@ -112,8 +118,8 @@ const userSchema = new mongoose.Schema({
 
     type: {
         type: String,
-        enum: ["Kids","Normal", "Admin"],
-        default:'Normal'
+        enum: ["Kids", "Normal", "Admin"],
+        default: 'Normal'
     },
 
     links: [{
@@ -135,22 +141,37 @@ const userSchema = new mongoose.Schema({
     archivedPostsIds: [{
         type: String
     }],
-    
-    postIds:[{
+
+    postIds: [{
         type: String
     }],
 
-    socketId:{
+    socketId: {
         type: String,
         default: null
     },
 
-    channelName:[{
+    channelName: [{
         type: String
     }],
     parentPassword: {
         type: String,
+        required: function () {
+            return this.type === "Kids";
+        },
         default: null
+    },
+
+    kidPreferredCategories: {
+        type: [String],
+        validate: {
+            validator: function (categories) {
+                if (this.type !== "Kids") return true;
+                return categories.every(cat => validChannelCategories.includes(cat));
+            },
+            message: "Invalid category found in kidPreferredCategories"
+        },
+        default: []
     },
 }, { timestamps: true });
 

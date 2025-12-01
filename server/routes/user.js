@@ -80,6 +80,7 @@ import {
   saveChannelPost,
   commentOnChannelPost,
   getSingleChannelPost,
+  getKidsHomePosts,
 } from "../controllers/Ayush/home.js";
 import {
   handleGetConnect,
@@ -291,5 +292,7 @@ router.get("/profile/sensitive/:username", isAuthuser, handlegetsensitive);
 router.get("/isfriend/:username", isAuthuser, handleisfriend);
 
 router.post("/checkParentPassword", isAuthuser, handleCheckParentalPass);
+
+router.get("/kidshome", isAuthuser, getKidsHomePosts);
 
 export default router;
