@@ -107,9 +107,21 @@ export default function ChannelRegistration() {
   }
 
   const toggleCategory = val => {
-    setSelectedCategories(prev =>
-      prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val],
-    );
+    setSelectedCategories(prev => {
+      if (val === 'All') {
+        if (prev.includes('All')) {
+          return prev.filter(v => v !== 'All');
+        }
+        return ['All'];
+      }
+      
+      const withoutAll = prev.filter(v => v !== 'All');
+            if (withoutAll.includes(val)) {
+        return withoutAll.filter(v => v !== val);
+      } else {
+        return [...withoutAll, val];
+      }
+    });
   };
 
   const filteredCategories = DEFAULT_CATEGORIES.filter(c =>
