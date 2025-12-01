@@ -48,6 +48,26 @@ async function getOtp(email) {
 const handleSignup = async (req, res) => {
   try {
     const pass = await bcrypt.hash(req.body.password, 10);
+    
+    // For kids accounts, also hash the parental password
+    let parentalPasswordHash = null;
+    if (req.body.acctype === "Kids") {
+      if (!req.body.parentalPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "Parental password is required for kids accounts"
+        });
+      }
+      
+      if (req.body.parentalPassword !== req.body.confirmParentalPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "Parental passwords do not match"
+        });
+      }
+      
+      parentalPasswordHash = await bcrypt.hash(req.body.parentalPassword, 10);
+    }
 
     const userData = {
       fullName: req.body.fullName,
@@ -62,48 +82,39 @@ const handleSignup = async (req, res) => {
       type: req.body.acctype || "Normal",
       isPremium: false,
       termsAccepted: req.body.terms === true,
+      parentalPasswordHash: parentalPasswordHash, // Store hashed parental password
+      isParentalPasswordSet: req.body.acctype === "Kids",
     };
 
-    const user = await User.create(userData);
+    // Save to database (example with MongoDB)
+    const newUser = new User(userData);
+    await newUser.save();
 
-    await ActivityLog.create({
-      username: user.username,
-      id: `#${Date.now()}`,
-      message: "You Registered Successfully!!",
-    });
-
-    await User.updateOne({ username: user.username }, { $inc: { coins: 10 } });
-
-    return res.status(201).json({
+    // Create session or token
+    req.session.userId = newUser._id;
+    
+    res.status(201).json({
       success: true,
-      message: "User registered successfully",
-      user: {
-        username: user.username,
-        email: user.email,
-        fullName: user.fullName,
-      },
+      message: "Account created successfully",
+      redirect: "/dashboard",
+      userType: req.body.acctype
     });
-  } catch (err) {
-    if (err.code === 11000) {
-      const fields = Object.keys(err.keyValue);
+
+  } catch (error) {
+    console.error("Signup error:", error);
+    
+    // Handle duplicate username/email
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
       return res.status(400).json({
         success: false,
-        message: `User with this ${fields[0]} already exists`,
+        message: `${field} already exists`
       });
     }
-
-    if (err.name === "ValidationError") {
-      const errors = Object.values(err.errors).map((e) => e.message);
-      return res.status(400).json({
-        success: false,
-        message: errors.join(", "),
-      });
-    }
-
-    console.error("Signup Error:", err);
-    return res.status(500).json({
+    
+    res.status(500).json({
       success: false,
-      message: "Internal server error during signup",
+      message: "Server error during signup"
     });
   }
 };
