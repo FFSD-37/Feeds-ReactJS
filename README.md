@@ -1,26 +1,31 @@
 # FSD - Group 37
 
-
 ### 🧩 Branch Commands
 
 #### 🔹 Check available branches
+
 ```bash
 git branch
 ```
+
 Displays all branches and highlights the one you’re currently on.
 
 #### 🔹 Create a new branch
+
 ```bash
 git checkout -b branchname
 ```
+
 Creates a new branch and switches to it immediately.
 
 #### 🔹 Switch between branches
+
 ```bash
 git checkout branchname
 ```
 
 **Tip:** You can quickly switch back to the **previous branch** using:
+
 ```bash
 git checkout -
 ```
@@ -30,25 +35,31 @@ git checkout -
 ### 🗑️ Deleting Branches
 
 #### Delete a branch (safe mode)
+
 ```bash
 git branch -d branchname
 ```
+
 Only works if the branch has **no unmerged changes**.
 
 #### Force delete a branch
+
 ```bash
 git branch -D branchname
 ```
+
 Use this if you still want to delete a branch with **unmerged changes**.
 
 ---
 
 ### ☁️ Pushing a Branch to Remote
+
 ```bash
 git push origin branchname
 ```
 
 ### ☁️ Pulling a Branch to Remote
+
 ```bash
 git pull origin main
 ```
@@ -58,11 +69,13 @@ git pull origin main
 # 🚀 Running the Project (Client + Server)
 
 ## 1️⃣ Clone the project
+
 ```bash
 git clone <repo-link>
 ```
 
 ## 2️⃣ Run the Client
+
 ```bash
 cd client
 npm i
@@ -70,6 +83,7 @@ npm run dev
 ```
 
 ## 3️⃣ Run the Server
+
 ```bash
 cd server
 npm i
@@ -81,6 +95,7 @@ The project will now be running locally. Open the provided localhost link in you
 ---
 
 # 📤 How to Push Your Changes
+
 ```bash
 git add .
 git commit -m "your message"
@@ -117,55 +132,62 @@ You can create **child components** freely under these parent components.
 ## 📋 Component Distribution & Status
 
 ### 👤 Ayush
-- [✅] Sidebar  
-- [✅] Post Overlay  
-- [✅] Edit Profile/Channel  
-- [✅] Connect  
+
+- [✅] Sidebar
+- [✅] Post Overlay
+- [✅] Edit Profile/Channel
+- [✅] Connect
 - [✅] Channel Profile (Self/Other)
 - [✅] Channel Home
+- [✅] Kids Home(Landing Page)
 
 ---
 
 ### 👤 Gourav Khakse
-- [❌] Admin Portal  
+
+- [❌] Admin Portal
 - [✅] Home (Normal User)
-- [✅] Profile (Self/Other) 
-- [✅] Notification  (Normal, Channel)
+- [✅] Profile (Self/Other)
+- [✅] Notification (Normal, Channel)
 - [✅] Games
 - [✅] Setting
+- [✅] Kids Settings
 
 ---
 
 ### 👤 Arnav Ranjan
-- [❌] Payment / Premium  
-- [❌] Chat  (Normal, Channel)
-- [❌] Kids Settings
-- [❌] Daily Usage  
-- [✅❌] Create Post / Reels / Stories (Channel, Normal)
-- [❌] Error Page(Incorrect Route)
+
+- [✅] Payment / Premium
+- [✅] Chat
+- [✅] Daily Usage
+- [✅] Create Post / Reels / Stories (Channel, Normal)
+- [✅] Error Page(Incorrect Route)
+- [✅] Redux integration
 
 ---
 
 ### 👤 Atin Chowdhury
-- [✅] Registration Page (All Types)  
-- [✅] Login Page (All Types)  
-- [✅] Activity Log  
-- [✅] Stories  
+
+- [✅] Registration Page (All Types)
+- [✅] Login Page (All Types)
+- [✅] Activity Log
+- [✅] Stories
 - [✅] Delete (Normal, Kids, Channel)
-- [❌] Kids Home(Landing Page)
 
 ---
 
 ### 👤 Vakadani Kavyamrutha
-- [❌] Kids Profile (Self/Other)  
-- [❌] Help / Support  
-- [❌] Reels  (Normal, Kids, Channel)
-- [❌] Terms & Conditions  
-- [❌] Contact Us
+
+- [❌] Kids Profile (Self/Other)
+- [✅] Help / Support
+- [❌] Reels (Normal, Kids, Channel)
+- [✅] Terms & Conditions
+- [✅] Contact Us
 
 ---
 
 ### 🧾 Notes
-- Please keep all commits meaningful and well-labeled.  
-- Follow consistent component naming and folder structure.  
+
+- Please keep all commits meaningful and well-labeled.
+- Follow consistent component naming and folder structure.
 - Always work on your **own branch** for each feature before working on it.

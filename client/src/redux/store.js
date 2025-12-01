@@ -1,8 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit';
-import socketReduce from './slices/socketSlice.js';
+import socketReducer from './slices/socketSlice.js';
+import themeReducer from './slices/themeSlice.js';
 
 export const store = configureStore({
   reducer: {
-    socket: socketReduce,
+    socket: socketReducer,
+    theme: themeReducer,
   },
 });

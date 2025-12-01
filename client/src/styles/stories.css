@@ -21,13 +21,9 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-}
-
-body {
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-  min-height: 100vh;
-  padding: 20px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
 }
 
 /* Main App Container */
@@ -567,10 +563,19 @@ body {
 }
 
 @keyframes likePulse {
-  0%, 100% { transform: scale(1); }
-  25% { transform: scale(1.3); }
-  50% { transform: scale(0.9); }
-  75% { transform: scale(1.1); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.3);
+  }
+  50% {
+    transform: scale(0.9);
+  }
+  75% {
+    transform: scale(1.1);
+  }
 }
 
 .heart-icon {
@@ -628,11 +633,10 @@ body {
   }
   100% {
     opacity: 0;
-    transform: 
-      translate(
+    transform: translate(
         calc(cos(var(--i) * 45deg) * 40px),
         calc(sin(var(--i) * 45deg) * 40px)
-      ) 
+      )
       scale(1);
   }
 }
@@ -645,25 +649,25 @@ body {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 16px;
   }
-  
+
   .stories-title {
     font-size: 2rem;
   }
-  
+
   .viewer-content {
     width: 95%;
     max-height: 85vh;
   }
-  
+
   .story-content {
     height: 500px;
   }
-  
+
   .nav-button {
     width: 40px;
     height: 40px;
   }
-  
+
   .nav-button svg {
     width: 20px;
     height: 20px;
@@ -674,16 +678,16 @@ body {
   .stories-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .story-user-card {
     padding: 20px;
   }
-  
+
   .story-avatar-wrapper {
     width: 80px;
     height: 80px;
   }
-  
+
   .viewer-content {
     border-radius: var(--radius-md);
   }
