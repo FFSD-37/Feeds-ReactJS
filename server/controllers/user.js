@@ -52,14 +52,14 @@ const handleSignup = async (req, res) => {
       if (!req.body.parentalPassword) {
         return res.status(400).json({
           success: false,
-          message: "Parental password is required for kids accounts"
+          message: "Parental password is required for kids accounts",
         });
       }
-      
+
       if (req.body.parentalPassword !== req.body.confirmParentalPassword) {
         return res.status(400).json({
           success: false,
-          message: "Parental passwords do not match"
+          message: "Parental passwords do not match",
         });
       }
     }
@@ -77,7 +77,7 @@ const handleSignup = async (req, res) => {
       type: req.body.acctype || "Normal",
       isPremium: false,
       termsAccepted: req.body.terms === true,
-      parentPassword: req.body.parentalPassword
+      parentPassword: req.body.parentalPassword,
     };
 
     // Save to database (example with MongoDB)
@@ -85,30 +85,28 @@ const handleSignup = async (req, res) => {
     await newUser.save();
 
     // Create session or token
-    req.session.userId = newUser._id;
-    
+
     res.status(201).json({
       success: true,
       message: "Account created successfully",
       redirect: "/dashboard",
-      userType: req.body.acctype
+      userType: req.body.acctype,
     });
-
   } catch (error) {
     console.error("Signup error:", error);
-    
+
     // Handle duplicate username/email
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
       return res.status(400).json({
         success: false,
-        message: `${field} already exists`
+        message: `${field} already exists`,
       });
     }
-    
+
     res.status(500).json({
       success: false,
-      message: "Server error during signup"
+      message: "Server error during signup",
     });
   }
 };
@@ -1409,16 +1407,15 @@ const unRequestSomeone = async (req, res) => {
     return res.status(400).json({
       success: false,
       message: `You haven't requested to follow @${targetUsername}.`,
-    }); 
-  }
-  catch (error) {
+    });
+  } catch (error) {
     console.error("❌ Error in unRequestSomeone:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error while unrequesting user",
     });
   }
-}
+};
 
 const unfollowSomeone = async (req, res) => {
   try {
@@ -2857,5 +2854,5 @@ export {
   handlepostcomment,
   handleGetEditChannel,
   updateChannelProfile,
-  unRequestSomeone
+  unRequestSomeone,
 };
