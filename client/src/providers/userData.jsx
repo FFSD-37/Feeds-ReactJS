@@ -33,20 +33,9 @@ export const UserDataProvider = ({ children }) => {
           }
           // console.log(data);
 
-          if (pathname === '/') {
-            if (data.type === 'Channel') navigate('/channelhome');
-            else navigate('/home');
-          }
-
           setUserData(data);
-          if (pathname === '/login' || pathname === '/signup') {
-            if (
-              data.type === 'Channel' ||
-              (data.type === 'Channel' && pathname === '/home')
-            )
-              navigate('/channelhome');
-            else navigate('/home');
-          }
+          if (pathname === '/login' || pathname === '/signup')
+            navigate('/home');
         } else throw new Error('Unauthorized');
         // eslint-disable-next-line no-unused-vars
       } catch (error) {
