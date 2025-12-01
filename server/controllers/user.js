@@ -48,9 +48,6 @@ async function getOtp(email) {
 const handleSignup = async (req, res) => {
   try {
     const pass = await bcrypt.hash(req.body.password, 10);
-    
-    // For kids accounts, also hash the parental password
-    let parentalPasswordHash = null;
     if (req.body.acctype === "Kids") {
       if (!req.body.parentalPassword) {
         return res.status(400).json({
@@ -65,8 +62,6 @@ const handleSignup = async (req, res) => {
           message: "Parental passwords do not match"
         });
       }
-      
-      parentalPasswordHash = await bcrypt.hash(req.body.parentalPassword, 10);
     }
 
     const userData = {
@@ -82,8 +77,7 @@ const handleSignup = async (req, res) => {
       type: req.body.acctype || "Normal",
       isPremium: false,
       termsAccepted: req.body.terms === true,
-      parentalPasswordHash: parentalPasswordHash, // Store hashed parental password
-      isParentalPasswordSet: req.body.acctype === "Kids",
+      parentPassword: req.body.parentalPassword
     };
 
     // Save to database (example with MongoDB)
