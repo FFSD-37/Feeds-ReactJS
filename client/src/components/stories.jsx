@@ -3,12 +3,7 @@ import "./../styles/stories.css";
 
 /**
  * Stories component
- *
- * Props:
- *  - initialStories: optional array of stories preloaded from server
- *      each story: { _id, username, avatarUrl, url, createdAt, liked? }
- *  - currentUser: optional current logged-in username
- *  - fetchUrl: optional url to fetch stories if initialStories not provided (default '/stories')
+ * Professional UI Overhaul
  */
 export default function Stories({
   initialStories = null,
@@ -22,14 +17,14 @@ export default function Stories({
   // viewer state
   const [viewerOpen, setViewerOpen] = useState(false);
   const [activeUsername, setActiveUsername] = useState(null);
-  const [activeStories, setActiveStories] = useState([]); // stories of active user
+  const [activeStories, setActiveStories] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [progressPercents, setProgressPercents] = useState([]); // per-story percent 0..100
+  const [progressPercents, setProgressPercents] = useState([]);
   const [isPaused, setIsPaused] = useState(false);
 
   const progressIntervalRef = useRef(null);
-  const storyMediaRefs = useRef({}); // store refs by index for media elements
-  const defaultDuration = 5000; // ms for images or fallback
+  const storyMediaRefs = useRef({});
+  const defaultDuration = 5000;
   const [progressDuration, setProgressDuration] = useState(defaultDuration);
 
   // Build a map of username -> list of stories
@@ -54,9 +49,7 @@ export default function Stories({
       fetch(fetchUrl, {
         method: "GET",
         credentials: "include",
-        headers: {
-          Accept: "application/json",
-        },
+        headers: { Accept: "application/json" },
       })
         .then((res) => {
           if (!res.ok) throw new Error(`Fetch failed ${res.status}`);
@@ -74,7 +67,6 @@ export default function Stories({
     }
   }, [initialStories, fetchUrl]);
 
-  // Open viewer for a username
   function openStory(username) {
     const arr = usersMap[username]?.stories || [];
     if (!arr.length) return;
@@ -283,117 +275,138 @@ export default function Stories({
 
   const uniqueUsers = useMemo(() => Object.values(usersMap).map((u) => ({ username: u.username, avatar: u.avatar })), [usersMap]);
 
-  // Small inline SVG spinner used while buffering / loading
+  // Professional Apple-style Spinner
   const Spinner = () => (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-      <svg width="48" height="48" viewBox="0 0 50 50" aria-hidden>
-        <circle cx="25" cy="25" r="20" fill="none" stroke="#ddd" strokeWidth="5" />
-        <path fill="#667eea" d="M25 5 A20 20 0 0 1 45 25 L40 25 A15 15 0 0 0 25 10z">
-          <animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/>
-        </path>
+    <div className="stories-spinner-container">
+      <svg className="stories-spinner" viewBox="0 0 50 50">
+        <circle className="path" cx="25" cy="25" r="20" fill="none" strokeWidth="4"></circle>
       </svg>
-      <div style={{ color: "#fff", opacity: 0.9 }}>Loading...</div>
+      <span className="loading-text">Updating feed...</span>
     </div>
   );
 
   const NoStories = () => (
-    <div style={{ textAlign: "center", padding: 40 }}>
-      <div style={{ fontSize: 48, opacity: 0.6 }}>🙁</div>
-      <div style={{ marginTop: 12, fontSize: 18, color: "#fff" }}>No stories found</div>
-      <div style={{ marginTop: 6, color: "#e6e6e6" }}>Try again later or ask users to post stories.</div>
+    <div className="no-stories-container">
+      <div className="no-stories-icon">😴</div>
+      <h3>All caught up</h3>
+      <p>No stories available at the moment.</p>
     </div>
   );
 
   return (
-    <div className="stories-page" style={{ padding: 16 }}>
+    <div className="stories-wrapper">
       {loading ? (
-        <div style={{ display: "flex", justifyContent: "center", marginTop: 36 }}>
-          <Spinner />
-        </div>
+        <Spinner />
       ) : error ? (
-        <div style={{ textAlign: "center", color: "crimson", padding: 20 }}>{error}</div>
+        <div className="stories-error">{error}</div>
       ) : uniqueUsers.length === 0 ? (
         <NoStories />
       ) : (
         <>
-          <div className="stories-grid" id="stories-grid">
+          <div className="stories-tray">
             {uniqueUsers.map((user) => (
-              <div
+              <button
                 key={user.username}
-                className="story-container"
+                className="story-trigger"
                 onClick={() => openStory(user.username)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") openStory(user.username);
-                }}
+                aria-label={`View story by ${user.username}`}
               >
-                <div className={`story-avatar-border`}>
-                  <img src={user.avatar || "/api/placeholder/80/80"} alt={user.username} className="story-avatar" />
+                <div className="avatar-ring">
+                  <div className="avatar-gap">
+                    <img 
+                      src={user.avatar || "/api/placeholder/80/80"} 
+                      alt="" 
+                      className="tray-avatar" 
+                    />
+                  </div>
                 </div>
-                <div className="story-username">{user.username}</div>
-              </div>
+                <span className="tray-username">{user.username}</span>
+              </button>
             ))}
           </div>
 
-          {/* Viewer Modal */}
-          <div className="story-viewer" id="story-viewer" style={{ display: viewerOpen ? "block" : "none" }} aria-hidden={!viewerOpen}>
-            <div className="close-story" onClick={closeStory} role="button" aria-label="Close story">
-              ✕
-            </div>
-
-            <div className="story-progress" id="story-progress-container" aria-hidden>
-              {(activeStories || []).map((s, i) => (
-                <div className="progress-bar" key={s._id || i}>
-                  <div className="progress-bar-fill" id={`progress-${i}`} style={{ width: `${progressPercents[i] || 0}%` }} />
-                </div>
-              ))}
-            </div>
-
-            <div className="story-header">
-              <div className="user-info" id="story-user-info">
-                <img src={activeStories[0]?.avatarUrl || "/api/placeholder/64/64"} alt={activeUsername} className="user-avatar-small" />
-                <span className="username" id="story-username">{activeUsername}</span>
-                <span className="post-time" id="story-time">
-                  {activeStories[activeIndex] ? new Date(activeStories[activeIndex].createdAt).toLocaleString() : ""}
-                </span>
-              </div>
-              <div className="story-actions" style={{ display: "flex", gap: 8 }} />
-            </div>
-
-            <div className="story-view" id="story-view-container" onClick={handleMediaClick}>
-              {(activeStories || []).map((story, i) => {
-                const isActive = i === activeIndex;
-                const type = story.url && story.url.toLowerCase().includes(".mp4") ? "video" : "image";
-                return (
-                  <div key={story._id || i} id={`story-image-${i}`} className={`story-image ${isActive ? "active-story" : "inactive-story"}`} style={{ display: isActive ? "block" : "none" }}>
-                    <div className="story-media-container" style={{ width: "100%", height: "100%" }}>
-                      {type === "image" ? (
-                        <img
-                          src={story.url}
-                          alt={`Story ${i}`}
-                          className="story-media"
-                          ref={(el) => {
-                            if (isActive) attachMediaRef(i, el);
-                            else {
-                              storyMediaRefs.current[i] = storyMediaRefs.current[i] || null;
-                            }
-                          }}
+          {/* Viewer Overlay */}
+          <div className={`story-overlay ${viewerOpen ? "open" : ""}`} aria-hidden={!viewerOpen}>
+            <div className="story-backdrop" onClick={closeStory}></div>
+            
+            <div className="story-modal">
+              {viewerOpen && (
+                <>
+                  <div className="progress-container">
+                    {(activeStories || []).map((s, i) => (
+                      <div className="progress-track" key={s._id || i}>
+                        <div 
+                          className="progress-fill" 
+                          style={{ width: `${progressPercents[i] || 0}%` }} 
                         />
-                      ) : (
-                        <video src={story.url} className="story-media" ref={(el) => attachMediaRef(i, el)} playsInline muted autoPlay={isActive} />
-                      )}
-
-                      <StoryLikeButton story={story} onToggle={(setLocal) => toggleLike(story._id || story.id, !!story.liked, setLocal)} />
-                    </div>
+                      </div>
+                    ))}
                   </div>
-                );
-              })}
-            </div>
 
-            <div className="navigation">
-              <div className="nav-left" onClick={(e) => { e.stopPropagation(); previousStory(); }} />
-              <div className="nav-right" onClick={(e) => { e.stopPropagation(); nextStory(); }} />
+                  <div className="modal-header">
+                    <div className="header-left">
+                      <img 
+                        src={activeStories[0]?.avatarUrl || "/api/placeholder/64/64"} 
+                        alt="" 
+                        className="header-avatar" 
+                      />
+                      <div className="header-text">
+                        <span className="header-username">{activeUsername}</span>
+                        <span className="header-time">
+                          {activeStories[activeIndex] ? new Date(activeStories[activeIndex].createdAt).toLocaleString(undefined, { hour: 'numeric', minute: 'numeric' }) : ""}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <button className="close-btn" onClick={closeStory} aria-label="Close">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                  </div>
+
+                  {/* Navigation Click Areas */}
+                  <div className="nav-area left" onClick={(e) => { e.stopPropagation(); previousStory(); }}></div>
+                  <div className="nav-area right" onClick={(e) => { e.stopPropagation(); nextStory(); }}></div>
+
+                  <div className="media-stage" onClick={handleMediaClick}>
+                    {(activeStories || []).map((story, i) => {
+                      const isActive = i === activeIndex;
+                      const type = story.url && story.url.toLowerCase().includes(".mp4") ? "video" : "image";
+                      return (
+                        <div 
+                          key={story._id || i} 
+                          className={`media-slide ${isActive ? "active" : ""}`}
+                        >
+                          {type === "image" ? (
+                            <img
+                              src={story.url}
+                              alt=""
+                              className="story-content"
+                              ref={(el) => {
+                                if (isActive) attachMediaRef(i, el);
+                                else storyMediaRefs.current[i] = storyMediaRefs.current[i] || null;
+                              }}
+                            />
+                          ) : (
+                            <video 
+                              src={story.url} 
+                              className="story-content" 
+                              ref={(el) => attachMediaRef(i, el)} 
+                              playsInline 
+                              muted 
+                              autoPlay={isActive} 
+                            />
+                          )}
+                          
+                          <StoryLikeButton 
+                            story={story} 
+                            onToggle={(setLocal) => toggleLike(story._id || story.id, !!story.liked, setLocal)} 
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </>
@@ -402,16 +415,19 @@ export default function Stories({
   );
 }
 
-/* Subcomponent for the like button (keeps component tidy) */
+/* Subcomponent for the like button */
 function StoryLikeButton({ story, onToggle }) {
   const [liked, setLiked] = useState(!!story.liked);
   useEffect(() => setLiked(!!story.liked), [story.liked]);
 
   return (
-    <button className={`story-like-button ${liked ? "liked" : ""}`} type="button" aria-pressed={liked} title={liked ? "Liked" : "Like"} onClick={(e) => { e.stopPropagation(); onToggle(setLiked); }}>
-      <svg viewBox="0 0 24 24" className="heart-icon" width="20" height="20" aria-hidden="true" focusable="false">
-        <path className="heart-outline" d="M12.1 8.64l-.1.1-.11-.11C10.14 6.7 7.35 6.7 5.8 8.25 4.23 9.82 4.23 12.6 5.8 14.17L12 20.36l6.2-6.19c1.57-1.57 1.57-4.35 0-5.92-1.55-1.55-4.34-1.55-5.9 0z" fill="none" stroke="currentColor" strokeWidth="1.2" />
-        <path className="heart-filled" d="M12 21s-7.5-5.5-9-8.4C1.9 9.1 4 6 7 6c1.7 0 3 1 4 2.3C12.9 7 14.3 6 16 6c3 0 5.1 3.1 4 6.6-1.5 2.9-9 8.4-9 8.4z" fill="currentColor" opacity={liked ? 1 : 0} />
+    <button 
+      className={`glass-like-btn ${liked ? "is-liked" : ""}`} 
+      type="button" 
+      onClick={(e) => { e.stopPropagation(); onToggle(setLiked); }}
+    >
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path className="heart-path" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
       </svg>
     </button>
   );
