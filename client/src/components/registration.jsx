@@ -94,14 +94,14 @@ export default function Register() {
 
   const onChange = e => {
     const { name, value, type, checked } = e.target;
-    
+
     // If account type changes, clear parental password fields
     if (name === 'acctype' && value === 'Normal') {
       setValues(v => ({
         ...v,
         [name]: value,
         parentalPassword: '',
-        confirmParentalPassword: ''
+        confirmParentalPassword: '',
       }));
     } else {
       setValues(v => ({
@@ -171,7 +171,7 @@ export default function Register() {
   const handleSubmit = async () => {
     // 1) validate inputs
     const newErrors = {};
-    
+
     // Basic validations
     if (!validateFullName(values.fullName)) newErrors.fullName = true;
     if (!validateUsername(values.username)) newErrors.username = true;
@@ -183,7 +183,7 @@ export default function Register() {
     if (!validateDOB(values.dob)) newErrors.dob = true;
     if (!values.gender) newErrors.gender = true;
     if (!values.terms) newErrors.terms = true;
-    
+
     // Parental password validation for kids accounts
     if (values.acctype === 'Kids') {
       if (!validateParentalPassword(values.parentalPassword)) {
@@ -236,10 +236,23 @@ export default function Register() {
     }
 
     // 4) Send FormData with fetch
+    const payload = {
+      ...values,
+      terms: Boolean(values.terms),
+      parentalPassword:
+      values.acctype === 'Kids' ? values.parentalPassword : null,
+      confirmParentalPassword:
+      values.acctype === 'Kids' ? values.confirmParentalPassword : null,
+    };
+    console.log(payload);
+
     try {
       const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/signup`, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
         credentials: 'include',
       });
 
@@ -478,7 +491,7 @@ export default function Register() {
                 <div className="section-title">
                   <h3>👨‍👩‍👧‍👦 Parental Consent Required</h3>
                   <p className="section-description">
-                    For kids accounts, a parent/guardian must set up a parental 
+                    For kids accounts, a parent/guardian must set up a parental
                     password to manage account settings and permissions.
                   </p>
                 </div>
@@ -492,7 +505,9 @@ export default function Register() {
                     <input
                       name="parentalPassword"
                       id="registration-parentalPassword"
-                      type={passwordVisible.parentalPassword ? 'text' : 'password'}
+                      type={
+                        passwordVisible.parentalPassword ? 'text' : 'password'
+                      }
                       placeholder="Set a parental control password (min 4 characters)"
                       value={values.parentalPassword}
                       onChange={onChange}
@@ -500,7 +515,9 @@ export default function Register() {
                     <button
                       type="button"
                       className="registration-password-toggle"
-                      onClick={() => togglePasswordVisibility('parentalPassword')}
+                      onClick={() =>
+                        togglePasswordVisibility('parentalPassword')
+                      }
                     >
                       {passwordVisible.parentalPassword ? '👁️‍🗨️' : '👁️'}
                     </button>
@@ -510,8 +527,8 @@ export default function Register() {
                   </div>
                   <div className="parental-password-info">
                     <small>
-                      ⚠️ This password will be needed to modify account settings, 
-                      change privacy options, or delete the account.
+                      ⚠️ This password will be needed to modify account
+                      settings, change privacy options, or delete the account.
                     </small>
                   </div>
                 </div>
@@ -525,7 +542,11 @@ export default function Register() {
                     <input
                       name="confirmParentalPassword"
                       id="registration-confirmParentalPassword"
-                      type={passwordVisible.confirmParentalPassword ? 'text' : 'password'}
+                      type={
+                        passwordVisible.confirmParentalPassword
+                          ? 'text'
+                          : 'password'
+                      }
                       placeholder="Re-enter parental password"
                       value={values.confirmParentalPassword}
                       onChange={onChange}
@@ -533,7 +554,9 @@ export default function Register() {
                     <button
                       type="button"
                       className="registration-password-toggle"
-                      onClick={() => togglePasswordVisibility('confirmParentalPassword')}
+                      onClick={() =>
+                        togglePasswordVisibility('confirmParentalPassword')
+                      }
                     >
                       {passwordVisible.confirmParentalPassword ? '👁️‍🗨️' : '👁️'}
                     </button>
@@ -659,7 +682,8 @@ export default function Register() {
               </a>
               {values.acctype === 'Kids' && (
                 <span className="kids-consent-note">
-                  {' '}(For kids accounts, parent/guardian consent is required)
+                  {' '}
+                  (For kids accounts, parent/guardian consent is required)
                 </span>
               )}
             </label>
@@ -697,15 +721,21 @@ export default function Register() {
               <>
                 <h2>Parental Consent for Kids Accounts</h2>
                 <p>
-                  For accounts designated as "Kids" (ages 2-8), the parent or guardian 
-                  creating this account acknowledges and agrees to:
+                  For accounts designated as "Kids" (ages 2-8), the parent or
+                  guardian creating this account acknowledges and agrees to:
                 </p>
                 <ul>
                   <li>Supervise the child's use of the platform</li>
                   <li>Use the parental password to manage privacy settings</li>
                   <li>Monitor the child's interactions and content</li>
-                  <li>Assume responsibility for the child's activities on the platform</li>
-                  <li>Use the parental password for any account modifications or deletions</li>
+                  <li>
+                    Assume responsibility for the child's activities on the
+                    platform
+                  </li>
+                  <li>
+                    Use the parental password for any account modifications or
+                    deletions
+                  </li>
                 </ul>
               </>
             )}
