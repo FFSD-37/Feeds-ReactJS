@@ -4,6 +4,7 @@ import { useUserData } from "../providers/userData.jsx";
 import "../styles/settings.css";
 import "../styles/KidsSettings.css";
 import "../styles/alert.css";
+import { useNavigate } from 'react-router-dom';
 
 const Modal = ({ children, onClose }) => {
     // ensure modal root exists
@@ -134,6 +135,7 @@ const AlertBanner = ({ type = "info", message, onClose }) => {
 
 const Settings = () => {
     const { userData: Meuser } = useUserData();
+    const navigate = useNavigate();
 
     const [blockedUsers, setBlockedUsers] = useState([]);
     const [isPublic, setIsPublic] = useState(false);
@@ -271,7 +273,7 @@ const Settings = () => {
 
     // Fetch current time limit when modal opens
     useEffect(() => {
-        if (!showTime || Meuser?.type !== "Kids") return;
+        // if (!showTime || Meuser?.type !== "Kids") return;
 
         const fetchLimit = async () => {
             try {
@@ -357,6 +359,7 @@ const Settings = () => {
                     "success",
                     data.message || "Your account has been deactivated successfully."
                 );
+                navigate('/login', { replace: true });navigate('/login', { replace: true });
                 setShowDeactivate(false);
                 setDeactivateForm({ password: "", reason: "", confirm: false });
             } else {

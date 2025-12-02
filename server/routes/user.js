@@ -65,6 +65,11 @@ import {
   handleisfriend,
   handleCheckParentalPass,
   getCoins,
+  handlechangepassKids,
+  handlechangeparentalpass,
+  handlegetkidsTime,
+  handlesetkidsTime,
+  handledeactivateKid
 } from "../controllers/Gourav/profile.js";
 import {
   handlegetchannel,
@@ -297,5 +302,15 @@ router.post("/checkParentPassword", isAuthuser, handleCheckParentalPass);
 router.get("/kidshome", isAuthuser, getKidsHomePosts);
 
 router.get("/getCoins", isAuthuser, getCoins);
+
+router.post("/kids/change-password", isAuthuser, handlechangepassKids);
+
+router.post("/kids/change-parental-password", isAuthuser, handlechangeparentalpass);
+
+router.get("/kids/time-control", isAuthuser, handlegetkidsTime);
+
+router.post("/kids/time-control", isAuthuser, handlesetkidsTime);
+
+router.post("/kids/deactivate", isAuthuser, handledeactivateKid);
 
 export default router;

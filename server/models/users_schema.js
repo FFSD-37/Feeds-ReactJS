@@ -162,6 +162,14 @@ const userSchema = new mongoose.Schema({
         default: null
     },
 
+    timeLimit: {
+        type: Number,
+        required: function () {
+            return this.type === "Kids";
+        },
+        default: 180
+    },
+
     kidPreferredCategories: {
         type: [String],
         validate: {

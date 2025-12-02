@@ -151,6 +151,126 @@ const getChannels = async (req, res) => {
   return res.json({ success: true, channels: channelsData });
 }
 
+import bcrypt from "bcrypt";
+
+const handlechangepassKids = async (req, res) => {
+  try {
+    const { data } = req.userDetails;
+    const user = await User.findOne({ username: data[0] });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    // Check if both fields exist
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    // Compare current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Current password is incorrect" });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully"
+    });
+
+  } catch (error) {
+    console.error("Password change error:", error);
+    return res.status(500).json({
+      message: "Server error while changing password"
+    });
+  }
+};
+
+const handlechangeparentalpass = async (req, res) => {
+  try {
+    const { data } = req.userDetails;
+    const { currentParentalPassword, newParentalPassword } = req.body;
+
+    // Validate fields
+    if (!currentParentalPassword || !newParentalPassword) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const user = await User.findOne({ username: data[0] });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Compare current parental password (plain text comparison)
+    if (user.parentPassword !== currentParentalPassword) {
+      return res.status(401).json({ message: "Current parental password is incorrect" });
+    }
+
+    // Update parental password directly
+    user.parentPassword = newParentalPassword;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Parental password updated successfully"
+    });
+
+  } catch (error) {
+    console.error("Error updating parental password:", error);
+    return res.status(500).json({
+      message: "Server error while updating parental password"
+    });
+  }
+};
+
+const handlegetkidsTime = async (req, res) => {
+  const {data} = req.userDetails;
+  const user = await User.findOne({username: data[0]});
+  return res.json({dailyLimitMinutes: user.timeLimit});
+}
+
+const handlesetkidsTime = async (req, res) => {
+  const {data} = req.userDetails;
+  const {dailyLimitMinutes} = req.body;
+  console.log(dailyLimitMinutes);
+  await User.updateOne({username: data[0]}, {timeLimit: dailyLimitMinutes});
+  return res.json({success: true});
+}
+
+const handledeactivateKid = async (req, res) => {
+  const {data} = req.userDetails;
+  const {password, reason} = req.body;
+  const user = await User.findOne({username: data[0]});
+  const isMatch = await bcrypt.compare(password, user.password);
+  if(isMatch){
+    res.clearCookie("uuid", {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: true,
+    });
+    res.clearCookie("cuid", {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: true,
+    });
+    return res.json({success: true})
+  }
+  else{
+    return res.json({success: false, message: "Incorrect password!!"});
+  }
+}
+
 export {
     handlegetUserPost,
     handlegetBasicDetails,
@@ -159,4 +279,9 @@ export {
     handleCheckParentalPass,
     getCoins,
     getChannels,
+    handlechangepassKids,
+    handlechangeparentalpass,
+    handlegetkidsTime,
+    handlesetkidsTime,
+    handledeactivateKid
 }
