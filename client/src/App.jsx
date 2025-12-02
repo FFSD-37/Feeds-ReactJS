@@ -35,23 +35,36 @@ import Settings from './components/settings.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import ChatPage from './components/chat.jsx';
 import { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { connectSocket, disconnectSocket } from './redux/slices/socketSlice.js';
 import DailyUsagePage from './components/dailyUsage.jsx';
 import NotFound from './components/error.jsx';
 import KidsSettings from './components/KidsSettings.jsx';
 import DeleteAccount from './components/DeleteAccount.jsx';
 import KidsHome from './components/kidsHome.jsx';
+import { setTheme } from './redux/slices/themeSlice.js';
 
 const AppContent = () => {
   const { userData } = useUserData();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const mode = useSelector(state => state.theme.mode);
 
   useEffect(() => {
+    dispatch(setTheme(userData?.type));
     dispatch(connectSocket());
     return () => dispatch(disconnectSocket());
-  }, [navigate, dispatch]);
+  }, [navigate, dispatch, userData?.type]);
+
+  useEffect(() => {
+    document.documentElement.classList.remove(
+      'normal-theme',
+      'channel-theme',
+      'kid-theme',
+    );
+
+    document.documentElement.classList.add(`${mode?.toLowerCase()}-theme`);
+  }, [mode]);
 
   return (
     <>

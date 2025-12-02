@@ -48,6 +48,21 @@ async function getOtp(email) {
 const handleSignup = async (req, res) => {
   try {
     const pass = await bcrypt.hash(req.body.password, 10);
+    if (req.body.acctype === "Kids") {
+      if (!req.body.parentalPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "Parental password is required for kids accounts",
+        });
+      }
+
+      if (req.body.parentalPassword !== req.body.confirmParentalPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "Parental passwords do not match",
+        });
+      }
+    }
 
     const userData = {
       fullName: req.body.fullName,
@@ -62,48 +77,36 @@ const handleSignup = async (req, res) => {
       type: req.body.acctype || "Normal",
       isPremium: false,
       termsAccepted: req.body.terms === true,
+      parentPassword: req.body.parentalPassword,
     };
 
-    const user = await User.create(userData);
+    // Save to database (example with MongoDB)
+    const newUser = new User(userData);
+    await newUser.save();
 
-    await ActivityLog.create({
-      username: user.username,
-      id: `#${Date.now()}`,
-      message: "You Registered Successfully!!",
-    });
+    // Create session or token
 
-    await User.updateOne({ username: user.username }, { $inc: { coins: 10 } });
-
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
-      message: "User registered successfully",
-      user: {
-        username: user.username,
-        email: user.email,
-        fullName: user.fullName,
-      },
+      message: "Account created successfully",
+      redirect: "/dashboard",
+      userType: req.body.acctype,
     });
-  } catch (err) {
-    if (err.code === 11000) {
-      const fields = Object.keys(err.keyValue);
+  } catch (error) {
+    console.error("Signup error:", error);
+
+    // Handle duplicate username/email
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
       return res.status(400).json({
         success: false,
-        message: `User with this ${fields[0]} already exists`,
+        message: `${field} already exists`,
       });
     }
 
-    if (err.name === "ValidationError") {
-      const errors = Object.values(err.errors).map((e) => e.message);
-      return res.status(400).json({
-        success: false,
-        message: errors.join(", "),
-      });
-    }
-
-    console.error("Signup Error:", err);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
-      message: "Internal server error during signup",
+      message: "Server error during signup",
     });
   }
 };
@@ -1404,16 +1407,15 @@ const unRequestSomeone = async (req, res) => {
     return res.status(400).json({
       success: false,
       message: `You haven't requested to follow @${targetUsername}.`,
-    }); 
-  }
-  catch (error) {
+    });
+  } catch (error) {
     console.error("❌ Error in unRequestSomeone:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error while unrequesting user",
     });
   }
-}
+};
 
 const unfollowSomeone = async (req, res) => {
   try {
@@ -2852,5 +2854,5 @@ export {
   handlepostcomment,
   handleGetEditChannel,
   updateChannelProfile,
-  unRequestSomeone
+  unRequestSomeone,
 };

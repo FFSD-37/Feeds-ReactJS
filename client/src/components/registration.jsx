@@ -16,6 +16,8 @@ export default function Register() {
     bio: '',
     gender: '',
     terms: false,
+    parentalPassword: '', // New field for kids accounts
+    confirmParentalPassword: '', // Confirm parental password
   };
 
   const [values, setValues] = useState(initialValues);
@@ -30,6 +32,8 @@ export default function Register() {
   const [passwordVisible, setPasswordVisible] = useState({
     password: false,
     confirmPassword: false,
+    parentalPassword: false, // New
+    confirmParentalPassword: false, // New
   });
 
   useEffect(() => {
@@ -69,6 +73,11 @@ export default function Register() {
     /[0-9]/.test(password) &&
     /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
+  const validateParentalPassword = password => {
+    // Parental password should be at least 4 characters
+    return password && password.length >= 4;
+  };
+
   const validateDOB = dobISO => {
     if (!dobISO) return false;
     const date = new Date(dobISO);
@@ -85,10 +94,21 @@ export default function Register() {
 
   const onChange = e => {
     const { name, value, type, checked } = e.target;
-    setValues(v => ({
-      ...v,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+
+    // If account type changes, clear parental password fields
+    if (name === 'acctype' && value === 'Normal') {
+      setValues(v => ({
+        ...v,
+        [name]: value,
+        parentalPassword: '',
+        confirmParentalPassword: '',
+      }));
+    } else {
+      setValues(v => ({
+        ...v,
+        [name]: type === 'checkbox' ? checked : value,
+      }));
+    }
   };
 
   const togglePasswordVisibility = fieldName => {
@@ -149,8 +169,10 @@ export default function Register() {
   };
 
   const handleSubmit = async () => {
-    // 1) validate inputs (your validators)
+    // 1) validate inputs
     const newErrors = {};
+
+    // Basic validations
     if (!validateFullName(values.fullName)) newErrors.fullName = true;
     if (!validateUsername(values.username)) newErrors.username = true;
     if (!validateEmail(values.email)) newErrors.email = true;
@@ -162,6 +184,16 @@ export default function Register() {
     if (!values.gender) newErrors.gender = true;
     if (!values.terms) newErrors.terms = true;
 
+    // Parental password validation for kids accounts
+    if (values.acctype === 'Kids') {
+      if (!validateParentalPassword(values.parentalPassword)) {
+        newErrors.parentalPassword = true;
+      }
+      if (values.parentalPassword !== values.confirmParentalPassword) {
+        newErrors.confirmParentalPassword = true;
+      }
+    }
+
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
@@ -172,7 +204,7 @@ export default function Register() {
     // 2) Build FormData properly
     const formData = new FormData();
 
-    // Helper to append values (stringify arrays/objects, convert booleans)
+    // Helper to append values
     function appendValue(key, val) {
       if (val === undefined || val === null) return;
       if (val instanceof File) {
@@ -180,7 +212,6 @@ export default function Register() {
       } else if (typeof val === 'boolean') {
         formData.append(key, String(val));
       } else if (typeof val === 'object') {
-        // arrays/objects -> stringify (server must parse JSON)
         formData.append(key, JSON.stringify(val));
       } else {
         formData.append(key, String(val));
@@ -194,7 +225,7 @@ export default function Register() {
       appendValue('pfp', fileRef.current.files[0]);
     }
 
-    // 3) Debug: print FormData contents (console.log(formData) is not helpful)
+    // 3) Debug: print FormData contents
     console.log('FormData entries:');
     for (const [name, value] of formData.entries()) {
       if (value instanceof File) {
@@ -205,22 +236,31 @@ export default function Register() {
     }
 
     // 4) Send FormData with fetch
+    const payload = {
+      ...values,
+      terms: Boolean(values.terms),
+      parentalPassword:
+      values.acctype === 'Kids' ? values.parentalPassword : null,
+      confirmParentalPassword:
+      values.acctype === 'Kids' ? values.confirmParentalPassword : null,
+    };
+    console.log(payload);
+
     try {
       const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/signup`, {
         method: 'POST',
-        // IMPORTANT: DO NOT set Content-Type header when sending FormData.
-        // The browser will set multipart/form-data with boundary automatically.
-        body: formData,
-        credentials: 'include', // keep if you need cookies
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        credentials: 'include',
       });
 
-      // If server returns non-JSON or non-OK status, handle gracefully
       const contentType = res.headers.get('content-type') || '';
       let data = null;
       if (contentType.includes('application/json')) {
         data = await res.json();
       } else {
-        // fallback: read text for debugging
         const text = await res.text();
         try {
           data = JSON.parse(text);
@@ -401,7 +441,7 @@ export default function Register() {
                   checked={values.acctype === 'Kids'}
                   onChange={onChange}
                 />
-                Kids (2-8 years)
+                Kids (2-8 years) - Requires parental permission
               </label>
               <label>
                 <input
@@ -420,7 +460,7 @@ export default function Register() {
                 type="button"
                 onClick={() =>
                   alert(
-                    '1. Kids: Age should be 2 to 8 years\n2. Normal: Age should be greater than 8',
+                    '1. Kids: Age should be 2 to 8 years - Requires parental password\n2. Normal: Age should be greater than 8',
                   )
                 }
               >
@@ -443,6 +483,91 @@ export default function Register() {
               Age criteria must match the selected account type
             </div>
           </div>
+
+          {/* PARENTAL PASSWORD SECTION - Only show for Kids account */}
+          {values.acctype === 'Kids' && (
+            <>
+              <div className="parental-section">
+                <div className="section-title">
+                  <h3>👨‍👩‍👧‍👦 Parental Consent Required</h3>
+                  <p className="section-description">
+                    For kids accounts, a parent/guardian must set up a parental
+                    password to manage account settings and permissions.
+                  </p>
+                </div>
+
+                {/* PARENTAL PASSWORD */}
+                <div className={groupClass('parentalPassword')}>
+                  <label htmlFor="registration-parentalPassword">
+                    Parental Password
+                  </label>
+                  <div className="registration-input-wrapper">
+                    <input
+                      name="parentalPassword"
+                      id="registration-parentalPassword"
+                      type={
+                        passwordVisible.parentalPassword ? 'text' : 'password'
+                      }
+                      placeholder="Set a parental control password (min 4 characters)"
+                      value={values.parentalPassword}
+                      onChange={onChange}
+                    />
+                    <button
+                      type="button"
+                      className="registration-password-toggle"
+                      onClick={() =>
+                        togglePasswordVisibility('parentalPassword')
+                      }
+                    >
+                      {passwordVisible.parentalPassword ? '👁️‍🗨️' : '👁️'}
+                    </button>
+                  </div>
+                  <div className="registration-error-message">
+                    Parental password must be at least 4 characters
+                  </div>
+                  <div className="parental-password-info">
+                    <small>
+                      ⚠️ This password will be needed to modify account
+                      settings, change privacy options, or delete the account.
+                    </small>
+                  </div>
+                </div>
+
+                {/* CONFIRM PARENTAL PASSWORD */}
+                <div className={groupClass('confirmParentalPassword')}>
+                  <label htmlFor="registration-confirmParentalPassword">
+                    Confirm Parental Password
+                  </label>
+                  <div className="registration-input-wrapper">
+                    <input
+                      name="confirmParentalPassword"
+                      id="registration-confirmParentalPassword"
+                      type={
+                        passwordVisible.confirmParentalPassword
+                          ? 'text'
+                          : 'password'
+                      }
+                      placeholder="Re-enter parental password"
+                      value={values.confirmParentalPassword}
+                      onChange={onChange}
+                    />
+                    <button
+                      type="button"
+                      className="registration-password-toggle"
+                      onClick={() =>
+                        togglePasswordVisibility('confirmParentalPassword')
+                      }
+                    >
+                      {passwordVisible.confirmParentalPassword ? '👁️‍🗨️' : '👁️'}
+                    </button>
+                  </div>
+                  <div className="registration-error-message">
+                    Parental passwords must match
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* PROFILE UPLOAD */}
           <div className="registration-form-group">
@@ -555,6 +680,12 @@ export default function Register() {
               >
                 Terms & Conditions
               </a>
+              {values.acctype === 'Kids' && (
+                <span className="kids-consent-note">
+                  {' '}
+                  (For kids accounts, parent/guardian consent is required)
+                </span>
+              )}
             </label>
             <div className="registration-error-message">
               You must agree to the terms and conditions
@@ -563,7 +694,7 @@ export default function Register() {
         </div>
 
         <button className="registration-submit-btn" onClick={handleSubmit}>
-          Create Account
+          {values.acctype === 'Kids' ? 'Create Kids Account' : 'Create Account'}
         </button>
       </div>
 
@@ -585,6 +716,29 @@ export default function Register() {
               Welcome to Feeds! By using our platform, you agree to these terms
               and conditions.
             </p>
+
+            {values.acctype === 'Kids' && (
+              <>
+                <h2>Parental Consent for Kids Accounts</h2>
+                <p>
+                  For accounts designated as "Kids" (ages 2-8), the parent or
+                  guardian creating this account acknowledges and agrees to:
+                </p>
+                <ul>
+                  <li>Supervise the child's use of the platform</li>
+                  <li>Use the parental password to manage privacy settings</li>
+                  <li>Monitor the child's interactions and content</li>
+                  <li>
+                    Assume responsibility for the child's activities on the
+                    platform
+                  </li>
+                  <li>
+                    Use the parental password for any account modifications or
+                    deletions
+                  </li>
+                </ul>
+              </>
+            )}
 
             <h2>2. User Responsibilities</h2>
             <ul>
