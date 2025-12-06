@@ -11,7 +11,6 @@ import {
   handlegetHome,
   handlegetpayment,
   handlegetprofile,
-  handlegetreels,
   handleadminlogin,
   handlefpadmin,
   adminPassUpdate,
@@ -107,8 +106,6 @@ router.get("/payment", isAuthuser, handlegetpayment);
 router.get("/connect", isAuthuser, handleGetConnect);
 
 router.get("/stories", isAuthuser, handlegetstories);
-
-router.get("/reels", isAuthuser, handlegetreels);
 
 router.get("/create_post", isAuthuser, handlegetcreatepost);
 

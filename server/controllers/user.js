@@ -844,66 +844,6 @@ const handlegetprofile = async (req, res) => {
   }
 };
 
-const handlegetreels = async (req, res) => {
-  try {
-    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
-    const username = data[0];
-
-    const user = await User.findOne({ username }).lean();
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    // Fetch all reels (non-archived)
-    const reels = await Post.find({ type: "Reels", isArchived: false })
-      .sort({ createdAt: -1 })
-      .lean();
-
-    if (!reels.length) {
-      return res.status(404).json({
-        success: false,
-        message: "No reels available",
-      });
-    }
-
-    // Include author info & liked status
-    const likedIds = user.likedPostsIds || [];
-    const enrichedReels = await Promise.all(
-      reels.map(async (reel) => {
-        const author = await User.findOne({ username: reel.author }).lean();
-        return {
-          ...reel,
-          authorProfile: {
-            username: author?.username || "Unknown",
-            profilePicture:
-              author?.profilePicture || process.env.DEFAULT_USER_IMG,
-          },
-          liked: likedIds.includes(reel.id),
-        };
-      })
-    );
-
-    return res.status(200).json({
-      success: true,
-      message: "Reels fetched successfully",
-      reels: enrichedReels,
-      user: {
-        username: user.username,
-        profilePicture: user.profilePicture,
-      },
-    });
-  } catch (error) {
-    console.error("❌ Error in handlegetreels:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error while fetching reels",
-    });
-  }
-};
-
 const handlegeteditprofile = async (req, res) => {
   try {
     const { data } = req.userDetails;
@@ -2718,7 +2658,6 @@ export {
   handlegetHome,
   handlegetpayment,
   handlegetprofile,
-  handlegetreels,
   handleadminlogin,
   generateOTP,
   handlefpadmin,

@@ -7,7 +7,7 @@ import ChannelComment from "../../models/channelPost_comment.js";
 const getAllChannelPosts = async (req, res) => {
   try {
     const { data } = req.userDetails;
-    const identifier = data[0]; // username or channelName
+    const identifier = data[0];
     const userType = data[3];
     const skip = parseInt(req.query.skip) || 0;
     const limit = parseInt(req.query.limit) || 5;
@@ -73,12 +73,12 @@ const likeChannelPost = async (req, res) => {
     const userType = data[3];   // "Normal", "Kids", or "Channel"
     const { postId } = req.body;
 
-    // 1️⃣ Find the post
+    // Find the post
     const post = await channelPost.findById(postId);
     if (!post)
       return res.status(404).json({ success: false, message: "Post not found" });
 
-    // 2️⃣ Find the liker (could be User, Kids, or Channel)
+    // Find the liker (could be User, Kids, or Channel)
     let likerDoc;
     if (userType === "Channel") {
       likerDoc = await Channel.findOne({ channelName: identifier });
@@ -89,7 +89,7 @@ const likeChannelPost = async (req, res) => {
     if (!likerDoc)
       return res.status(404).json({ success: false, message: "User/Channel not found" });
 
-    // 3️⃣ Check if already liked
+    // Check if already liked
     const hasLiked = likerDoc.likedPostsIds.includes(postId);
 
     if (hasLiked) {
@@ -106,7 +106,7 @@ const likeChannelPost = async (req, res) => {
       await likerDoc.updateOne({ $addToSet: { likedPostsIds: postId } });
     }
 
-    // 4️⃣ Send updated info
+    // Send updated info
     return res.json({
       success: true,
       likes: post.likes,
@@ -126,7 +126,7 @@ const saveChannelPost = async (req, res) => {
     const userType = data[3];   // "Normal", "Kids", or "Channel"
     const { postId } = req.body;
 
-    // 1️⃣ Determine who is saving
+    // Determine who is saving
     let saverDoc;
     if (userType === "Channel") {
       saverDoc = await Channel.findOne({ channelName: identifier });
@@ -134,7 +134,7 @@ const saveChannelPost = async (req, res) => {
       saverDoc = await User.findOne({ username: identifier });
     }
 
-    // 2️⃣ Handle invalid case
+    // Handle invalid case
     if (!saverDoc) {
       return res.status(404).json({
         success: false,
@@ -142,7 +142,7 @@ const saveChannelPost = async (req, res) => {
       });
     }
 
-    // 3️⃣ Toggle saved state
+    // Toggle saved state
     const hasSaved = saverDoc.savedPostsIds.includes(postId);
 
     if (hasSaved) {
@@ -151,7 +151,7 @@ const saveChannelPost = async (req, res) => {
       await saverDoc.updateOne({ $addToSet: { savedPostsIds: postId } });
     }
 
-    // 4️⃣ Response
+    // Response
     return res.json({ success: true, saved: !hasSaved });
   } catch (err) {
     console.error("❌ Error saving post:", err);
