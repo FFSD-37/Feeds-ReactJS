@@ -1489,6 +1489,7 @@ const togglePP = async (req, res) => {
   try {
     const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
     const username = data[0];
+    console.log("HIT");
 
     const user = await User.findOne({ username });
     if (!user) {
@@ -1502,13 +1503,6 @@ const togglePP = async (req, res) => {
     const newVisibility = user.visibility === "Public" ? "Private" : "Public";
     user.visibility = newVisibility;
     await user.save();
-
-    // Reflect visibility on user's posts
-    const isPublicValue = newVisibility === "Public";
-    await Post.updateMany(
-      { author: username },
-      { $set: { ispublic: isPublicValue } }
-    );
 
     // Log this activity
     await ActivityLog.create({
@@ -2372,6 +2366,7 @@ const handlelikecomment = async (req, res) => {
 };
 
 const handleblockuser = async (req, res) => {
+  console.log("BLOCK HIT");
   const { username } = req.params;
   const { data } = req.userDetails;
   const user = await User.findOne({ username: data[0] });

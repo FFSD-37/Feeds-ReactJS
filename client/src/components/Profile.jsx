@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { User, Settings, Grid, Heart, Bookmark, Archive } from 'lucide-react';
+import { User, Settings, Grid, Heart, Bookmark, Archive, Flag, Ban } from 'lucide-react';
 import { UserDataProvider, useUserData } from '../providers/userData.jsx';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
@@ -212,6 +212,25 @@ const ProfilePage = () => {
     setHref(h);
   };
 
+  const handleBlockUser = async () => {
+      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/block/${ProfileUsername.username}`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json"
+          }
+        },
+      );
+      const data = await res.json();
+      alert(`User ${data.flag} successfully`);
+      window.location.href = "/home";
+  }
+
+  const handleReportUser = () => {
+
+  }
+
   const canSeeContent = () => {
     // 1. If user is viewing their own profile → always show content
     if (ProfileUsername.username === username) return true;
@@ -295,7 +314,23 @@ const ProfilePage = () => {
               <Settings size={20} />
             </button>
           ) : (
-            <div></div>
+            <div>
+              <button
+                style={styles.iconBtn}
+                title="Report this user"
+                onClick={handleReportUser}
+              >
+                <Flag size={20} />
+              </button>
+
+              <button
+                style={styles.iconBtn}
+                title="Block this user"
+                onClick={handleBlockUser}
+              >
+                <Ban size={20} />
+              </button>
+            </div>
           )}
         </div>
 
@@ -307,7 +342,7 @@ const ProfilePage = () => {
 
           <div style={styles.stats}>
             <div style={styles.statItem}>
-              <div style={styles.statNumber}>{posts.length}</div>
+              <div style={styles.statNumber}>{posts.length+archived.length}</div>
               <div style={styles.statLabel}>Posts</div>
             </div>
             <div style={styles.statItem} onClick={() => OpenFollower()}>
@@ -519,6 +554,16 @@ const styles = {
     justifyContent: 'center',
     borderRadius: '4px',
     transition: 'background-color 0.2s',
+  },
+  actionIcons: {
+    display: "flex",
+    gap: "8px",
+  },
+  iconBtn: {
+    border: "none",
+    background: "transparent",
+    cursor: "pointer",
+    padding: "6px",
   },
   profileInfo: {
     display: 'flex',

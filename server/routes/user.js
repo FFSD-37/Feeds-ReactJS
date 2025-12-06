@@ -58,7 +58,8 @@ import {
   handlechangeparentalpass,
   handlegetkidsTime,
   handlesetkidsTime,
-  handledeactivateKid
+  handledeactivateKid,
+  handlegetBlcokedUsers
 } from "../controllers/Gourav/profile.js";
 import {
   handlegetchannel,
@@ -182,7 +183,7 @@ router.get("/dailyUsage", isAuthuser, getDailyusage);
 
 router.get("/settings", isAuthuser, handlegetsettings);
 
-router.post("/togglePublicPrivate", isAuthuser, togglePP);
+router.get("/togglePublicPrivate", isAuthuser, togglePP);
 
 router.get("/create_channel", isAuthuser, signupChannel);
 
@@ -215,6 +216,8 @@ router.get("/ads", isAuthuser, handlegetads);
 router.post("/comment/like/:id", isAuthuser, handlelikecomment);
 
 router.post("/block/:username", isAuthuser, handleblockuser);
+
+router.get("/block", isAuthuser, handlegetBlcokedUsers);
 
 router.post("/delete/:id", isAuthuser, handledeletepost);
 

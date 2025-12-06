@@ -142,6 +142,20 @@ const Settings = () => {
     const [showModal, setShowModal] = useState(false);
     const [basicDetails, setBasicDetails] = useState({});
 
+    const fetchBlocked = async () => {
+        const res = await fetch(
+            `${import.meta.env.VITE_SERVER_URL}/block`,
+            {
+                method: "GET",
+                credentials: "include"
+            },
+        );
+        const data = await res.json();
+        if (data.success){
+            setBlockedUsers(data.list);
+        }
+    }
+
     const fetchBasic = async (username) => {
         // console.log(username);
         const res = await fetch(
@@ -154,6 +168,7 @@ const Settings = () => {
         const data = await res.json();
         if (data.success) {
             console.log(data.details);
+            console.log(data.details);
             setBasicDetails(data.details);
         }
         else {
@@ -164,6 +179,7 @@ const Settings = () => {
     useEffect(() => {
         if (Meuser?.username) {
             fetchBasic(Meuser.username);
+            fetchBlocked();
         }
     }, [Meuser]);
 
@@ -171,9 +187,10 @@ const Settings = () => {
     // Load initial values
     useEffect(() => {
         if (basicDetails) {
-            setIsPublic(basicDetails.visibility === "Public");
+            console.log(basicDetails["visibility"]);
+            setIsPublic(basicDetails.visibility === "Private");
         }
-    }, [Meuser]);
+    }, [basicDetails]);
 
     // Lock scroll when modal open
     useEffect(() => {
@@ -189,16 +206,20 @@ const Settings = () => {
 
     const handleToggle = () => setShowModal(true);
 
-    const confirmToggle = () => {
+    const confirmToggle = async () => {
         setShowModal(false);
+        const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/togglePublicPrivate`, {
+            method: "GET",
+            credentials: "include"
+        });
 
-        fetch("/togglePublicPrivate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-        })
-            .then((res) => res.json())
-            .then(() => window.location.reload())
-            .catch(() => setIsPublic(!isPublic));
+        const data = await res.json();
+        if (data.success){
+            setIsPublic(!isPublic);
+        }
+        else{
+            console.log("Error happened")
+        }
     };
 
     const cancelToggle = () => {
@@ -208,14 +229,14 @@ const Settings = () => {
     const unblockUser = (username) => {
         if (!window.confirm(`Are you sure you want to unblock ${username}?`)) return;
 
-        fetch(`/block/${username}`, {
+        fetch(`${import.meta.env.VITE_SERVER_URL}/block/${username}`, {
             method: "POST",
+            credentials: "include",
             headers: { "Content-Type": "application/json" },
         })
             .then((res) => res.json())
             .then((data) => {
                 if (data) {
-                    alert("Unblocked successfully");
                     setBlockedUsers((prev) => prev.filter((u) => u !== username));
                 }
             })
@@ -359,7 +380,7 @@ const Settings = () => {
                     "success",
                     data.message || "Your account has been deactivated successfully."
                 );
-                navigate('/login', { replace: true });navigate('/login', { replace: true });
+                navigate('/login', { replace: true }); navigate('/login', { replace: true });
                 setShowDeactivate(false);
                 setDeactivateForm({ password: "", reason: "", confirm: false });
             } else {
@@ -440,7 +461,7 @@ const Settings = () => {
                 showAlert(
                     "error",
                     data.message ||
-                        "Failed to update daily usage limit. Please try again later."
+                    "Failed to update daily usage limit. Please try again later."
                 );
             }
         } catch (err) {
@@ -602,7 +623,7 @@ const Settings = () => {
                 showAlert(
                     "error",
                     data.message ||
-                        "Failed to change parental control password. Please try again."
+                    "Failed to change parental control password. Please try again."
                 );
             }
         } catch (err) {
@@ -731,9 +752,8 @@ const Settings = () => {
                     >
                         <form onSubmit={submitDeactivate} className="kids-form" noValidate>
                             <div
-                                className={`kids-form-group ${
-                                    deactivateErrors.password ? "kids-form-error" : ""
-                                }`}
+                                className={`kids-form-group ${deactivateErrors.password ? "kids-form-error" : ""
+                                    }`}
                             >
                                 <label htmlFor="deactivate-password">
                                     Password <span className="kids-required">*</span>
@@ -753,9 +773,8 @@ const Settings = () => {
                             </div>
 
                             <div
-                                className={`kids-form-group ${
-                                    deactivateErrors.reason ? "kids-form-error" : ""
-                                }`}
+                                className={`kids-form-group ${deactivateErrors.reason ? "kids-form-error" : ""
+                                    }`}
                             >
                                 <label htmlFor="deactivate-reason">
                                     Reason <span className="kids-required">*</span>
@@ -775,9 +794,8 @@ const Settings = () => {
                             </div>
 
                             <div
-                                className={`kids-form-group kids-form-checkbox ${
-                                    deactivateErrors.confirm ? "kids-form-error" : ""
-                                }`}
+                                className={`kids-form-group kids-form-checkbox ${deactivateErrors.confirm ? "kids-form-error" : ""
+                                    }`}
                             >
                                 <label>
                                     <input
@@ -828,9 +846,8 @@ const Settings = () => {
                     >
                         <form onSubmit={submitTime} className="kids-form" noValidate>
                             <div
-                                className={`kids-form-inline ${
-                                    timeErrors.hours ? "kids-form-error" : ""
-                                }`}
+                                className={`kids-form-inline ${timeErrors.hours ? "kids-form-error" : ""
+                                    }`}
                             >
                                 <div className="kids-form-group">
                                     <label htmlFor="time-hours">Hours</label>
@@ -900,9 +917,8 @@ const Settings = () => {
                     >
                         <form onSubmit={submitPwd} className="kids-form" noValidate>
                             <div
-                                className={`kids-form-group ${
-                                    pwdErrors.currentPassword ? "kids-form-error" : ""
-                                }`}
+                                className={`kids-form-group ${pwdErrors.currentPassword ? "kids-form-error" : ""
+                                    }`}
                             >
                                 <label htmlFor="currentPassword">
                                     Current Password <span className="kids-required">*</span>
@@ -922,9 +938,8 @@ const Settings = () => {
                             </div>
 
                             <div
-                                className={`kids-form-group ${
-                                    pwdErrors.newPassword ? "kids-form-error" : ""
-                                }`}
+                                className={`kids-form-group ${pwdErrors.newPassword ? "kids-form-error" : ""
+                                    }`}
                             >
                                 <label htmlFor="newPassword">
                                     New Password <span className="kids-required">*</span>
@@ -944,9 +959,8 @@ const Settings = () => {
                             </div>
 
                             <div
-                                className={`kids-form-group ${
-                                    pwdErrors.confirmPassword ? "kids-form-error" : ""
-                                }`}
+                                className={`kids-form-group ${pwdErrors.confirmPassword ? "kids-form-error" : ""
+                                    }`}
                             >
                                 <label htmlFor="confirmPassword">
                                     Confirm New Password <span className="kids-required">*</span>
@@ -996,9 +1010,8 @@ const Settings = () => {
                     >
                         <form onSubmit={submitParentPwd} className="kids-form" noValidate>
                             <div
-                                className={`kids-form-group ${
-                                    parentErrors.currentParentalPassword ? "kids-form-error" : ""
-                                }`}
+                                className={`kids-form-group ${parentErrors.currentParentalPassword ? "kids-form-error" : ""
+                                    }`}
                             >
                                 <label htmlFor="currentParentalPassword">
                                     Current Parental Password{" "}
@@ -1021,9 +1034,8 @@ const Settings = () => {
                             </div>
 
                             <div
-                                className={`kids-form-group ${
-                                    parentErrors.newParentalPassword ? "kids-form-error" : ""
-                                }`}
+                                className={`kids-form-group ${parentErrors.newParentalPassword ? "kids-form-error" : ""
+                                    }`}
                             >
                                 <label htmlFor="newParentalPassword">
                                     New Parental Password{" "}
@@ -1046,11 +1058,10 @@ const Settings = () => {
                             </div>
 
                             <div
-                                className={`kids-form-group ${
-                                    parentErrors.confirmParentalPassword
+                                className={`kids-form-group ${parentErrors.confirmParentalPassword
                                         ? "kids-form-error"
                                         : ""
-                                }`}
+                                    }`}
                             >
                                 <label htmlFor="confirmParentalPassword">
                                     Confirm New Parental Password{" "}
