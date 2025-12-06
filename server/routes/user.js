@@ -84,6 +84,16 @@ import {
   followEntity,
   unfollowEntity,
 } from "../controllers/Ayush/connect.js";
+import {
+  getReelsFeed,
+  likeReel,
+  unlikeReel,
+  saveReel,
+  unsaveReel,
+  commentReel,
+  replyReel,
+  getReelComments,
+} from "../controllers/Ayush/reels.js";
 import { handleimagKitauth } from "../services/imagKit.js";
 import { isAuthuser } from "../middleware/isAuthuser.js";
 import { checkOut, verify_payment } from "../controllers/payment.js";
@@ -282,5 +292,21 @@ router.get("/kids/time-control", isAuthuser, handlegetkidsTime);
 router.post("/kids/time-control", isAuthuser, handlesetkidsTime);
 
 router.post("/kids/deactivate", isAuthuser, handledeactivateKid);
+
+router.get("/reels", isAuthuser, getReelsFeed);
+
+router.post("/likereel", isAuthuser, likeReel);
+
+router.post("/unlikereel", isAuthuser, unlikeReel);
+
+router.post("/savereel", isAuthuser, saveReel);
+
+router.post("/unsavereel", isAuthuser, unsaveReel);
+
+router.post("/commentreel", isAuthuser, commentReel);
+
+router.post("/replyreel", isAuthuser, replyReel);
+
+router.get("/reelcomments/:id", isAuthuser, getReelComments);
 
 export default router;
