@@ -12,6 +12,13 @@ const handlegetUserPost = async (req, res) => {
     return res.json({ posts: posts });
 }
 
+const handlegetBlcokedUsers = async (req, res) => {
+  const { data } = req.userDetails;
+  const user = await User.findOne({ username: data[0] });
+  console.log(user.blockedUsers);
+  return res.json({success: true, list: user.blockedUsers});
+}
+
 const handleCheckParentalPass = async (req, res) => {
     const { data } = req.userDetails;
     const { password } = req.body;
@@ -283,5 +290,6 @@ export {
     handlechangeparentalpass,
     handlegetkidsTime,
     handlesetkidsTime,
-    handledeactivateKid
+    handledeactivateKid,
+    handlegetBlcokedUsers
 }
