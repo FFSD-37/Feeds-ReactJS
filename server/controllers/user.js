@@ -80,11 +80,8 @@ const handleSignup = async (req, res) => {
       parentPassword: req.body.parentalPassword,
     };
 
-    // Save to database (example with MongoDB)
     const newUser = new User(userData);
     await newUser.save();
-
-    // Create session or token
 
     res.status(201).json({
       success: true,
@@ -203,23 +200,6 @@ Team FEEDS`,
     });
   }
 };
-
-// const handleLogin = async (req, res) => {
-//   try {
-//     const user = await User.findOne(req.body.identifykro === 'username' ? { username: req.body.identifier } : { email: req.body.identifier });
-//     if (!user) return res.render("login", { loginType: "Email", msg: "Username Doesn't exists" });
-//     const isPasswordMatch = await bcrypt.compare(req.body.password, user.password);
-//     if (!isPasswordMatch) return res.render("login", { loginType: "Username", msg: "Incorrect password" });
-
-//     const token = create_JWTtoken([user.username, user.email, user.profilePicture, user.type], process.env.USER_SECRET, '30d');
-//     res.cookie('uuid', token, { httpOnly: true });
-//     return res.redirect("/home");
-//   }
-//   catch (e) {
-//     console.log(e);
-//     return res.render("login", { loginType: "Email", msg: "Something went wrong" });
-//   }
-// };
 
 function generateOTP() {
   const characters = "0123456789";
@@ -864,30 +844,6 @@ const handlegetprofile = async (req, res) => {
   }
 };
 
-const handlegetterms = (req, res) => {
-  const { data } = req.userDetails;
-  return res.render("tandc", { img: data[2], currUser: data[0] });
-};
-
-const handlegetcontact = (req, res) => {
-  const { data } = req.userDetails;
-  return res.render("contact", { img: data[2], msg: null, currUser: data[0] });
-};
-
-const handlegetgames = (req, res) => {
-  const { data } = req.userDetails;
-  return res.render("games", { img: data[2], currUser: data[0] });
-};
-
-const handlegetdelacc = (req, res) => {
-  const { data } = req.userDetails;
-  return res.render("delacc", { img: data[2], msg: null, currUser: data[0] });
-};
-
-const handlegetadmin = (req, res) => {
-  return res.render("admin", { msg: null });
-};
-
 const handlegetreels = async (req, res) => {
   try {
     const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
@@ -946,25 +902,6 @@ const handlegetreels = async (req, res) => {
       message: "Internal server error while fetching reels",
     });
   }
-};
-
-const handlegethelp = (req, res) => {
-  const { data } = req.userDetails;
-  return res.render("help", { img: data[2], currUser: data[0] });
-};
-
-const handlegetsignup = (req, res) => {
-  return res.render("Registration", { msg: null });
-};
-
-const handlegetforgetpass = (req, res) => {
-  res.render("Forgot_pass", {
-    msg: null,
-    newpass: "NO",
-    otpsec: "NO",
-    emailsec: "YES",
-    title: "Forgot Password",
-  });
 };
 
 const handlegeteditprofile = async (req, res) => {
@@ -1126,10 +1063,6 @@ const updateUserProfile = async (req, res) => {
       message: "Internal server error while updating profile",
     });
   }
-};
-
-const handlegetpostoverlay = (req, res) => {
-  return res.render("post_overlay");
 };
 
 const handlegetcreatepost = (req, res) => {
@@ -2040,11 +1973,6 @@ const reportAccount = async (req, res) => {
   }
 };
 
-const handlegetloginchannel = async (req, res) => {
-  const { data } = req.userDetails;
-  return res.render("channellogin", { img: data[2], currUser: data[0] });
-};
-
 const handleloginchannel = async (req, res) => {
   try {
     const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
@@ -2593,22 +2521,6 @@ const handleunsavepost = async (req, res) => {
   return res.json({ data: true });
 };
 
-// const handlegetchannel = async (req, res) => {
-//   const { data } = req.userDetails;
-//   const { channelid } = req.params;
-//   const channel = await Channel.findById(channelid).lean();
-//   const posts = channel.postIds;
-//   const archived = channel.archivedPostIds;
-//   return res.render("channel", {
-//     img: data[2],
-//     currUser: data[0],
-//     channel,
-//     type: data[3],
-//     posts,
-//     archived,
-//   });
-// };
-
 const handlepostcomment = async (req, res) => {
   try {
     const { data } = req.userDetails;
@@ -2797,7 +2709,6 @@ const updateChannelProfile = async (req, res) => {
 
 export {
   handleSignup,
-  // handleLogin,
   sendotp,
   verifyotp,
   updatepass,
@@ -2807,21 +2718,12 @@ export {
   handlegetHome,
   handlegetpayment,
   handlegetprofile,
-  handlegetterms,
-  handlegetcontact,
-  handlegetforgetpass,
-  handlegetsignup,
-  handlegethelp,
   handlegetreels,
-  handlegetdelacc,
-  handlegetgames,
-  handlegetadmin,
   handleadminlogin,
   generateOTP,
   handlefpadmin,
   adminPassUpdate,
   handlegeteditprofile,
-  handlegetpostoverlay,
   handlegetcreatepost,
   handlecreatepost,
   handlegetcreatepost2,
@@ -2838,7 +2740,6 @@ export {
   createPostfinalize,
   uploadFinalPost,
   reportAccount,
-  handlegetloginchannel,
   handleloginchannel,
   handlegetallnotifications,
   handleloginsecond,

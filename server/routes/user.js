@@ -11,20 +11,11 @@ import {
   handlegetHome,
   handlegetpayment,
   handlegetprofile,
-  handlegetterms,
-  handlegetcontact,
-  handlegetgames,
-  handlegetdelacc,
   handlegetreels,
-  handlegethelp,
-  handlegetsignup,
-  handlegetforgetpass,
-  handlegetadmin,
   handleadminlogin,
   handlefpadmin,
   adminPassUpdate,
   handlegeteditprofile,
-  handlegetpostoverlay,
   handlegetcreatepost,
   handlecreatepost,
   handlegetcreatepost2,
@@ -41,7 +32,6 @@ import {
   createPostfinalize,
   uploadFinalPost,
   reportAccount,
-  handlegetloginchannel,
   handleloginchannel,
   handlegetallnotifications,
   handleloginsecond,
@@ -114,25 +104,15 @@ router.get("/payment", isAuthuser, handlegetpayment);
 
 // router.get("/profile/:username", isAuthuser, handlegetprofile);
 
-router.get("/tandc", isAuthuser, handlegetterms);
-
-router.get("/contact", isAuthuser, handlegetcontact);
-
 router.get("/connect", isAuthuser, handleGetConnect);
 
-router.get("/games", isAuthuser, handlegetgames);
-
 router.get("/stories", isAuthuser, handlegetstories);
-
-router.get("/delacc", isAuthuser, handlegetdelacc);
 
 router.get("/reels", isAuthuser, handlegetreels);
 
 router.get("/create_post", isAuthuser, handlegetcreatepost);
 
 router.get("/create_post_2", isAuthuser, handlegetcreatepost2);
-
-router.get("/help", isAuthuser, handlegethelp);
 
 router.get("/notifications", isAuthuser, handlegetnotification);
 
@@ -153,10 +133,6 @@ router.get("/verify", isAuthuser, (req, res) => {
   });
 });
 
-router.get("/admin", handlegetadmin);
-
-router.get("/signup", isAuthuser, handlegetsignup);
-
 // router.post("/login", isAuthuser, handleLogin);
 
 router.post("/signup", handleSignup);
@@ -166,8 +142,6 @@ router.post("/contact", isAuthuser, handleContact);
 router.post("/adminLogin", handleadminlogin);
 
 router.post("/delacc", isAuthuser, handledelacc);
-
-router.get("/forget-password", handlegetforgetpass);
 
 router.post("/logout", isAuthuser, handlelogout);
 
@@ -186,8 +160,6 @@ router.get("/fpadmin", handlefpadmin);
 router.get("/edit_profile", isAuthuser, handlegeteditprofile);
 
 router.post("/updatepassadmin", adminPassUpdate);
-
-router.get("/post_overlay", isAuthuser, handlegetpostoverlay);
 
 router.post("/checkout_razorpay", isAuthuser, checkOut);
 
@@ -226,8 +198,6 @@ router.get("/activityLog", isAuthuser, handlegetlog);
 router.post("/shareFinalPost", isAuthuser, uploadFinalPost);
 
 router.post("/report/:username", isAuthuser, reportAccount);
-
-router.get("/login_channel", isAuthuser, handlegetloginchannel);
 
 router.post("/postloginchannel", isAuthuser, handleloginchannel);
 
