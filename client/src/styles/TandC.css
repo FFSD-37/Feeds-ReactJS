@@ -1,12 +1,3 @@
-:root {
-  /* Using the Purple from your theme */
-  --primary-purple: #6E48AA; 
-  --text-dark: #333;
-  --card-bg: #ffffff;
-  /* Lighter Purple Background */
-  --main-bg-color: #7c66ff; 
-}
-
 .tandc-container {
   background-color: var(--main-bg-color);
   min-height: 100vh;

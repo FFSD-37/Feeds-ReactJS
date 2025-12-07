@@ -1,22 +1,4 @@
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-:root {
-  --primary: #00bcd4;
-  --primary-hover: #0097a7;
-  --bg-dark: #0b132b;
-  --bg-mid: #1c2541;
-  --bg-light: #3a506b;
-  --text-light: #e0e0e0;
-  --text-muted: #aaa;
-  --radius: 0.7rem;
-  --transition: all 0.25s ease;
-}
-
 /* === PAGE CONTAINER === */
 .channel-page-container {
   width:80vw;

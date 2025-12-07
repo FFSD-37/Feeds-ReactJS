@@ -1,11 +1,3 @@
-:root {
-  --accent-blue: #0056b3;
-  --text-dark: #333;
-  --card-bg: #ffffff;
-  /* This is the Lighter Purple from your 1st image */
-  --main-bg-color: #7c66ff; 
-}
-
 .help-container {
   /* Set the main background to the lighter purple */
   background-color: var(--main-bg-color);

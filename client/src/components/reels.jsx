@@ -94,17 +94,21 @@ export default function Reels() {
 
   // Auto play/pause
   useEffect(() => {
-    videoRefs.current.forEach((v, i) => {
-      if (!v) return;
+    videoRefs.current.forEach((video, i) => {
+      if (!video) return;
+
       if (i === activeIndex) {
-        v.play().catch(() => {});
+        video.muted = muted;
+
+        setTimeout(() => {
+          video.play().catch(() => {});
+        }, 50);
       } else {
-        try {
-          v.pause();
-        } catch {}
+        video.currentTime = 0;
+        video.muted = true;
       }
     });
-  }, [activeIndex]);
+  }, [activeIndex, muted]);
 
   useEffect(() => {
     if (activeIndex === reels.length - 1 && hasMore) {
@@ -297,6 +301,33 @@ export default function Reels() {
     }
   };
 
+  // When new reels load, immediately pause ALL new videos
+  useEffect(() => {
+    videoRefs.current.forEach((video, i) => {
+      if (!video) return;
+
+      if (i === activeIndex) {
+        // Active reel auto-plays
+        video.muted = muted;
+        setTimeout(() => video.play().catch(() => {}), 50);
+      } else {
+        // Other reels are completely stopped (prevents audio leak)
+        video.pause();
+        video.currentTime = 0;
+        video.muted = true;
+      }
+    });
+  }, [activeIndex, muted]);
+
+  const toggleMute = () => {
+    setMuted(m => {
+      const newVal = !m;
+      const video = videoRefs.current[activeIndex];
+      if (video) video.muted = newVal;
+      return newVal;
+    });
+  };
+
   // Submit a new top-level comment
   const handleSubmitComment = async () => {
     if (!commentText.trim() || !openComments) return;
@@ -432,7 +463,7 @@ export default function Reels() {
             className={`reels-slide ${active ? 'reels-active' : ''} ${commentsOpen ? 'reels-comments-open' : ''}`}
           >
             <div id={`reels-heart-${i}`} className="reels-heart">
-              ❤️
+              <img src="/Images/liked.svg"/>
             </div>
 
             <video
@@ -446,6 +477,19 @@ export default function Reels() {
                 if (e.target.paused) e.target.play();
                 else e.target.pause();
               }}
+              onLoadedMetadata={() => {
+                const video = videoRefs.current[i];
+                if (!video) return;
+
+                if (i === activeIndex) {
+                  video.muted = muted;
+                  video.play().catch(() => {});
+                } else {
+                  video.pause();
+                  video.currentTime = 0;
+                  video.muted = true;
+                }
+              }}
             />
 
             <div className="reels-sidebar">
@@ -455,7 +499,7 @@ export default function Reels() {
                 aria-pressed={!!reel._liked}
                 title={reel._liked ? 'Unlike' : 'Like'}
               >
-                {reel._liked ? '❤️' : '🤍'} {reel.likes ?? 0}
+                {reel._liked ? <img src="/Images/liked.svg"/> : <img src="/Images/unliked.svg"/>} {reel.likes ?? 0}
               </button>
 
               {!isKids && (
@@ -466,7 +510,7 @@ export default function Reels() {
                     setMenuOpenId(null);
                   }}
                 >
-                  💬
+                  <img src="/Images/comment.svg"/>
                 </button>
               )}
 
@@ -475,16 +519,10 @@ export default function Reels() {
                 onClick={() => toggleSave(reel)}
                 title={reel._saved ? 'Unsave' : 'Save'}
               >
-                {reel._saved ? '💾' : '📁'}
+                {reel._saved ? <img src="/Images/saved.svg"/> : <img src="/Images/unsaved.svg"/>}
               </button>
 
-              <button
-                className="reels-btn"
-                onClick={e => {
-                  if (e.target.paused) e.target.play();
-                  else e.target.pause();
-                }}
-              >
+              <button className="reels-btn" onClick={toggleMute}>
                 {muted ? '🔇' : '🔊'}
               </button>
 

@@ -1,9 +1,3 @@
-:root {
-  --kids-bg-gradient: linear-gradient(to bottom, #89f7fe, #66a6ff);
-  --kids-card-bg: #ffffff;
-  --kids-accent: #0095f6;
-  --kids-text: #262626;
-}
 
 .kids-profile-container {
   width: 100%;
