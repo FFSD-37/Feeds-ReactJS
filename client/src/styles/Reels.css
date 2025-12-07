@@ -1,5 +1,6 @@
 
 .reels-container {
+  width: 50vw;
   height: 100vh;
   background-color: #000;
   overflow-y: scroll;
@@ -22,9 +23,6 @@
   background: #000;
 }
 
-/* =========================================
-   2. Individual Slide Layout
-   ========================================= */
 .reels-slide {
   width: 100%;
   height: 100%;
@@ -39,9 +37,7 @@
   transition: all 0.3s ease;
 }
 
-/* The actual video element */
 .reels-video {
-  width: 50%;
   height: 100%;
   object-fit: contain;
   display: block;
@@ -52,20 +48,20 @@
    (Video left, Comments right)
 */
 @media (min-width: 768px) {
+  .reels-container:has(.reels-comments-active) {
+    width: 70vw;
+  }
+
   .reels-slide.reels-comments-open .reels-video {
-    width: 65%; /* Shrink video */
-    margin-right: 35%; /* Make space for comments */
+    width: 50%; /* Shrink video */
+    margin-right: 50%; /* Make space for comments */
   }
   
   .reels-slide.reels-comments-open .reels-sidebar,
   .reels-slide.reels-comments-open .reels-info {
-    right: 36%; /* Move overlays so they aren't covered by comments */
+    right: 51%;
   }
 }
-
-/* =========================================
-   3. Overlays (Sidebar, Info, Heart)
-   ========================================= */
 
 /* Sidebar (Right actions: Like, Comment, Share) */
 .reels-sidebar {
@@ -111,7 +107,7 @@
   color: #fff;
   z-index: 10;
   text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-  pointer-events: none; /* Let clicks pass through to video */
+  pointer-events: none;
 }
 
 .reels-author {
@@ -180,14 +176,12 @@
   background: #444;
 }
 
-/* =========================================
-   4. Comments Panel
-   ========================================= */
+/* Comments Panel */
 .reels-comments-panel {
   position: absolute;
   bottom: 0;
   right: 0;
-  background: #1a1a1a; /* Dark theme */
+  background: #1a1a1a;
   z-index: 30;
   display: flex;
   flex-direction: column;
@@ -203,7 +197,7 @@
 /* Desktop: Side Panel */
 @media (min-width: 768px) {
   .reels-comments-panel {
-    width: 35%;
+    width: 50%;
     height: 100%;
     top: 0;
     border-radius: 0;

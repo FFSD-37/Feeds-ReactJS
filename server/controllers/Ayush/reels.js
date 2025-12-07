@@ -18,193 +18,263 @@ function markLikedSaved(reels, actor, forceType = null) {
 }
 
 const getReelsFeed = async (req, res) => {
-    try {
-        const username = req.userDetails.data[0];
-        const userType = req.userDetails.data[3];
+  try {
+    const username = req.userDetails.data[0];
+    const userType = req.userDetails.data[3];
 
-        // Fetch user or channel doc
-        let actor =
-            userType === "Channel"
-                ? await Channel.findOne({ channelName: username }).lean()
-                : await User.findOne({ username }).lean();
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
 
-        if (!actor) return res.json({ success: false, message: "User not found" });
+    // Fetch actor based on login type
+    let actor =
+      userType === "Channel"
+        ? await Channel.findOne({ channelName: username }).lean()
+        : await User.findOne({ username }).lean();
 
-        // Kids feed → only channelPost Reels, category-limited
-        if (actor.type === "Kids") {
-            let reels = await channelPost
-                .find({
-                    type: "Reels",
-                    isArchived: false,
-                    category: { $in: actor.kidPreferredCategories }
-                })
-                .sort({ createdAt: -1 })
-                .lean();
+    if (!actor) return res.json({ success: false, message: "User not found" });
 
-            reels = markLikedSaved(reels, actor, "channel");
+    // ---------- KIDS FEED ----------
+    if (actor.type === "Kids") {
+      let reels = await channelPost
+        .find({
+          type: "Reels",
+          isArchived: false,
+          category: { $in: actor.kidPreferredCategories }
+        })
+        .sort({ createdAt: -1 })
+        .lean();
 
-            return res.json({ success: true, reels });
-        }
+      reels = markLikedSaved(reels, actor, "channel");
 
-        // Channel account feed → show other channels only
-        if (actor.type === "Channel") {
-            const own = actor.channelName || [];
+      const paginated = reels.slice(skip, skip + limit);
 
-            let reels = await channelPost
-                .find({
-                    type: "Reels",
-                    isArchived: false,
-                    channel: { $nin: own }
-                })
-                .sort({ createdAt: -1 })
-                .lean();
-
-            reels = markLikedSaved(reels, actor, "channel");
-
-            return res.json({ success: true, reels });
-        }
-
-        // ---------- NORMAL USER ----------
-        const followedChannels = actor.channelFollowings.map(c => c.channelName);
-        const followedUsers = actor.followings.map(f => f.username);
-
-        const chReels = await channelPost
-            .find({
-                type: "Reels",
-                isArchived: false,
-                channel: { $in: followedChannels }
-            })
-            .lean();
-
-        const pubReels = await Post.find({
-            type: "Reels",
-            isArchived: false,
-            ispublic: true
-        }).lean();
-
-        const privReels = await Post.find({
-            type: "Reels",
-            isArchived: false,
-            ispublic: false,
-            author: { $in: followedUsers }
-        }).lean();
-
-        let combined = [
-            ...chReels.map(r => ({ ...r, postType: "channel" })),
-            ...pubReels.map(r => ({ ...r, postType: "normal" })),
-            ...privReels.map(r => ({ ...r, postType: "normal" }))
-        ];
-
-        // Remove duplicates
-        const seen = new Set();
-        combined = combined.filter(r => {
-            const id = r._id.toString();
-            if (seen.has(id)) return false;
-            seen.add(id);
-            return true;
-        });
-
-        // Sort by newest first
-        combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-        // Add flags
-        combined = markLikedSaved(combined, actor);
-
-        return res.json({ success: true, reels: combined });
-
-    } catch (err) {
-        console.log("FEED ERROR:", err);
-        return res.status(500).json({ success: false });
+      return res.json({
+        success: true,
+        reels: paginated,
+        hasMore: skip + limit < reels.length
+      });
     }
+
+    // ---------- CHANNEL ACCOUNT FEED ----------
+    if (userType === "Channel") {
+      const own = actor.channelName || [];
+
+      let reels = await channelPost
+        .find({
+          type: "Reels",
+          isArchived: false,
+          channel: { $nin: own }
+        })
+        .sort({ createdAt: -1 })
+        .lean();
+
+      reels = markLikedSaved(reels, actor, "channel");
+
+      const paginated = reels.slice(skip, skip + limit);
+
+      return res.json({
+        success: true,
+        reels: paginated,
+        hasMore: skip + limit < reels.length
+      });
+    }
+
+    // ---------- NORMAL USER FEED ----------
+    const followedChannels = actor.channelFollowings.map(c => c.channelName);
+    const followedUsers = actor.followings.map(f => f.username);
+
+    const chReels = await channelPost
+      .find({
+        type: "Reels",
+        isArchived: false,
+        channel: { $in: followedChannels }
+      })
+      .lean();
+
+    const pubReels = await Post.find({
+      type: "Reels",
+      isArchived: false,
+      ispublic: true
+    }).lean();
+
+    const privReels = await Post.find({
+      type: "Reels",
+      isArchived: false,
+      ispublic: false,
+      author: { $in: followedUsers }
+    }).lean();
+
+    let combined = [
+      ...chReels.map(r => ({ ...r, postType: "channel" })),
+      ...pubReels.map(r => ({ ...r, postType: "normal" })),
+      ...privReels.map(r => ({ ...r, postType: "normal" }))
+    ];
+
+    // remove duplicates
+    const seen = new Set();
+    combined = combined.filter(r => {
+      const id = r._id.toString();
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+
+    combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    combined = markLikedSaved(combined, actor);
+
+    // Apply pagination
+    const paginated = combined.slice(skip, skip + limit);
+
+    return res.json({
+      success: true,
+      reels: paginated,
+      hasMore: skip + limit < combined.length
+    });
+
+  } catch (err) {
+    console.log("FEED ERROR:", err);
+    return res.status(500).json({ success: false });
+  }
 };
 
 const likeReel = async (req, res) => {
-    try {
-        const { postId, postType } = req.body;
-        const username = req.userDetails.data[0];
-        const userType = req.userDetails.data[3];
+  try {
+    const { postId, postType } = req.body;
+    const username = req.userDetails.data[0];
+    const userType = req.userDetails.data[3];
 
-        // Model Selection
-        const postModel = postType === "channel" ? channelPost : Post;
-        const post = await postModel.findById(postId);
-        if (!post) return res.json({ success: false, message: "Reel not found" });
+    const postModel = postType === "channel" ? channelPost : Post;
+    const post = await postModel.findById(postId);
+    if (!post) return res.json({ success: false, message: "Reel not found" });
 
-        // User/Channel who liked
-        const liker = userType === "Channel"
-            ? await Channel.findOne({ channelName: username })
-            : await User.findOne({ username });
-        
-        if (liker.likedPostsIds.includes(postId))
-            return res.json({ success: false, message: "Already liked" });
+    if (userType === "Channel") {
+      const channel = await Channel.findOne({ channelName: username });
+      if (!channel) return res.json({ success: false });
 
-        post.likes += 1;
-        await post.save();
+      if (channel.likedPostsIds.includes(postId))
+        return res.json({ success: false, message: "Already liked" });
 
-        await liker.updateOne({ $addToSet: { likedPostsIds: postId } });
+      post.likes += 1;
+      await post.save();
 
-        res.json({ success: true, likes: post.likes });
+      await Channel.updateOne(
+        { channelName: username },
+        { $addToSet: { likedPostsIds: postId } }
+      );
 
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ success: false });
+    } else {
+      const user = await User.findOne({ username });
+      if (!user) return res.json({ success: false });
+
+      if (user.likedPostsIds.includes(postId))
+        return res.json({ success: false, message: "Already liked" });
+
+      post.likes += 1;
+      await post.save();
+
+      await User.updateOne(
+        { username },
+        { $addToSet: { likedPostsIds: postId } }
+      );
     }
+
+    res.json({ success: true, likes: post.likes });
+
+  } catch (err) {
+    console.log("LIKE ERROR:", err);
+    res.status(500).json({ success: false });
+  }
 };
 
 const unlikeReel = async (req, res) => {
-    try {
-        const { postId, postType } = req.body;
-        const username = req.userDetails.data[0];
-        const userType = req.userDetails.data[3];
+  try {
+    const { postId, postType } = req.body;
+    const username = req.userDetails.data[0];
+    const userType = req.userDetails.data[3];
 
-        const postModel = postType === "channel" ? channelPost : Post;
-        const post = await postModel.findById(postId);
+    const postModel = postType === "channel" ? channelPost : Post;
+    const post = await postModel.findById(postId);
+    if (!post) return res.json({ success: false });
 
-        const liker = userType === "Channel"
-            ? await Channel.findOne({ channelName: username })
-            : await User.findOne({ username });
+    if (userType === "Channel") {
+      const channel = await Channel.findOne({ channelName: username });
+      if (!channel) return res.json({ success: false });
 
-        if (!liker.likedPostsIds.includes(postId))
-            return res.json({ success: false, message: "Not liked" });
+      if (!channel.likedPostsIds.includes(postId))
+        return res.json({ success: false, message: "Not liked" });
 
-        post.likes = Math.max(0, post.likes - 1);
-        await post.save();
+      post.likes = Math.max(0, post.likes - 1);
+      await post.save();
 
-        await liker.updateOne({ $pull: { likedPostsIds: postId } });
+      await Channel.updateOne(
+        { channelName: username },
+        { $pull: { likedPostsIds: postId } }
+      );
 
-        res.json({ success: true, likes: post.likes });
+    } else {
+      const user = await User.findOne({ username });
+      if (!user) return res.json({ success: false });
 
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ success: false });
+      if (!user.likedPostsIds.includes(postId))
+        return res.json({ success: false, message: "Not liked" });
+
+      post.likes = Math.max(0, post.likes - 1);
+      await post.save();
+
+      await User.updateOne(
+        { username },
+        { $pull: { likedPostsIds: postId } }
+      );
     }
+
+    res.json({ success: true, likes: post.likes });
+
+  } catch (err) {
+    console.log("UNLIKE ERROR:", err);
+    res.status(500).json({ success: false });
+  }
 };
 
 const saveReel = async (req, res) => {
-    const { postId } = req.body;
-    const username = req.userDetails.data[0];
-    const userType = req.userDetails.data[3];
+  const { postId } = req.body;
+  const username = req.userDetails.data[0];
+  const userType = req.userDetails.data[3];
 
-    const saver = userType === "Channel"
-        ? await Channel.findOne({ channelName: username })
-        : await User.findOne({ username });
+  if (userType === "Channel") {
+    await Channel.updateOne(
+      { channelName: username },
+      { $addToSet: { savedPostsIds: postId } }
+    );
+  } else {
+    await User.updateOne(
+      { username },
+      { $addToSet: { savedPostsIds: postId } }
+    );
+  }
 
-    await saver.updateOne({ $addToSet: { savedPostsIds: postId } });
-
-    res.json({ success: true, saved: true });
+  res.json({ success: true, saved: true });
 };
 
 const unsaveReel = async (req, res) => {
-    const { postId } = req.body;
-    const username = req.userDetails.data[0];
-    const userType = req.userDetails.data[3];
+  const { postId } = req.body;
+  const username = req.userDetails.data[0];
+  const userType = req.userDetails.data[3];
 
-    const saver = userType === "Channel"
-        ? await Channel.findOne({ channelName: username })
-        : await User.findOne({ username });
+  if (userType === "Channel") {
+    await Channel.updateOne(
+      { channelName: username },
+      { $pull: { savedPostsIds: postId } }
+    );
+  } else {
+    await User.updateOne(
+      { username },
+      { $pull: { savedPostsIds: postId } }
+    );
+  }
 
-    await saver.updateOne({ $pull: { savedPostsIds: postId } });
-
-    res.json({ success: true, saved: false });
+  res.json({ success: true, saved: false });
 };
 
 const commentReel = async (req, res) => {
