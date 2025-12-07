@@ -1504,6 +1504,13 @@ const togglePP = async (req, res) => {
     user.visibility = newVisibility;
     await user.save();
 
+    // Reflect visibility on user's posts
+    const isPublicValue = newVisibility === "Public";
+    await Post.updateMany(
+      { author: username },
+      { $set: { ispublic: isPublicValue } }
+    );
+
     // Log this activity
     await ActivityLog.create({
       username,
