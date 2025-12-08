@@ -1,14 +1,7 @@
-/* FULLY FIXED CONNECT.JSX */
-/* — Requested Button Fixed
-   — Cancel Request Works
-   — Category Filter Works When Search Empty
-   — Empty src Warning Fixed */
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserData } from './../providers/userData.jsx';
 import './../styles/connect.css';
-
 import {
   FaGlobe,
   FaBook,
@@ -25,8 +18,17 @@ import {
   FaBullhorn,
   FaDumbbell,
   FaHeart,
+  FaPlane,
+  FaFlask,
+  FaUtensils,
+  FaTools,
+  FaPaintBrush,
+  FaCamera,
+  FaBriefcase,
+  FaDollarSign,
+  FaPaw,
+  FaCar,
 } from 'react-icons/fa';
-
 const Connect = () => {
   const { userData } = useUserData();
   const navigate = useNavigate();
@@ -38,25 +40,70 @@ const Connect = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const categoryIcons = {
-    All: <FaGlobe color="#9e9e9e" />,
-    Education: <FaBook color="#3f51b5" />,
-    Animations: <FaFilm color="#ff9800" />,
-    Games: <FaGamepad color="#00ff99" />,
-    Memes: <FaLaugh color="#ff4081" />,
-    News: <FaNewspaper color="#00bcd4" />,
-    Tech: <FaLaptopCode color="#8e24aa" />,
-    Vlog: <FaVideo color="#ff5722" />,
-    Entertainment: <FaTv color="#ffd740" />,
-    Sports: <FaFutbol color="#4caf50" />,
-    Nature: <FaLeaf color="#43a047" />,
-    Music: <FaMusic color="#00b0ff" />,
-    Marketing: <FaBullhorn color="#cddc39" />,
-    Fitness: <FaDumbbell color="#f44336" />,
-    Lifestyle: <FaHeart color="#e91e63" />,
-  };
+const categoryIcons = {
+  All: <FaGlobe color="#9e9e9e" />,
+  Entertainment: <FaTv color="#ffd740" />,
+  Comedy: <FaLaugh color="#ff9800" />,
+  Education: <FaBook color="#3f51b5" />,
+  Science: <FaBook color="#4caf50" />,
+  Tech: <FaLaptopCode color="#8e24aa" />,
+  Gaming: <FaGamepad color="#00ff99" />,
+  Animations: <FaFilm color="#ff9800" />,
+  Memes: <FaLaugh color="#ff4081" />,
+  Music: <FaMusic color="#00b0ff" />,
+  Sports: <FaFutbol color="#4caf50" />,
+  Fitness: <FaDumbbell color="#f44336" />,
+  Lifestyle: <FaHeart color="#e91e63" />,
+  Fashion: <FaHeart color="#ff80ab" />,
+  Beauty: <FaHeart color="#ffb3c6" />,
+  Food: <FaHeart color="#ffa726" />,
+  Travel: <FaVideo color="#ff5722" />,
+  Vlog: <FaVideo color="#ff7043" />,
+  Nature: <FaLeaf color="#43a047" />,
+  DIY: <FaBook color="#8d6e63" />,
+  Art: <FaBook color="#ba68c8" />,
+  Photography: <FaVideo color="#64b5f6" />,
+  Business: <FaBullhorn color="#cddc39" />,
+  Finance: <FaBullhorn color="#9ccc65" />,
+  Marketing: <FaBullhorn color="#cddc39" />,
+  News: <FaNewspaper color="#00bcd4" />,
+  Movies: <FaFilm color="#ff7043" />,
+  Pets: <FaHeart color="#ffcc80" />,
+  Automotive: <FaBullhorn color="#90a4ae" />
+};
 
-  const categories = Object.keys(categoryIcons);
+// final ordered category list
+const categories = [
+  "All",
+  "Entertainment",
+  "Comedy",
+  "Education",
+  "Science",
+  "Tech",
+  "Gaming",
+  "Animations",
+  "Memes",
+  "Music",
+  "Sports",
+  "Fitness",
+  "Lifestyle",
+  "Fashion",
+  "Beauty",
+  "Food",
+  "Travel",
+  "Vlog",
+  "Nature",
+  "DIY",
+  "Art",
+  "Photography",
+  "Business",
+  "Finance",
+  "Marketing",
+  "News",
+  "Movies",
+  "Pets",
+  "Automotive"
+];
 
   // INITIALIZE MODE
   useEffect(() => {

@@ -4,21 +4,38 @@ import Channel from "../models/channelSchema.js";
 
 const categories = [
   "Entertainment",
+  "Comedy",
   "Education",
-  "Animations",
-  "Games",
-  "Memes",
-  "News",
+  "Science",
   "Tech",
-  "Vlog",
-  "Sports",
-  "Nature",
+  "Gaming",
+  "Animations",
+  "Memes",
   "Music",
-  "Marketing",
+  "Sports",
   "Fitness",
   "Lifestyle",
+  "Fashion",
+  "Beauty",
+  "Food",
+  "Travel",
+  "Vlog",
+  "Nature",
+  "DIY",
+  "Art",
+  "Photography",
+  "Business",
+  "Finance",
+  "Marketing",
+  "News",
+  "Movies",
+  "Pets",
+  "Automotive"
 ];
 
+// ============================
+// UPLOAD CHANNEL POST
+// ============================
 const handlechannelPostupload = async (req, res) => {
   try {
     const { data } = req.userDetails;
@@ -29,19 +46,24 @@ const handlechannelPostupload = async (req, res) => {
       !req.body?.content?.length ||
       !req.body?.category?.length ||
       !req.body?.type?.length
-    )
+    ) {
       return res.status(400).json({ err: "All fields are required" });
+    }
 
     const id = `${data[0]}-${Date.now()}`;
     const channelDetails = await Channel.findOne({
       channelName: data[0],
     }).lean();
 
-    let allowedCatogary = channelDetails?.channelCategory.includes("All")
+    // Determine allowed categories
+    let allowedCategory = channelDetails?.channelCategory.includes("All")
       ? categories
       : channelDetails?.channelCategory;
-    if (!allowedCatogary.includes(req.body.category))
+
+    // Validate category
+    if (!allowedCategory.includes(req.body.category)) {
       return res.status(400).json({ err: "Invalid category selected" });
+    }
 
     const postObj = {
       id,
@@ -63,30 +85,36 @@ const handlechannelPostupload = async (req, res) => {
     await ActivityLog.create({
       username: data[0],
       id: `#${Date.now()}`,
-      message: `You uploaded a new ${post.type === "Reel" ? "reel" : "post"}!`,
+      message: `You uploaded a new ${
+        post.type === "Reel" ? "reel" : "post"
+      }!`,
     });
 
-    return res
-      .status(200)
-      .json({
-        success: true,
-        message: `${
-          post.type === "Reel" ? "Reel" : "Post"
-        } uploaded successfully.`,
-      });
+    return res.status(200).json({
+      success: true,
+      message: `${
+        post.type === "Reel" ? "Reel" : "Post"
+      } uploaded successfully.`,
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ err: error.message });
   }
 };
 
+// ============================
+// GET AVAILABLE CHANNEL CATEGORIES
+// ============================
 const handleGetcategories = async (req, res) => {
   try {
     const channelDetails = await Channel.findOne({
       channelName: req.userDetails.data[0],
     }).lean();
-    if (!channelDetails?.channelName?.length)
+
+    if (!channelDetails?.channelName?.length) {
       return res.status(404).json({ err: "Channel not found" });
+    }
+
     return res.status(200).json({
       category: channelDetails?.channelCategory.includes("All")
         ? categories

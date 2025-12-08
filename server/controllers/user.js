@@ -530,7 +530,7 @@ const handleContact = async (req, res) => {
     fs.writeFile(
       filePath,
       JSON.stringify({ name, email, subject, message }, null, 2),
-      () => {}
+      () => { }
     );
 
     return res.status(200).json({
@@ -1547,21 +1547,34 @@ const signupChannel = async (req, res) => {
 
     // Define all allowed categories for channels
     const channelCategories = [
-      "All",
       "Entertainment",
+      "Comedy",
       "Education",
-      "Animations",
-      "Games",
-      "Memes",
-      "News",
+      "Science",
       "Tech",
-      "Vlog",
-      "Sports",
-      "Nature",
+      "Gaming",
+      "Animations",
+      "Memes",
       "Music",
-      "Marketing",
+      "Sports",
       "Fitness",
       "Lifestyle",
+      "Fashion",
+      "Beauty",
+      "Food",
+      "Travel",
+      "Vlog",
+      "Nature",
+      "DIY",
+      "Art",
+      "Photography",
+      "Business",
+      "Finance",
+      "Marketing",
+      "News",
+      "Movies",
+      "Pets",
+      "Automotive"
     ];
 
     return res.status(200).json({
@@ -1634,21 +1647,34 @@ const registerChannel = async (req, res) => {
       : JSON.parse(channelCategory);
 
     const validOptions = [
-      "All",
       "Entertainment",
+      "Comedy",
       "Education",
-      "Animations",
-      "Games",
-      "Memes",
-      "News",
+      "Science",
       "Tech",
-      "Vlog",
-      "Sports",
-      "Nature",
+      "Gaming",
+      "Animations",
+      "Memes",
       "Music",
-      "Marketing",
+      "Sports",
       "Fitness",
       "Lifestyle",
+      "Fashion",
+      "Beauty",
+      "Food",
+      "Travel",
+      "Vlog",
+      "Nature",
+      "DIY",
+      "Art",
+      "Photography",
+      "Business",
+      "Finance",
+      "Marketing",
+      "News",
+      "Movies",
+      "Pets",
+      "Automotive"
     ];
 
     const invalid = parsedCategories.find((cat) => !validOptions.includes(cat));
@@ -1839,9 +1865,8 @@ const uploadFinalPost = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: `${
-        post.type === "Reel" ? "Reel" : "Post"
-      } uploaded successfully.`,
+      message: `${post.type === "Reel" ? "Reel" : "Post"
+        } uploaded successfully.`,
       post: {
         id: post.id,
         url: post.url,

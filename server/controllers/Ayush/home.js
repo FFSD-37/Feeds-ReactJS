@@ -186,9 +186,14 @@ const commentOnChannelPost = async (req, res) => {
       await ChannelComment.findByIdAndUpdate(parentCommentId, {
         $push: { replies: comment._id },
       });
+    } else {
+      await channelPost.findByIdAndUpdate(postId, {
+        $push: { comments: comment._id },
+      });
     }
 
     return res.json({ success: true, comment });
+
   } catch (err) {
     console.error("❌ Error adding comment:", err);
     return res
@@ -209,19 +214,22 @@ const getSingleChannelPost = async (req, res) => {
     if (!post)
       return res.status(404).json({ success: false, message: "Post not found" });
 
-    // Fetch comments (with nested replies)
+    // FETCH TOP LEVEL COMMENTS
+    const rootCommentIds = post.comments || [];
+
     const comments = await ChannelComment.find({
-      postId: post._id,
-      parentCommentId: null,
+      _id: { $in: rootCommentIds },
+      parentCommentId: null
     })
-      .populate({
-        path: "replies",
-        model: "ChannelComment",
-      })
       .sort({ createdAt: -1 })
       .lean();
 
-    // Determine if this user/channel has liked or saved the post
+    comments.forEach(c => {
+      c.replyCount = c.replies.length; // how many exist in DB
+      c.replies = []; // reset, load on click
+    });
+
+    // USER LIKE/SAVE CHECK
     let likedPosts = [];
     let savedPosts = [];
 
@@ -235,7 +243,6 @@ const getSingleChannelPost = async (req, res) => {
       savedPosts = user?.savedPostsIds || [];
     }
 
-    // Add the booleans for the current user
     const userHasLiked = likedPosts.includes(post._id.toString());
     const userHasSaved = savedPosts.includes(post._id.toString());
 
@@ -244,14 +251,45 @@ const getSingleChannelPost = async (req, res) => {
       post: { ...post, userHasLiked, userHasSaved },
       comments,
     });
+
   } catch (err) {
     console.error("❌ Error fetching post overlay:", err);
-    return res
-      .status(500)
-      .json({ success: false, message: "Error loading post overlay" });
+    return res.status(500).json({ success: false, message: "Error loading post overlay" });
   }
 };
 
+// GET PAGINATED REPLIES FOR CHANNEL COMMENT
+const getChannelCommentReplies = async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 5;
+    const skip = (page - 1) * limit;
+
+    const parent = await ChannelComment.findById(commentId).lean();
+    if (!parent) return res.json({ success: false, message: "Comment not found" });
+
+    const totalReplies = parent.replies.length;
+
+    const replies = await ChannelComment.find({
+      _id: { $in: parent.replies }
+    })
+      .sort({ createdAt: 1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    return res.json({
+      success: true,
+      replies,
+      hasMore: skip + limit < totalReplies
+    });
+
+  } catch (err) {
+    console.error("REPLY PAGINATION ERROR:", err);
+    return res.status(500).json({ success: false });
+  }
+};
 
 // KIDS HOME POSTS
 const getKidsHomePosts = async (req, res) => {
@@ -335,4 +373,5 @@ export {
   commentOnChannelPost,
   getSingleChannelPost,
   getKidsHomePosts,
+  getChannelCommentReplies,
 };

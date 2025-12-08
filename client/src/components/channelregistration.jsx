@@ -1,12 +1,39 @@
 import React, { useEffect, useRef, useState } from 'react';
 // import './styles.css';
 
-const PLACEHOLDER_IMAGE_PATH = '/mnt/data/e479b996-dc06-436e-b39d-4bca279897fd.jpg';
+const PLACEHOLDER_IMAGE_PATH =
+  '/mnt/data/e479b996-dc06-436e-b39d-4bca279897fd.jpg';
 
 const DEFAULT_CATEGORIES = [
-  'All', 'Education', 'Animations', 'Games', 'Memes', 'News', 'Tech',
-  'Vlog', 'Entertainment', 'Sports', 'Nature', 'Music', 'Marketing',
-  'Fitness', 'Lifestyle',
+  'All',
+  'Entertainment',
+  'Comedy',
+  'Education',
+  'Science',
+  'Tech',
+  'Gaming',
+  'Animations',
+  'Memes',
+  'Music',
+  'Sports',
+  'Fitness',
+  'Lifestyle',
+  'Fashion',
+  'Beauty',
+  'Food',
+  'Travel',
+  'Vlog',
+  'Nature',
+  'DIY',
+  'Art',
+  'Photography',
+  'Business',
+  'Finance',
+  'Marketing',
+  'News',
+  'Movies',
+  'Pets',
+  'Automotive',
 ];
 
 export default function ChannelRegistration() {
@@ -78,7 +105,8 @@ export default function ChannelRegistration() {
 
       const imagekit = new window.ImageKit({
         publicKey: authData.publicKey || 'public_wbpheuS28ohGGR1W5QtPU+uv/z8=',
-        urlEndpoint: authData.urlEndpoint || 'https://ik.imagekit.io/lidyx2zxm/',
+        urlEndpoint:
+          authData.urlEndpoint || 'https://ik.imagekit.io/lidyx2zxm/',
       });
 
       imagekit.upload(
@@ -114,9 +142,9 @@ export default function ChannelRegistration() {
         }
         return ['All'];
       }
-      
+
       const withoutAll = prev.filter(v => v !== 'All');
-            if (withoutAll.includes(val)) {
+      if (withoutAll.includes(val)) {
         return withoutAll.filter(v => v !== val);
       } else {
         return [...withoutAll, val];
@@ -784,7 +812,9 @@ export default function ChannelRegistration() {
             )}
 
             <form onSubmit={handleSubmit} noValidate>
-              <div className={`form-group ${errors.channelName ? 'error' : ''}`}>
+              <div
+                className={`form-group ${errors.channelName ? 'error' : ''}`}
+              >
                 <label htmlFor="channelName">Channel Name</label>
                 <input
                   id="channelName"
@@ -820,11 +850,14 @@ export default function ChannelRegistration() {
                   </button>
                 </div>
                 <div className="error-message">
-                  Password must be 6+ characters with uppercase, number, and special character
+                  Password must be 6+ characters with uppercase, number, and
+                  special character
                 </div>
               </div>
 
-              <div className={`form-group ${errors.confirmPassword ? 'error' : ''}`}>
+              <div
+                className={`form-group ${errors.confirmPassword ? 'error' : ''}`}
+              >
                 <label htmlFor="confirmPassword">Confirm Password</label>
                 <div className="password-wrapper">
                   <input
@@ -844,9 +877,7 @@ export default function ChannelRegistration() {
                     {showConfirmPassword ? '👁️‍🗨️' : '👁️'}
                   </button>
                 </div>
-                <div className="error-message">
-                  Passwords must match
-                </div>
+                <div className="error-message">Passwords must match</div>
               </div>
 
               <div className="form-group">
@@ -866,7 +897,9 @@ export default function ChannelRegistration() {
                   >
                     <div className="selected-items">
                       {selectedCategories.length === 0 ? (
-                        <span className="placeholder">Choose your content categories...</span>
+                        <span className="placeholder">
+                          Choose your content categories...
+                        </span>
                       ) : (
                         selectedCategories.map(v => (
                           <div key={v} className="selected-item">
@@ -889,14 +922,18 @@ export default function ChannelRegistration() {
                     <span
                       className="dropdown-arrow"
                       style={{
-                        transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transform: dropdownOpen
+                          ? 'rotate(180deg)'
+                          : 'rotate(0deg)',
                       }}
                     >
                       ▼
                     </span>
                   </div>
 
-                  <div className={`dropdown-content ${dropdownOpen ? 'show' : ''}`}>
+                  <div
+                    className={`dropdown-content ${dropdownOpen ? 'show' : ''}`}
+                  >
                     <div className="search-box">
                       <input
                         className="search-input"
@@ -957,14 +994,15 @@ export default function ChannelRegistration() {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     style={{
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      background:
+                        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                       color: 'white',
                       border: 'none',
                       padding: '12px 24px',
                       borderRadius: '8px',
                       cursor: 'pointer',
                       fontWeight: '600',
-                      fontSize: '14px'
+                      fontSize: '14px',
                     }}
                   >
                     Choose Image
@@ -1013,7 +1051,9 @@ export default function ChannelRegistration() {
                     </a>
                   </span>
                 </label>
-                <div className="error-message">You must agree to the terms and conditions</div>
+                <div className="error-message">
+                  You must agree to the terms and conditions
+                </div>
               </div>
 
               <button type="submit" className="submit-btn">
@@ -1036,27 +1076,28 @@ export default function ChannelRegistration() {
             <h2>1. Introduction</h2>
             <p>
               Welcome to Feeds! By using our platform, you agree to these terms
-              and conditions. Please read them carefully before creating your channel.
+              and conditions. Please read them carefully before creating your
+              channel.
             </p>
 
             <h2>2. User Category Information</h2>
-            
+
             <h3>Kids Category</h3>
-            <pre>1. Education
-2. Animation
-3. Nature</pre>
+            <pre>1. Education 2. Animation 3. Nature</pre>
 
             <h3>Students Category</h3>
             <pre>All categories available</pre>
 
             <h2>3. Content Guidelines</h2>
             <p>
-              All content must comply with our community guidelines and applicable laws.
-              Creators are responsible for ensuring their content is appropriate for their
-              selected categories.
+              All content must comply with our community guidelines and
+              applicable laws. Creators are responsible for ensuring their
+              content is appropriate for their selected categories.
             </p>
 
-            <p style={{ marginTop: '24px', fontWeight: '600', color: '#2d3748' }}>
+            <p
+              style={{ marginTop: '24px', fontWeight: '600', color: '#2d3748' }}
+            >
               Last Updated: February 2025
             </p>
           </div>

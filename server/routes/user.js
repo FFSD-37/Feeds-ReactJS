@@ -77,6 +77,7 @@ import {
   commentOnChannelPost,
   getSingleChannelPost,
   getKidsHomePosts,
+  getChannelCommentReplies,
 } from "../controllers/Ayush/home.js";
 import {
   handleGetConnect,
@@ -254,6 +255,8 @@ router.post("/channel/like", isAuthuser, likeChannelPost);
 router.post("/channel/save", isAuthuser, saveChannelPost);
 
 router.post("/channel/comment", isAuthuser, commentOnChannelPost);
+
+router.get("/channel/comment/replies/:commentId", getChannelCommentReplies);
 
 router.post("/follow_channel/:channelName", isAuthuser, followChannel);
 

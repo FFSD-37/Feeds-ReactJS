@@ -17,8 +17,38 @@ const channelSchema = new mongoose.Schema({
         type: [String],
         required: true,
         validate: {
-            validator: function(categories) {
-                const validOptions = ["All","Entertainment","Education","Animations","Games","Memes","News","Tech","Vlog","Sports","Nature","Music","Marketing","Fitness","Lifestyle"];
+            validator: function (categories) {
+                const validOptions = [
+                    "All",
+                    "Entertainment",
+                    "Comedy",
+                    "Education",
+                    "Science",
+                    "Tech",
+                    "Gaming",
+                    "Animations",
+                    "Memes",
+                    "Music",
+                    "Sports",
+                    "Fitness",
+                    "Lifestyle",
+                    "Fashion",
+                    "Beauty",
+                    "Food",
+                    "Travel",
+                    "Vlog",
+                    "Nature",
+                    "DIY",
+                    "Art",
+                    "Photography",
+                    "Business",
+                    "Finance",
+                    "Marketing",
+                    "News",
+                    "Movies",
+                    "Pets",
+                    "Automotive"
+                ];
                 return categories.every(cat => validOptions.includes(cat));
             },
             message: "Invalid category found in the list"
@@ -63,11 +93,11 @@ const channelSchema = new mongoose.Schema({
     savedPostsIds: [{
         type: String
     }],
-    
-    postIds:[{
+
+    postIds: [{
         type: String
     }]
-},{timestamps:true});
+}, { timestamps: true });
 
 const Channel = mongoose.model("Channel", channelSchema);
 

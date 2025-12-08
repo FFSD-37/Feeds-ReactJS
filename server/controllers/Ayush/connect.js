@@ -167,7 +167,7 @@ const getSearch = async (req, res) => {
     if (type === "channel") {
       const filter = { channelName: regex };
       if (category && category !== "All") {
-        filter.channelCategory = category; 
+        filter.channelCategory = category;
       }
 
       const channels = await Channel.find(filter).limit(50).lean();
@@ -288,7 +288,7 @@ const followEntity = async (req, res) => {
 
       await Notification.create({
         mainUser: target,
-        msgSerial: 4, 
+        msgSerial: 4,
         userInvolved: username,
         coin: 0,
       });
@@ -475,4 +475,9 @@ const unfollowEntity = async (req, res) => {
   }
 };
 
-export { handleGetConnect, getSearch, followEntity, unfollowEntity };
+export {
+  handleGetConnect,
+  getSearch,
+  followEntity,
+  unfollowEntity
+};

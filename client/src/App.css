@@ -28,7 +28,7 @@ body {
 }
 
 .kid-theme {
-  --bg-primary: linear-gradient(135deg, #fffae6 0%, #ffe9f7 100%);
+  --bg-primary: linear-gradient(135deg, #f70000 0%, #0004ff 100%);
 }
 
 body {
@@ -40,9 +40,17 @@ body {
     sans-serif;
 
   min-height: 100vh;
+  width: calc(100vw - 60px);
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--bg-primary);
   padding: 2rem 0;
+}
+
+@media (max-width: 768px) {
+  body {
+    width: 100vw;
+    padding: 1rem 0;
+  }
 }

@@ -1,9 +1,34 @@
 import mongoose from 'mongoose';
 
 const validChannelCategories = [
-    "Entertainment", "Education", "Animations", "Games", "Memes",
-    "News", "Tech", "Vlog", "Sports", "Nature", "Music", "Marketing",
-    "Fitness", "Lifestyle"
+    "Entertainment",
+    "Comedy",
+    "Education",
+    "Science",
+    "Tech",
+    "Gaming",
+    "Animations",
+    "Memes",
+    "Music",
+    "Sports",
+    "Fitness",
+    "Lifestyle",
+    "Fashion",
+    "Beauty",
+    "Food",
+    "Travel",
+    "Vlog",
+    "Nature",
+    "DIY",
+    "Art",
+    "Photography",
+    "Business",
+    "Finance",
+    "Marketing",
+    "News",
+    "Movies",
+    "Pets",
+    "Automotive"
 ];
 
 const userSchema = new mongoose.Schema({

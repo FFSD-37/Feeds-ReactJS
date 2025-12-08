@@ -35,6 +35,9 @@ export default function ChannelPostOverlay({ id: propId, onClose }) {
   const [showOptions, setShowOptions] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [replyPages, setReplyPages] = useState({});
+  const [loadingReplies, setLoadingReplies] = useState({});
+  const [hasMoreReplies, setHasMoreReplies] = useState({});
 
   const standalone = !onClose; // Detect full-page mode
 
@@ -155,6 +158,36 @@ export default function ChannelPostOverlay({ id: propId, onClose }) {
       }
       setNewComment('');
     }
+  };
+
+  const loadReplies = async commentId => {
+    setLoadingReplies(prev => ({ ...prev, [commentId]: true }));
+
+    const page = replyPages[commentId] || 1;
+
+    const res = await fetch(
+      `${import.meta.env.VITE_SERVER_URL}/channel/comment/replies/${commentId}?page=${page}`,
+      { credentials: 'include' },
+    );
+
+    const data = await res.json();
+
+    if (data.success) {
+      // Merge replies
+      setComments(prev =>
+        prev.map(c =>
+          c._id === commentId
+            ? { ...c, replies: [...(c.replies || []), ...data.replies] }
+            : c,
+        ),
+      );
+
+      // Update page
+      setReplyPages(prev => ({ ...prev, [commentId]: page + 1 }));
+      setHasMoreReplies(prev => ({ ...prev, [commentId]: data.hasMore }));
+    }
+
+    setLoadingReplies(prev => ({ ...prev, [commentId]: false }));
   };
 
   const handleReport = () => {
@@ -338,36 +371,37 @@ export default function ChannelPostOverlay({ id: propId, onClose }) {
                           Reply
                         </span>
                       </div>
+                      {/* SHOW "VIEW REPLIES" only if replies exist in DB AND none loaded yet */}
+                      {c.replyCount > 0 && c.replies.length === 0 && (
+                        <span
+                          className="view-replies-btn"
+                          onClick={() => loadReplies(c._id)}
+                        >
+                          View replies ({c.replyCount})
+                        </span>
+                      )}
 
-                      {c.replies?.length > 0 && (
+                      {/* SHOW "VIEW MORE REPLIES" only if some replies are loaded AND more exist */}
+                      {c.replies.length > 0 && hasMoreReplies[c._id] && (
+                        <span
+                          className={`view-replies-btn ${loadingReplies[c._id] ? 'loading' : ''}`}
+                          onClick={() => loadReplies(c._id)}
+                        >
+                          {loadingReplies[c._id]
+                            ? 'Loading...'
+                            : 'View more replies'}
+                        </span>
+                      )}
+
+                      {/* RENDER LOADED REPLIES */}
+                      {c.replies.length > 0 && (
                         <div className="channel-post-comment-replies">
                           {c.replies.map(r => (
                             <div key={r._id} className="reply-bubble">
-                              <img
-                                src={r.avatarUrl}
-                                alt="avatar"
-                                onClick={() =>
-                                  r.type === 'Channel'
-                                    ? navigate(`/channel/${r.name}`)
-                                    : navigate(`/profile/${r.name}`)
-                                }
-                              />
+                              <img src={r.avatarUrl} />
                               <div>
-                                <div className="reply-header">
-                                  <strong
-                                    onClick={() =>
-                                      r.type === 'Channel'
-                                        ? navigate(`/channel/${r.name}`)
-                                        : navigate(`/profile/${r.name}`)
-                                    }
-                                  >
-                                    @{r.name}
-                                  </strong>
-                                  <span className="comment-time">
-                                    {timeAgo(r.createdAt)}
-                                  </span>
-                                </div>
-                                <p className="reply-text">{r.text}</p>
+                                <strong>@{r.name}</strong>
+                                <p>{r.text}</p>
                               </div>
                             </div>
                           ))}
