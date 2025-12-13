@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import ImageKit from 'imagekit-javascript';
 import './../styles/editChannel.css';
 
@@ -347,43 +348,45 @@ function EditChannel() {
         )}
       </form>
 
-      {edit_channel_termsVisible && (
-        <div className="edit_channel_overlay">
-          <div className="edit_channel_overlay-content" ref={overlayRef}>
-            <button
-              className="edit_channel_close-btn"
-              onClick={() => set_edit_channel_termsVisible(false)}
-            >
-              X
-            </button>
+      {edit_channel_termsVisible &&
+        createPortal(
+          <div className="edit_channel_overlay">
+            <div className="edit_channel_overlay-content" ref={overlayRef}>
+              <button
+                className="edit_channel_close-btn"
+                onClick={() => set_edit_channel_termsVisible(false)}
+              >
+                X
+              </button>
 
-            <h1>Terms & Conditions</h1>
+              <h1>Terms & Conditions</h1>
 
-            <div className="edit_channel_overlay-text">
-              <h2>1. Channel Guidelines</h2>
-              <p>Maintain professionalism and avoid inappropriate content.</p>
+              <div className="edit_channel_overlay-text">
+                <h2>1. Channel Guidelines</h2>
+                <p>Maintain professionalism and avoid inappropriate content.</p>
 
-              <h2>2. Data Policy</h2>
-              <p>
-                Feeds collects minimal channel data for discovery and analytics.
-              </p>
+                <h2>2. Data Policy</h2>
+                <p>
+                  Feeds collects minimal channel data for discovery and analytics.
+                </p>
 
-              <h2>3. Content Rights</h2>
-              <p>
-                You retain ownership of uploads but grant Feeds permission to
-                display them.
-              </p>
+                <h2>3. Content Rights</h2>
+                <p>
+                  You retain ownership of uploads but grant Feeds permission to
+                  display them.
+                </p>
 
-              <h2>4. Termination</h2>
-              <p>Violations may result in channel suspension.</p>
+                <h2>4. Termination</h2>
+                <p>Violations may result in channel suspension.</p>
 
-              <p>
-                <strong>Last Updated: February 2025</strong>
-              </p>
+                <p>
+                  <strong>Last Updated: February 2025</strong>
+                </p>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

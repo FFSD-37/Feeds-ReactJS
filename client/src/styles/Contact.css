@@ -1,103 +1,152 @@
-:root {
-  --bg: rgba(255, 255, 255, 0.6);
-  --bubble-sent: rgba(0, 123, 255, 0.8);
-  --bubble-recv: rgba(220, 220, 220, 0.8);
-}
 
-/* This acts like his ".messages" class - It holds the background image */
+/* BACKGROUND */
 .contact-container {
-  background-image: url('https://img.freepik.com/free-vector/night-ocean-landscape-full-moon-stars-shine_107791-7397.jpg?semt=ais_hybrid&w=740');
-  background-size: cover;
-  background-position: center;
-  
-  /* Make sure it takes full height so we see the stars */
-  width: 100%;
-  min-height: 100vh; 
-  
-  /* Center the card in the middle of the stars */
+  height: 100vh;
+  width: 100vw;
   display: flex;
-  justify-content: center;
   align-items: center;
-  padding: 20px;
+  justify-content: center;
+  padding: 24px;
 }
 
-/* This acts like his ".message" class - It is the glass bubble */
+/* GLASS CARD */
 .contact-card {
-  /* Glass Effect */
-  background: var(--bg);
-  backdrop-filter: blur(5px); 
-  -webkit-backdrop-filter: blur(5px);
-  
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  
-  max-width: 420px;
   width: 100%;
-  padding: 2.2rem 1.7rem;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+  max-width: 50vw;
+  padding: 2.4rem 2rem;
+
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+
+  animation: fadeUp 0.5s ease;
 }
 
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 🧾 TITLE */
 .contact-title {
-  font-size: 2rem;
-  color: #0056b3; /* Darker blue for visibility */
   text-align: center;
+  font-size: 2rem;
   font-weight: 700;
-  margin-bottom: 1.4rem;
-  text-shadow: 0 1px 1px rgba(255,255,255,0.8);
+  color: var(--primary-dark);
+  margin-bottom: 1.6rem;
+  letter-spacing: 0.5px;
 }
 
+/* ✏️ FORM */
 .contact-form label {
   display: block;
+  font-size: 0.9rem;
   font-weight: 600;
-  margin-bottom: 0.5em;
-  color: #000;
+  color: var(--text-dark);
+  margin-bottom: 0.3rem;
 }
 
-/* Styling inputs to be round like chat bars */
-.contact-form input, .contact-form textarea {
+/* Inputs */
+.contact-form input,
+.contact-form textarea {
   width: 100%;
-  margin-top: 0.3em;
-  margin-bottom: 1em;
-  padding: 12px 15px;
-  
-  /* Round shapes */
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.9);
-  
-  font-size: 1rem;
+  padding: 13px 16px;
+  margin-bottom: 1.1rem;
+
+  font-size: 0.95rem;
+  color: #111827;
+
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+
   outline: none;
+  transition: all 0.2s ease;
 }
 
-.contact-form input:focus, .contact-form textarea:focus { 
-  border-color: #007bff;
-  box-shadow: 0 0 5px rgba(0, 123, 255, 0.4);
+.contact-form textarea {
+  border-radius: 16px;
+  resize: none;
 }
 
-/* Button looks like the "Sent" message bubble */
+/* Focus */
+.contact-form input:focus,
+.contact-form textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
+/* Error */
+.contact-error {
+  border-color: var(--error) !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25) !important;
+}
+
+/* 🚀 BUTTON */
 .contact-btn {
-  background: var(--bubble-sent);
-  color: #fff;
-  font-weight: 600;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 1.08em;
-  margin-top: .3em;
   width: 100%;
-  transition: transform 0.1s;
+  padding: 13px;
+  margin-top: 0.4rem;
+
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+
+  background: linear-gradient(
+    135deg,
+    var(--primary),
+    var(--primary-dark)
+  );
+
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+
+  transition: all 0.2s ease;
 }
 
-.contact-btn:hover {
-  transform: scale(1.02);
+.contact-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
 }
 
+.contact-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ✅ SUCCESS */
 .contact-success {
-  background: rgba(220, 252, 231, 0.9);
-  color: #15803d;
-  border-radius: 10px;
-  padding: 10px;
   text-align: center;
-  margin-bottom: 10px;
+  padding: 1.2rem;
+  border-radius: 14px;
+
+  background: rgba(220, 252, 231, 0.95);
+  color: #14532d;
+
+  box-shadow: inset 0 0 0 1px rgba(22, 163, 74, 0.3);
+}
+
+.contact-success h3 {
+  margin-bottom: 0.3rem;
+  font-weight: 700;
+}
+
+/* Error text under form */
+.contact-error-text {
+  color: var(--error, #dc2626);
+  margin-top: 0.6rem;
+  font-weight: 600;
+  text-align: center;
 }

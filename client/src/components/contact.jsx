@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import "../styles/Contact.css";
 
 const Contact = () => {
-  const [fields, setFields] = useState({ name: "", email: "", message: "" });
+  const [fields, setFields] = useState({ name: "", email: "", subject: "", message: "" });
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e) =>
     setFields({ ...fields, [e.target.name]: e.target.value });
@@ -14,12 +16,37 @@ const Contact = () => {
 
   const isValid =
     fields.name.trim() &&
+    fields.subject.trim() &&
     /\S+@\S+\.\S+/.test(fields.email) &&
     fields.message.trim();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isValid) setSubmitted(true);
+    setError("");
+    if (!isValid) return setError("Please fill all fields correctly.");
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(fields),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to send message");
+      }
+
+      setSubmitted(true);
+      setFields({ name: "", email: "", subject: "", message: "" });
+    } catch (err) {
+      console.error("Contact submit error:", err);
+      setError(err.message || "Failed to send message");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -71,6 +98,22 @@ const Contact = () => {
             </label>
 
             <label>
+              Subject
+              <input
+                type="text"
+                name="subject"
+                placeholder="Subject"
+                value={fields.subject}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                required
+                className={
+                  touched.subject && !fields.subject ? "contact-error" : ""
+                }
+              />
+            </label>
+
+            <label>
               Message
               <textarea
                 name="message"
@@ -89,10 +132,11 @@ const Contact = () => {
             <button
               className="contact-btn"
               type="submit"
-              disabled={!isValid}
+              disabled={!isValid || loading}
             >
-              Send Message
+              {loading ? "Sending..." : "Send Message"}
             </button>
+            {error && <p className="contact-error-text">{error}</p>}
           </form>
         )}
       </div>
