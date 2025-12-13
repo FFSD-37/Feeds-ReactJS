@@ -520,19 +520,6 @@ const handleContact = async (req, res) => {
       message,
     });
 
-    // Optional: Save to local file for admin log (non-blocking)
-    const folderPath = path.resolve(`responses/${subject}`);
-    const filePath = path.join(
-      folderPath,
-      `${email.replace(/[@.]/g, "_")}.json`
-    );
-    fs.mkdirSync(folderPath, { recursive: true });
-    fs.writeFile(
-      filePath,
-      JSON.stringify({ name, email, subject, message }, null, 2),
-      () => { }
-    );
-
     return res.status(200).json({
       success: true,
       message: "Your response has been recorded. We'll get back to you soon!",

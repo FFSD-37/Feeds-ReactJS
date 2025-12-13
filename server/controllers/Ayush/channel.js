@@ -2,20 +2,44 @@ import Channel from "../../models/channelSchema.js";
 import User from "../../models/users_schema.js";
 import channelPost from "../../models/channelPost.js";
 import ChannelComment from "../../models/channelPost_comment.js";
+import Notification from "../../models/notification_schema.js";
 
+// GET /getchannel/:channelName
 // GET /getchannel/:channelName
 const handlegetchannel = async (req, res) => {
   try {
     const { channelName } = req.params;
+    const { data } = req.userDetails || {};
+    console.log("data:", data);
+
+    // data = [channelName, adminName, logo, type, isPremium]
+    // data = [username, email, profileUrl, type, isPremium]
 
     const channel = await Channel.findOne({
-      channelName: { $regex: new RegExp(`^${channelName}$`, 'i') }
+      channelName: { $regex: new RegExp(`^${channelName}$`, "i") }
     })
       .populate("channelAdmin", "username profilePicture")
       .lean();
 
     if (!channel) {
       return res.status(404).json({ error: "Channel not found" });
+    }
+
+    // 🔔 PREVENT SELF-VIEW NOTIFICATION
+    if (data[3] === "Channel" && data[1] === channel.channelName) {
+      // skip creating notification
+    } else {
+      // 🔔 CREATE NOTIFICATION
+      let msgSerial = data[3] === "Channel" ? 17 : 18;
+
+      let userInvolved = data[0]; 
+      await Notification.create({
+        mainUser: channel.channelName,
+        mainUserType: "Channel",
+        msgSerial,
+        userInvolved,
+        coin: 0
+      });
     }
 
     return res.status(200).json({
@@ -31,9 +55,9 @@ const handlegetchannel = async (req, res) => {
       channel_liked: channel.likedPostsIds || [],
       channel_saved: channel.savedPostsIds || [],
       channel_links: channel.links || [],
-
-      created_at: channel.createdAt,
+      created_at: channel.createdAt
     });
+
   } catch (error) {
     console.error("❌ Error fetching channel:", error);
     return res.status(500).json({ error: "Internal server error" });

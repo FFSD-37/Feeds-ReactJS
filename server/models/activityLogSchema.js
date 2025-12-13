@@ -7,6 +7,11 @@ const activityLogSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    mainUserType: {
+        type: String,
+        enum: ["Kids", "Normal", "Channel"],
+        default: 'Normal'
+    },
     id: {
       type: String,
       required: true,
