@@ -46,11 +46,17 @@ export default function Reels() {
     postType: null,
   });
 
-  const [muted, setMuted] = useState(true);
+  // Start unmuted by default; browser autoplay block is expected until user interacts
+  // User can toggle with 'm' key or mute button
+  const [muted, setMuted] = useState(false);
   const isKids = userData?.type === 'Kids';
 
   const videoRefs = useRef([]);
   const touchStartY = useRef(null);
+  const navLock = useRef(false);
+  const containerRef = useRef(null);
+  const playTokenRef = useRef(0);
+  const visibilityDebounce = useRef(null);
 
   // Load emoji picker script once
   useEffect(() => {
@@ -92,23 +98,106 @@ export default function Reels() {
     }
   };
 
-  // Auto play/pause
+  // Ensure refs array length matches reels to avoid stale refs
   useEffect(() => {
-    videoRefs.current.forEach((video, i) => {
-      if (!video) return;
+    if (!videoRefs.current) videoRefs.current = [];
+    if (videoRefs.current.length > reels.length) {
+      videoRefs.current = videoRefs.current.slice(0, reels.length);
+    }
+  }, [reels]);
 
-      if (i === activeIndex) {
-        video.muted = muted;
+  // Robust playback: only play the active video, pause/reset others.
+  useEffect(() => {
+    const myToken = ++playTokenRef.current;
 
+    const ensureReady = v =>
+      new Promise(resolve => {
+        if (!v) return resolve(false);
+        if (v.readyState >= 3) return resolve(true);
+        const onReady = () => {
+          cleanup();
+          resolve(true);
+        };
+        const onError = () => {
+          cleanup();
+          resolve(false);
+        };
+        const cleanup = () => {
+          v.removeEventListener('canplaythrough', onReady);
+          v.removeEventListener('loadeddata', onReady);
+          v.removeEventListener('error', onError);
+        };
+        v.addEventListener('canplaythrough', onReady, { once: true });
+        v.addEventListener('loadeddata', onReady, { once: true });
+        v.addEventListener('error', onError, { once: true });
         setTimeout(() => {
-          video.play().catch(() => {});
-        }, 50);
-      } else {
-        video.currentTime = 0;
-        video.muted = true;
+          cleanup();
+          resolve(v.readyState >= 2);
+        }, 2500);
+      });
+
+    (async () => {
+      // Pause and reset non-active videos
+      for (let i = 0; i < videoRefs.current.length; i++) {
+        const vv = videoRefs.current[i];
+        if (!vv) continue;
+        if (i !== activeIndex) {
+          try { vv.pause(); } catch {}
+          try { vv.currentTime = 0; } catch {}
+          vv.dataset.playing = 'false';
+        }
       }
-    });
-  }, [activeIndex, muted]);
+
+      const activeV = videoRefs.current[activeIndex];
+      if (!activeV) return;
+      if (myToken !== playTokenRef.current) return;
+
+      activeV.muted = muted;
+      const ready = await ensureReady(activeV);
+      if (myToken !== playTokenRef.current) return;
+
+      try {
+        await activeV.play();
+        activeV.dataset.playing = 'true';
+      } catch (err) {
+        // If play fails, video may be loading; just mark and move on
+        activeV.dataset.playing = 'false';
+      }
+    })();
+
+    return () => { playTokenRef.current++; };
+  }, [activeIndex, muted, reels]);
+
+  // Intersection observer: pick the most visible slide and debounce updates
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const root = null;
+    const options = { root, rootMargin: '0px', threshold: Array.from({ length: 21 }, (_, i) => i / 20) };
+
+    const observer = new IntersectionObserver(entries => {
+      let best = null;
+      for (const e of entries) if (!best || e.intersectionRatio > best.intersectionRatio) best = e;
+      if (!best) return;
+      const slide = best.target.closest('.reels-slide');
+      if (!slide) return;
+      const slides = Array.from(containerRef.current.querySelectorAll('.reels-slide'));
+      const index = slides.indexOf(slide);
+      if (index === -1) return;
+
+      if (visibilityDebounce.current) clearTimeout(visibilityDebounce.current);
+      visibilityDebounce.current = setTimeout(() => {
+        if (best.intersectionRatio >= 0.35) setActiveIndex(index);
+      }, 80);
+    }, options);
+
+    const slides = containerRef.current.querySelectorAll('.reels-slide');
+    slides.forEach(s => observer.observe(s));
+
+    return () => {
+      observer.disconnect();
+      if (visibilityDebounce.current) clearTimeout(visibilityDebounce.current);
+    };
+  }, [reels]);
 
   useEffect(() => {
     if (activeIndex === reels.length - 1 && hasMore) {
@@ -116,11 +205,28 @@ export default function Reels() {
     }
   }, [activeIndex, reels, hasMore]);
 
-  // Wheel navigation
+  // Navigation locking to prevent rapid multi-steps (wheel/keys/touch)
+  const lockNav = (duration = 350) => {
+    navLock.current = true;
+    setTimeout(() => (navLock.current = false), duration);
+  };
+
+  const nextReel = () => {
+    if (navLock.current) return;
+    setActiveIndex(p => (p + 1 < reels.length ? p + 1 : p));
+    lockNav();
+  };
+  const prevReel = () => {
+    if (navLock.current) return;
+    setActiveIndex(p => (p - 1 >= 0 ? p - 1 : p));
+    lockNav();
+  };
+
+  // Wheel navigation -> route through next/prev to get debounce
   useEffect(() => {
     const wheel = e => {
-      if (e.deltaY > 0) setActiveIndex(p => (p + 1 < reels.length ? p + 1 : p));
-      else setActiveIndex(p => (p - 1 >= 0 ? p - 1 : p));
+      if (e.deltaY > 0) nextReel();
+      else prevReel();
     };
     window.addEventListener('wheel', wheel, { passive: true });
     return () => window.removeEventListener('wheel', wheel);
@@ -129,15 +235,20 @@ export default function Reels() {
   // Keyboard nav + Escape handling
   useEffect(() => {
     const keys = e => {
-      if (e.key.toLowerCase() === 'm') {
+      const k = e.key;
+      if (k.toLowerCase() === 'm') {
         setMuted(m => !m);
+        return;
       }
-      if (e.key === 'ArrowDown')
-        setActiveIndex(p => (p + 1 < reels.length ? p + 1 : p));
-      if (e.key === 'ArrowUp') setActiveIndex(p => (p - 1 >= 0 ? p - 1 : p));
-      if (e.key === 'ArrowDown') nextReel();
-      if (e.key === 'ArrowUp') prevReel();
-      if (e.key === 'Escape') {
+      if (k === 'ArrowDown') {
+        nextReel();
+        return;
+      }
+      if (k === 'ArrowUp') {
+        prevReel();
+        return;
+      }
+      if (k === 'Escape') {
         setOpenComments(null);
         setMenuOpenId(null);
         setShowEmoji(false);
@@ -194,9 +305,7 @@ export default function Reels() {
     };
   }, [showEmoji]);
 
-  const nextReel = () =>
-    setActiveIndex(p => (p + 1 < reels.length ? p + 1 : p));
-  const prevReel = () => setActiveIndex(p => (p - 1 >= 0 ? p - 1 : p));
+  // (nextReel/prevReel moved above to use navLock)
 
   const onTouchStart = e => (touchStartY.current = e.touches[0].clientY);
   const onTouchMove = e => {
@@ -301,23 +410,7 @@ export default function Reels() {
     }
   };
 
-  // When new reels load, immediately pause ALL new videos
-  useEffect(() => {
-    videoRefs.current.forEach((video, i) => {
-      if (!video) return;
 
-      if (i === activeIndex) {
-        // Active reel auto-plays
-        video.muted = muted;
-        setTimeout(() => video.play().catch(() => {}), 50);
-      } else {
-        // Other reels are completely stopped (prevents audio leak)
-        video.pause();
-        video.currentTime = 0;
-        video.muted = true;
-      }
-    });
-  }, [activeIndex, muted]);
 
   const toggleMute = () => {
     setMuted(m => {
@@ -449,6 +542,7 @@ export default function Reels() {
 
   return (
     <div
+      ref={containerRef}
       className="reels-container"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
@@ -470,25 +564,13 @@ export default function Reels() {
               ref={el => (videoRefs.current[i] = el)}
               className="reels-video"
               src={reel.url}
+              preload="auto"
               muted={muted}
               loop
               playsInline
               onClick={e => {
                 if (e.target.paused) e.target.play();
                 else e.target.pause();
-              }}
-              onLoadedMetadata={() => {
-                const video = videoRefs.current[i];
-                if (!video) return;
-
-                if (i === activeIndex) {
-                  video.muted = muted;
-                  video.play().catch(() => {});
-                } else {
-                  video.pause();
-                  video.currentTime = 0;
-                  video.muted = true;
-                }
               }}
             />
 
