@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   AlertTriangle,
   File,
@@ -26,6 +26,20 @@ const HomePage = () => {
   const [activePostId, setActivePostId] = useState(null);
   const [comments, setComments] = useState([]);
   const [showEmoji, setShowEmoji] = useState(false);
+  const [stories, setStories] = useState([]);
+  const [showArrows, setShowArrows] = useState(false);
+  const storiesRef = useRef(null);
+
+  const scrollStories = (direction) => {
+    const container = storiesRef.current;
+    const scrollAmount = 200; // adjust
+
+    if (direction === 'left') {
+      container.scrollLeft -= scrollAmount;
+    } else {
+      container.scrollLeft += scrollAmount;
+    }
+  };
 
   const navigate = useNavigate();
 
@@ -358,6 +372,35 @@ const HomePage = () => {
   //   </div>
   // );
 
+  const fetchStories = async () => {
+    const res = await fetch(
+      `${import.meta.env.VITE_SERVER_URL}/stories`,
+      {
+        method: "GET",
+        credentials: "include",
+      },
+    );
+    const data = await res.json();
+    if (data.success) {
+      console.log(`Stories: ${data.allStories}`);
+      setStories(data.allStories);
+      console.log(data.allStories[0])
+    }
+  }
+
+  useEffect(() => {
+    fetchStories();
+  }, []);
+
+  useEffect(() => {
+    if (storiesRef.current) {
+      const container = storiesRef.current;
+      const needsScroll = container.scrollWidth > container.clientWidth;
+      setShowArrows(needsScroll);
+    }
+  }, [stories]);
+
+
   return (
     <div className="main-layout">
       {(loadingPosts || loadingFriends) && (
@@ -370,14 +413,46 @@ const HomePage = () => {
       )}
       <main className="main-content">
         <div className="content-section">
-          {/* 🔥 If loading, show skeletons */}
-          {/* {loadingPosts ? (
-            <>
-              <PostSkeleton />
-              <PostSkeleton />
-              <PostSkeleton />
-            </>
-          ) : ( */}
+          {stories.length > 0 && (
+            <div className="stories-container">
+
+              {showArrows && (
+                <button
+                  className="stories-arrow left"
+                  onClick={() => scrollStories("left")}
+                >
+                  &lt;
+                </button>
+              )}
+
+              <div className="stories-list" ref={storiesRef}>
+                {stories.map(story => (
+                  <div
+                    className="story-item"
+                    key={story._id}
+                    onClick={() => navigate(`/profile/${story.username}`)}
+                  >
+                    <img
+                      src={story.avatarUrl}
+                      alt={story.username}
+                      className="story-avatar"
+                    />
+                    <p className="story-name">{story.username}</p>
+                  </div>
+                ))}
+              </div>
+
+              {showArrows && (
+                <button
+                  className="stories-arrow right"
+                  onClick={() => scrollStories("right")}
+                >
+                  &gt;
+                </button>
+              )}
+
+            </div>
+          )}
           {!loadingPosts && (
             <div className="post-card">
               {allPosts.map((post, index) => (
@@ -562,27 +637,27 @@ const HomePage = () => {
         </div>
         {(userData.type === "Normal") ? (
           <div className="sidebar-section">
-          <div className="card">
-            <h3 className="card-title">Channels you follow</h3>
-            {channels.length > 0 ? (
-              <div className="friends-grid">
-                {channels.slice(0, 9).map((channel) => (
-                  <div key={channel._id}
-                    className="friend-item"
-                    onClick={() => navigate(`/channel/${channel.channelName}`)}
-                  >
-                    <img
-                      src={channel.channelLogo}
-                      alt={channel.channelName}
-                      className="friend-avatar"
-                    />
-                    <p className="friend-name">{channel.channelName}</p>
-                  </div>
-                ))}
-              </div>
-            ) : null}
+            <div className="card">
+              <h3 className="card-title">Channels you follow</h3>
+              {channels.length > 0 ? (
+                <div className="friends-grid">
+                  {channels.slice(0, 9).map((channel) => (
+                    <div key={channel._id}
+                      className="friend-item"
+                      onClick={() => navigate(`/channel/${channel.channelName}`)}
+                    >
+                      <img
+                        src={channel.channelLogo}
+                        alt={channel.channelName}
+                        className="friend-avatar"
+                      />
+                      <p className="friend-name">{channel.channelName}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           </div>
-        </div>
         ) : <div></div>}
         <br />
         {!userData.isPremium ? (
