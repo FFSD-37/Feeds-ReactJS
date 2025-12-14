@@ -38,7 +38,6 @@ const handlegetchannel = async (req, res) => {
         mainUserType: "Channel",
         msgSerial,
         userInvolved,
-        coin: 0
       });
     }
 
@@ -124,6 +123,13 @@ const followChannel = async (req, res) => {
       { $addToSet: { channelMembers: { username } } }
     );
 
+    await Notification.create({
+      mainUser: channelName,
+      mainUserType: "Channel",
+      msgSerial: 9, // Normal/kids user follows a channel
+      userInvolved: username,
+    });
+
     res.json({ success: true, message: `Now following ${channelName}` });
   } catch (error) {
     console.error("Error following channel:", error);
@@ -154,6 +160,13 @@ const unfollowChannel = async (req, res) => {
       { channelName },
       { $pull: { channelMembers: { username } } }
     );
+
+    await Notification.create({
+      mainUser: channelName,
+      mainUserType: "Channel",
+      msgSerial: 10, // Normal/kids user unfollows a channel
+      userInvolved: username,
+    });
 
     res.json({ success: true, message: `Unfollowed ${channelName}` });
   } catch (error) {

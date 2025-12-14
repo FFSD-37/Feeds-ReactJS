@@ -4,6 +4,7 @@ import User from "../../models/users_schema.js";
 import Channel from "../../models/channelSchema.js";
 import ChannelComment from "../../models/channelPost_comment.js";
 import Comment from "../../models/comment_schema.js";
+import Notification from "../../models/notification_schema.js";
 
 // NORMAL POST → use post.id
 // CHANNEL POST → use post._id
@@ -177,6 +178,16 @@ const likeReel = async (req, res) => {
                 { $addToSet: { likedPostsIds: storeId } }
             );
 
+            // Notification for channel post like
+            if (postType === "channel" && post.channel && post.channel !== username) {
+                await Notification.create({
+                    mainUser: post.channel,
+                    mainUserType: "Channel",
+                    msgSerial: 13, // Channel likes a channel-post
+                    userInvolved: username,
+                });
+            }
+
         } else {
             const user = await User.findOne({ username });
             if (user.likedPostsIds.includes(storeId))
@@ -189,6 +200,29 @@ const likeReel = async (req, res) => {
                 { username },
                 { $addToSet: { likedPostsIds: storeId } }
             );
+
+            // Notification for post like
+            if (postType === "channel") {
+                // Normal/kids user likes a channel-post
+                if (post.channel && post.channel !== username) {
+                    await Notification.create({
+                        mainUser: post.channel,
+                        mainUserType: "Channel",
+                        msgSerial: 11, // Normal/kids user likes a channel-post
+                        userInvolved: username,
+                    });
+                }
+            } else {
+                // Normal user likes a normal post
+                if (post.author && post.author !== username) {
+                    await Notification.create({
+                        mainUser: post.author,
+                        mainUserType: "Normal",
+                        msgSerial: 3, // Normal user likes a normal post
+                        userInvolved: username,
+                    });
+                }
+            }
         }
 
         res.json({ success: true, likes: post.likes });
@@ -330,13 +364,34 @@ const commentReel = async (req, res) => {
                 text,
             });
 
+            const post = await channelPost.findById(postId);
             await channelPost.findByIdAndUpdate(postId, {
                 $push: { comments: comment._id }
             });
 
+            // Notification for channel post comment
+            if (post && post.channel && post.channel !== username) {
+                if (type === "Channel") {
+                    await Notification.create({
+                        mainUser: post.channel,
+                        mainUserType: "Channel",
+                        msgSerial: 16, // Channel comments on channel-post
+                        userInvolved: username,
+                    });
+                } else {
+                    await Notification.create({
+                        mainUser: post.channel,
+                        mainUserType: "Channel",
+                        msgSerial: 15, // Normal/kids user comments on channel-post
+                        userInvolved: username,
+                    });
+                }
+            }
+
             return res.json({ success: true, comment });
         }
 
+        const post = await Post.findById(postId);
         const comment = await Comment.create({
             id: postId,
             username,
@@ -345,6 +400,16 @@ const commentReel = async (req, res) => {
         });
 
         await Post.findByIdAndUpdate(postId, { $push: { comments: comment._id } });
+
+        // Notification for normal post comment
+        if (post && post.author && post.author !== username) {
+            await Notification.create({
+                mainUser: post.author,
+                mainUserType: "Normal",
+                msgSerial: 8, // Normal user comments on normal posts
+                userInvolved: username,
+            });
+        }
 
         return res.json({ success: true, comment });
 

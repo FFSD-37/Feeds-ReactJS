@@ -180,7 +180,7 @@ You can create **child components** freely under these parent components.
 
 - [❌] Kids Profile (Self/Other)
 - [✅] Help / Support
-- [❌] Reels (Normal, Kids, Channel)
+- [✅] Reels (Normal, Kids, Channel)
 - [✅] Terms & Conditions
 - [✅] Contact Us
 

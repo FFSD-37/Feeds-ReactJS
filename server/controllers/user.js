@@ -786,9 +786,9 @@ const handlegetprofile = async (req, res) => {
     if (!isOwnProfile && profileUser.isPremium) {
       await Notification.create({
         mainUser: username,
-        msgSerial: 5,
+        mainUserType: profileUser.type || "Normal",
+        msgSerial: 5, // Normal user views a premium user
         userInvolved: loggedInUser,
-        coin: 1,
       });
     }
 
@@ -1140,15 +1140,23 @@ const followSomeone = async (req, res) => {
 
         await Notification.create({
           mainUser: targetUsername,
-          msgSerial: 1,
+          mainUserType: "Normal",
+          msgSerial: 1, // Normal user follows another normal user
           userInvolved: followerUsername,
-          coin: 1,
         });
 
         await User.updateOne(
           { username: followerUsername },
           { $inc: { coins: 1 } }
         );
+
+        // Notification for getting coins
+        await Notification.create({
+          mainUser: targetUsername,
+          mainUserType: "Normal",
+          msgSerial: 6, // Normal user get some coins
+          userInvolved: followerUsername,
+        });
 
         return res.status(200).json({
           success: true,
@@ -1165,9 +1173,9 @@ const followSomeone = async (req, res) => {
 
       await Notification.create({
         mainUser: targetUsername,
-        msgSerial: 4,
+        mainUserType: "Normal",
+        msgSerial: 4, // Normal user requested to follow another private normal user
         userInvolved: followerUsername,
-        coin: 0,
       });
 
       await ActivityLog.create({
@@ -1203,15 +1211,23 @@ const followSomeone = async (req, res) => {
 
     await Notification.create({
       mainUser: targetUsername,
-      msgSerial: 1,
+      mainUserType: "Normal",
+      msgSerial: 1, // Normal user follows another normal user
       userInvolved: followerUsername,
-      coin: 1,
     });
 
     await User.updateOne(
       { username: followerUsername },
       { $inc: { coins: 1 } }
     );
+
+    // Notification for getting coins
+    await Notification.create({
+      mainUser: targetUsername,
+      mainUserType: "Normal",
+      msgSerial: 6, // Normal user get some coins
+      userInvolved: followerUsername,
+    });
 
     return res.status(200).json({
       success: true,
@@ -1315,12 +1331,7 @@ const unfollowSomeone = async (req, res) => {
         message: `You canceled your follow request to @${targetUsername}`,
       });
 
-      await Notification.create({
-        mainUser: targetUsername,
-        msgSerial: 12,
-        userInvolved: unfollowerUsername,
-        coin: 0,
-      });
+      // No notification needed when canceling a follow request
 
       return res.status(200).json({
         success: true,
@@ -1353,9 +1364,9 @@ const unfollowSomeone = async (req, res) => {
 
       await Notification.create({
         mainUser: targetUsername,
-        msgSerial: 7,
+        mainUserType: "Normal",
+        msgSerial: 7, // Normal user unfollows another normal user
         userInvolved: unfollowerUsername,
-        coin: 0,
       });
 
       await User.updateOne(
@@ -1410,7 +1421,6 @@ const handlegetnotification = async (req, res) => {
           userInvolved: n.userInvolved,
           profilePicture: user?.profilePicture || process.env.DEFAULT_USER_IMG,
           msgSerial: n.msgSerial,
-          coin: n.coin,
           createdAt: n.createdAt,
           message: getNotificationMessage(n.msgSerial, n.userInvolved),
         };
@@ -2218,21 +2228,6 @@ const handlelikereel = async (req, res) => {
         id: `#${Date.now()}`,
         message: `You liked a reel by @${post.author}.`,
       });
-
-      // Create a notification for the author (if not self-like)
-      if (post.author !== username) {
-        await Notification.create({
-          mainUser: post.author,
-          msgSerial: 3, // example serial for 'like reel'
-          userInvolved: username,
-          coin: 1,
-        });
-
-        await User.findOneAndUpdate(
-          { username: post.author },
-          { $inc: { coins: 1 } }
-        );
-      }
     }
 
     // Fetch updated likes
@@ -2309,9 +2304,9 @@ const handlereportpost = async (req, res) => {
     if (post.author !== reporter) {
       await Notification.create({
         mainUser: post.author,
+        mainUserType: "Normal",
         msgSerial: 13, // example serial for 'report received'
         userInvolved: reporter,
-        coin: 0,
       });
     }
 
@@ -2340,14 +2335,26 @@ const handlelikecomment = async (req, res) => {
   const { post_id, commUser } = req.body;
   const comment = await Comment.findOne({ _id: id });
   if (comment.likes.includes(data[0])) {
-    comment.likes.filter((uname) => uname !== data[0]);
+    // Unlike - remove from array
+    comment.likes = comment.likes.filter((uname) => uname !== data[0]);
+    await comment.save();
+    // No notification for unlike
+    await ActivityLog.create({
+      username: data[0],
+      id: `#${Date.now()}`,
+      message: `You unliked the comment on post ${post_id}`,
+    });
+    return res.json({ data: true });
+  } else {
+    // Like - add to array
+    comment.likes.push(data[0]);
     await comment.save();
     if (commUser != data[0]) {
       await Notification.create({
         mainUser: commUser,
-        msgSerial: 9,
+        mainUserType: "Normal",
+        msgSerial: 2, // Normal user likes a normal post-comment
         userInvolved: data[0],
-        coin: 1,
       });
       await User.findOneAndUpdate(
         { username: commUser },
@@ -2358,27 +2365,6 @@ const handlelikecomment = async (req, res) => {
       username: data[0],
       id: `#${Date.now()}`,
       message: `You liked the comment on post ${post_id}`,
-    });
-    return res.json({ data: true });
-  } else {
-    comment.likes.push(data[0]);
-    await comment.save();
-    if (commUser != data[0]) {
-      await Notification.create({
-        mainUser: commUser,
-        msgSerial: 9,
-        userInvolved: data[0],
-        coin: 1,
-      });
-      await User.findOneAndUpdate(
-        { username: commUser },
-        { $inc: { coins: -1 } }
-      );
-    }
-    await ActivityLog.create({
-      username: data[0],
-      id: `#${Date.now()}`,
-      message: `You disliked the comment on post ${post_id}`,
     });
     return res.json({ data: true });
   }
@@ -2522,15 +2508,23 @@ const handlepostcomment = async (req, res) => {
     if (data[0] !== post.author) {
       const noti8 = await Notification.create({
         mainUser: post.author,
-        msgSerial: 8,
+        mainUserType: "Normal",
+        msgSerial: 8, // Normal user comments on normal posts
         userInvolved: data[0],
-        coin: 1,
       });
 
       await User.findOneAndUpdate(
         { username: data[0] },
         { $inc: { coins: 1 } }
       );
+
+      // Notification for getting coins
+      await Notification.create({
+        mainUser: post.author,
+        mainUserType: "Normal",
+        msgSerial: 6, // Normal user get some coins
+        userInvolved: data[0],
+      });
     }
 
     return res.status(200).json({

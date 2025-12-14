@@ -19,10 +19,6 @@ const notificationSchema = new mongoose.Schema({
     userInvolved: {
         type: String,
         required: true
-    },
-    coin: {
-        type: Number,
-        required: true
     }
 }, { timestamps: true });
 

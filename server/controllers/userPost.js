@@ -2,6 +2,7 @@ import { verify_JWTtoken } from "cookie-string-parser";
 import Post from "../models/postSchema.js";
 import User from "../models/users_schema.js";
 import channelPost from "../models/channelPost.js";
+import Notification from "../models/notification_schema.js";
 
 const handlePostupload=async(req,res)=>{
     try {
@@ -148,20 +149,38 @@ const handleLikePost=async(req,res)=>{
         const userDetails=verify_JWTtoken(req.cookies.uuid, process.env.USER_SECRET);
         if(!userDetails) return res.status(401).json({ err: "Unauthorized" });
         const userType=userDetails.data[3];
+        const username = userDetails.data[0];
 
-        let user=await User.findOne({username:userDetails.data[0]});
+        let user=await User.findOne({username});
         let isUserliked=user.likedPostsIds.find((postId)=>postId===id);
         if(isUserliked){
+            // Unlike
             user.likedPostsIds=user.likedPostsIds.filter((postId)=>postId!==id);
             await Post.findOneAndUpdate({id},{
                 $inc:{likes:-1}
             })
         }
         else{
+            // Like
             user.likedPostsIds.push(id);
             await Post.findOneAndUpdate({id},{
                 $inc:{likes:1}
             })
+            
+            // Get post author to send notification
+            const post = await Post.findOne({id});
+            if (post && post.author && post.author !== username) {
+                await Notification.create({
+                    mainUser: post.author,
+                    mainUserType: "Normal",
+                    msgSerial: 3, // Normal user likes a normal post
+                    userInvolved: username,
+                });
+                await User.findOneAndUpdate(
+                    { username: post.author },
+                    { $inc: { coins: 1 } }
+                );
+            }
         }
 
         await user.save();

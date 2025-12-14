@@ -263,9 +263,9 @@ const followEntity = async (req, res) => {
 
       await Notification.create({
         mainUser: target,
-        msgSerial: 1,
+        mainUserType: "Channel",
+        msgSerial: 9, // Normal/kids user follows a channel
         userInvolved: username,
-        coin: 0,
       });
 
       return res.json({ success: true, status: "following" });
@@ -288,9 +288,9 @@ const followEntity = async (req, res) => {
 
       await Notification.create({
         mainUser: target,
-        msgSerial: 4,
+        mainUserType: "Normal",
+        msgSerial: 4, // Normal user requested to follow another private normal user
         userInvolved: username,
-        coin: 0,
       });
 
       await ActivityLog.create({
@@ -316,9 +316,9 @@ const followEntity = async (req, res) => {
 
     await Notification.create({
       mainUser: target,
-      msgSerial: 1,
+      mainUserType: "Normal",
+      msgSerial: 1, // Normal user follows another normal user
       userInvolved: username,
-      coin: 0,
     });
 
     await ActivityLog.create({
@@ -369,9 +369,9 @@ const unfollowEntity = async (req, res) => {
       // Notification to channel admin
       await Notification.create({
         mainUser: target,
-        msgSerial: 7, // unfollow
+        mainUserType: "Channel",
+        msgSerial: 10, // Normal/kids user unfollows a channel
         userInvolved: username,
-        coin: 0,
       });
 
       // Activity log
@@ -448,9 +448,9 @@ const unfollowEntity = async (req, res) => {
     // Send notification to unfollowed user
     await Notification.create({
       mainUser: target,
-      msgSerial: 7,
+      mainUserType: "Normal",
+      msgSerial: 7, // Normal user unfollows another normal user
       userInvolved: username,
-      coin: 0,
     });
 
     // Log activity

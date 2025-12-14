@@ -2,6 +2,7 @@ import Channel from "../../models/channelSchema.js";
 import User from "../../models/users_schema.js";
 import channelPost from "../../models/channelPost.js";
 import ChannelComment from "../../models/channelPost_comment.js";
+import Notification from "../../models/notification_schema.js";
 
 // GET ALL PUBLIC CHANNEL POSTS
 const getAllChannelPosts = async (req, res) => {
@@ -91,6 +92,7 @@ const likeChannelPost = async (req, res) => {
 
     // Check if already liked
     const hasLiked = likerDoc.likedPostsIds.includes(postId);
+    const postChannel = post.channel; // Channel that owns the post
 
     if (hasLiked) {
       // Unlike the post
@@ -98,12 +100,50 @@ const likeChannelPost = async (req, res) => {
       await post.save();
 
       await likerDoc.updateOne({ $pull: { likedPostsIds: postId } });
+
+      // Send notification for unlike (only if not self-like)
+      if (postChannel && postChannel !== identifier) {
+        if (userType === "Channel") {
+          await Notification.create({
+            mainUser: postChannel,
+            mainUserType: "Channel",
+            msgSerial: 14, // Channel unlikes a channel-post
+            userInvolved: identifier,
+          });
+        } else {
+          await Notification.create({
+            mainUser: postChannel,
+            mainUserType: "Channel",
+            msgSerial: 12, // Normal/kids user unlikes a channel-post
+            userInvolved: identifier,
+          });
+        }
+      }
     } else {
       // Like the post
       post.likes += 1;
       await post.save();
 
       await likerDoc.updateOne({ $addToSet: { likedPostsIds: postId } });
+
+      // Send notification for like (only if not self-like)
+      if (postChannel && postChannel !== identifier) {
+        if (userType === "Channel") {
+          await Notification.create({
+            mainUser: postChannel,
+            mainUserType: "Channel",
+            msgSerial: 13, // Channel likes a channel-post
+            userInvolved: identifier,
+          });
+        } else {
+          await Notification.create({
+            mainUser: postChannel,
+            mainUserType: "Channel",
+            msgSerial: 11, // Normal/kids user likes a channel-post
+            userInvolved: identifier,
+          });
+        }
+      }
     }
 
     // Send updated info
@@ -164,6 +204,8 @@ const commentOnChannelPost = async (req, res) => {
   try {
     const { data } = req.userDetails; // [name, email, avatar, type]
     const { postId, text, parentCommentId } = req.body;
+    const commenterName = data[0];
+    const commenterType = data[3];
 
     if (!text?.trim()) {
       return res.status(400).json({ success: false, message: "Empty comment" });
@@ -173,10 +215,12 @@ const commentOnChannelPost = async (req, res) => {
     if (!post)
       return res.status(404).json({ success: false, message: "Post not found" });
 
+    const postChannel = post.channel; // Channel that owns the post
+
     const comment = await ChannelComment.create({
       postId,
-      name: data[0],
-      type: data[3],
+      name: commenterName,
+      type: commenterType,
       avatarUrl: data[2],
       text,
       parentCommentId: parentCommentId || null,
@@ -190,6 +234,25 @@ const commentOnChannelPost = async (req, res) => {
       await channelPost.findByIdAndUpdate(postId, {
         $push: { comments: comment._id },
       });
+    }
+
+    // Send notification to channel owner (only if not self-comment)
+    if (postChannel && postChannel !== commenterName) {
+      if (commenterType === "Channel") {
+        await Notification.create({
+          mainUser: postChannel,
+          mainUserType: "Channel",
+          msgSerial: 16, // Channel comments on channel-post
+          userInvolved: commenterName,
+        });
+      } else {
+        await Notification.create({
+          mainUser: postChannel,
+          mainUserType: "Channel",
+          msgSerial: 15, // Normal/kids user comments on channel-post
+          userInvolved: commenterName,
+        });
+      }
     }
 
     return res.json({ success: true, comment });
