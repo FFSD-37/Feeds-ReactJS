@@ -38,6 +38,16 @@
     0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
 
+:root {
+  --sidebar-bg: #0f172a;
+  --sidebar-hover: #1e293b;
+  --primary: #3b82f6;
+  --sent: #2563eb;
+  --recv: rgba(255,255,255,0.85);
+  --text-light: #e5e7eb;
+  --chat-bg: url('https://img.freepik.com/free-vector/night-ocean-landscape-full-moon-stars-shine_107791-7397.jpg?semt=ais_hybrid&w=740');
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

@@ -16,8 +16,8 @@ export default function Register() {
     bio: '',
     gender: '',
     terms: false,
-    parentalPassword: '', // New field for kids accounts
-    confirmParentalPassword: '', // Confirm parental password
+    parentalPassword: '',
+    confirmParentalPassword: '',
   };
 
   const [values, setValues] = useState(initialValues);
@@ -32,8 +32,8 @@ export default function Register() {
   const [passwordVisible, setPasswordVisible] = useState({
     password: false,
     confirmPassword: false,
-    parentalPassword: false, // New
-    confirmParentalPassword: false, // New
+    parentalPassword: false,
+    confirmParentalPassword: false,
   });
 
   useEffect(() => {
@@ -74,7 +74,6 @@ export default function Register() {
     /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
   const validateParentalPassword = password => {
-    // Parental password should be at least 4 characters
     return password && password.length >= 4;
   };
 

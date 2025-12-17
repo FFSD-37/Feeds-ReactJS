@@ -388,7 +388,6 @@ export default function Reels() {
           setReels(prev =>
             prev.map(r => (r._id === reel._id ? { ...r, _saved: false } : r)),
           );
-          alert('Unsaved');
         }
       } else {
         const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/savereel`, {
@@ -402,7 +401,6 @@ export default function Reels() {
           setReels(prev =>
             prev.map(r => (r._id === reel._id ? { ...r, _saved: true } : r)),
           );
-          alert('Saved');
         }
       }
     } catch (err) {
@@ -496,7 +494,6 @@ export default function Reels() {
   const doCopy = async text => {
     try {
       await navigator.clipboard.writeText(text);
-      alert('Copied to clipboard');
     } catch {
       alert('Copy failed');
     }

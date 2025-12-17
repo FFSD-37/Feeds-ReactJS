@@ -98,15 +98,15 @@ io.on("connection", async (socket) => {
 
   socket.on("sendMessage", async (data) => {
     try {
-      const { to, text, time } = data;
-      await Chat.create({ from: socket.userId, to, text, createdAt: time });
+      const { to, text, dateTime } = data;
+      await Chat.create({ from: socket.userId, to, text, createdAt: dateTime });
 
       const receiver = await User.findOne({ username: to });
       if (receiver?.socketId) {
         socket.to(receiver.socketId).emit("receiveMessage", {
           from: socket.userId,
           text,
-          time,
+          dateTime,
         });
       }
     } catch (err) {

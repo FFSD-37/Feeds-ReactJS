@@ -79,26 +79,43 @@ export default function ChatPage() {
   const sendMessage = () => {
     if (!input.trim() || !activeUser) return;
 
-    const time = new Date().toLocaleTimeString([], {
+    const now = new Date();
+    const date = now.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+    const time = now.toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit',
     });
+    const dateTime = `${date} ${time}`;
 
     const newMsg = {
       text: input,
       from: userData.username,
-      time,
+      dateTime,
     };
 
     socket.emit('sendMessage', {
       to: activeUser,
       text: input,
-      time,
+      dateTime,
     });
 
     setMessages(prev => [...prev, newMsg]);
     setInput('');
     scrollBottom();
+  };
+
+  const groupByDate = msgs => {
+    const map = {};
+    msgs.forEach(m => {
+      const d = (m.dateTime || m.createdAt).split(',')[0];
+      if (!map[d]) map[d] = [];
+      map[d].push(m);
+    });
+    return map;
   };
 
   return (
@@ -125,37 +142,53 @@ export default function ChatPage() {
 
       {/* Conversation area */}
       <div className="chat-area">
+        <div className="chat-header">
+          <span>{activeUser}</span>
+          <select
+            onChange={e =>
+              document.documentElement.style.setProperty(
+                '--chat-bg',
+                `url(${e.target.value})`,
+              )
+            }
+          >
+            <option value="https://img.freepik.com/free-vector/night-ocean-landscape-full-moon-stars-shine_107791-7397.jpg?semt=ais_hybrid&w=740">🌃 Night Scene</option>
+            <option value="https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=1200&h=800&fit=crop">🌙 Night Sky</option>
+            <option value="https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?w=1200&h=800&fit=crop">💜 Purple Gradient</option>
+            <option value="https://images.unsplash.com/photo-1557672172-298e090d0f80?w=1200&h=800&fit=crop">⬛ Dark Minimal</option>
+            <option value="https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1200&h=800&fit=crop">🌊 Ocean Blue</option>
+            <option value="https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?w=1200&h=800&fit=crop">🌅 Sunset</option>
+            <option value="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200&h=800&fit=crop">🌲 Forest</option>
+            <option value="https://images.unsplash.com/photo-1533709752211-118fcffe3312?w=1200&h=800&fit=crop">✨ Lights</option>
+          </select>
+        </div>
+
         <div className="messages" ref={chatBoxRef}>
           {!activeUser ? (
-            <div
-              style={{
-                textAlign: 'center',
-                marginTop: '50px',
-                opacity: 0.5,
-                color: 'white',
-              }}
-            >
+            <div className="empty-state">
               Select a user to start chatting
             </div>
           ) : messages.length === 0 ? (
-            <div
-              style={{
-                textAlign: 'center',
-                marginTop: '50px',
-                opacity: 0.5,
-                color: 'white',
-              }}
-            >
+            <div className="empty-state">
               No messages yet. Start the conversation.
             </div>
           ) : (
-            messages.map((msg, i) => (
-              <div
-                key={i}
-                className={`message ${msg.from === userData.username ? 'sent' : 'received'}`}
-              >
-                <div>{msg.text}</div>
-                <div className="timestamp">{msg.time || msg.createdAt}</div>
+            Object.entries(groupByDate(messages)).map(([date, msgs]) => (
+              <div key={date} className="date-group">
+                <div className="date-separator">{date}</div>
+                {msgs.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`message ${msg.from === userData.username ? 'sent' : 'received'}`}
+                  >
+                    <div className="bubble">
+                      <div>{msg.text}</div>
+                      <div className="timestamp-inline">
+                        {(msg.dateTime || msg.createdAt).split(' ').slice(-2).join(' ')}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ))
           )}
@@ -172,7 +205,6 @@ export default function ChatPage() {
                 placeholder="Type a message..."
                 onKeyDown={e => e.key === 'Enter' && sendMessage()}
               />
-
               <button onClick={sendMessage}>Send</button>
             </div>
           </div>
