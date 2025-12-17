@@ -2,6 +2,21 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import '../styles/chat.css';
 import { useUserData } from '../providers/userData';
 import socket from '../socket';
+import EmojiPicker from 'emoji-picker-react';
+import { HexColorPicker } from 'react-colorful';
+
+/*
+ISSUES/Improvements:
+1) Unite wallpaper and colour pallete in one thing
+2) when in mobile, users and chatbox not seen (Improve responsivess)
+3) Add delivered and seen feature in chats
+4) Change class/id names to start with chat
+5) When newly loaded, the image(wallpaper) is not seen until changed
+6) Permanent memory of wallpaper to be added (database)
+7) Only Premium users can change wallpaper and colours
+8) Fix color-popover and emoji-popover position/styling
+9) Integrate Chats with channels
+*/
 
 export default function ChatPage() {
   const { userData } = useUserData();
@@ -10,6 +25,11 @@ export default function ChatPage() {
   const [input, setInput] = useState('');
   const [friends, setFriends] = useState([]);
   const chatBoxRef = useRef(null);
+  const [showEmoji, setShowEmoji] = useState(false);
+  const emojiRef = useRef(null);
+  const [showColor, setShowColor] = useState(false);
+  const [bgColor, setBgColor] = useState('#020617');
+  const colorRef = useRef(null);
 
   const scrollBottom = useCallback(() => {
     const el = chatBoxRef.current;
@@ -17,12 +37,15 @@ export default function ChatPage() {
   }, []);
 
   useEffect(() => {
-    socket.on('receiveMessage', msg => {
+    const handler = msg => {
       if (msg.from === activeUser) {
         setMessages(prev => [...prev, msg]);
         scrollBottom();
       }
-    });
+    };
+
+    socket.on('receiveMessage', handler);
+    return () => socket.off('receiveMessage', handler);
   }, [activeUser, scrollBottom]);
 
   // Load friend list only once
@@ -111,12 +134,49 @@ export default function ChatPage() {
   const groupByDate = msgs => {
     const map = {};
     msgs.forEach(m => {
-      const d = (m.dateTime || m.createdAt).split(',')[0];
+      const raw = m.dateTime || m.createdAt;
+      const d = new Date(raw).toDateString();
       if (!map[d]) map[d] = [];
       map[d].push(m);
     });
     return map;
   };
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--chat-bg', bgColor);
+  }, [bgColor]);
+
+  useEffect(() => {
+    const close = e => {
+      if (emojiRef.current && !emojiRef.current.contains(e.target)) {
+        setShowEmoji(false);
+      }
+    };
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, []);
+
+  useEffect(() => {
+    const close = e => {
+      if (colorRef.current && !colorRef.current.contains(e.target)) {
+        setShowColor(false);
+      }
+    };
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = e => {
+      if (e.key === 'Escape') {
+        setShowEmoji(false);
+        setShowColor(false);
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   return (
     <div style={{ display: 'flex', height: '100vh', width: '90vw' }}>
@@ -152,22 +212,60 @@ export default function ChatPage() {
               )
             }
           >
-            <option value="https://img.freepik.com/free-vector/night-ocean-landscape-full-moon-stars-shine_107791-7397.jpg?semt=ais_hybrid&w=740">🌃 Night Scene</option>
-            <option value="https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=1200&h=800&fit=crop">🌙 Night Sky</option>
-            <option value="https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?w=1200&h=800&fit=crop">💜 Purple Gradient</option>
-            <option value="https://images.unsplash.com/photo-1557672172-298e090d0f80?w=1200&h=800&fit=crop">⬛ Dark Minimal</option>
-            <option value="https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1200&h=800&fit=crop">🌊 Ocean Blue</option>
-            <option value="https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?w=1200&h=800&fit=crop">🌅 Sunset</option>
-            <option value="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200&h=800&fit=crop">🌲 Forest</option>
-            <option value="https://images.unsplash.com/photo-1533709752211-118fcffe3312?w=1200&h=800&fit=crop">✨ Lights</option>
+            <option value="https://img.freepik.com/free-vector/night-ocean-landscape-full-moon-stars-shine_107791-7397.jpg?semt=ais_hybrid&w=740">
+              🌃 Night Scene
+            </option>
+            <option value="https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=1200&h=800&fit=crop">
+              🌙 Night Sky
+            </option>
+            <option value="https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?w=1200&h=800&fit=crop">
+              💜 Purple Gradient
+            </option>
+            <option value="https://images.unsplash.com/photo-1557672172-298e090d0f80?w=1200&h=800&fit=crop">
+              ⬛ Dark Minimal
+            </option>
+            <option value="https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1200&h=800&fit=crop">
+              🌊 Ocean Blue
+            </option>
+            <option value="https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?w=1200&h=800&fit=crop">
+              🌅 Sunset
+            </option>
+            <option value="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200&h=800&fit=crop">
+              🌲 Forest
+            </option>
+            <option value="https://images.unsplash.com/photo-1533709752211-118fcffe3312?w=1200&h=800&fit=crop">
+              ✨ Lights
+            </option>
           </select>
+          <div className="color-wrapper" ref={colorRef}>
+            <button
+              className="color-btn"
+              onClick={e => {
+                e.stopPropagation();
+                setShowEmoji(false);
+                setShowColor(p => !p);
+              }}
+            >
+              🎨
+            </button>
+
+            {showColor && (
+              <div className="color-popover">
+                <HexColorPicker
+                  color={bgColor}
+                  onChange={c => {
+                    setBgColor(c);
+                    document.documentElement.style.setProperty('--chat-bg', c);
+                  }}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="messages" ref={chatBoxRef}>
           {!activeUser ? (
-            <div className="empty-state">
-              Select a user to start chatting
-            </div>
+            <div className="empty-state">Select a user to start chatting</div>
           ) : messages.length === 0 ? (
             <div className="empty-state">
               No messages yet. Start the conversation.
@@ -184,7 +282,10 @@ export default function ChatPage() {
                     <div className="bubble">
                       <div>{msg.text}</div>
                       <div className="timestamp-inline">
-                        {(msg.dateTime || msg.createdAt).split(' ').slice(-2).join(' ')}
+                        {(msg.dateTime || msg.createdAt)
+                          .split(' ')
+                          .slice(-2)
+                          .join(' ')}
                       </div>
                     </div>
                   </div>
@@ -198,6 +299,32 @@ export default function ChatPage() {
         {activeUser && (
           <div className="chat-controls">
             <div className="input-area">
+              <div className="emoji-wrapper" ref={emojiRef}>
+                <button
+                  className="emoji-btn"
+                  onClick={e => {
+                    e.stopPropagation();
+                    setShowColor(false);
+                    setShowEmoji(p => !p);
+                  }}
+                >
+                  😊
+                </button>
+
+                {showEmoji && (
+                  <div className="emoji-popover">
+                    <EmojiPicker
+                      theme="dark"
+                      onEmojiClick={e => {
+                        setInput(prev => prev + e.emoji);
+                      }}
+                      searchDisabled={false}
+                      previewConfig={{ showPreview: false }}
+                    />
+                  </div>
+                )}
+              </div>
+
               <input
                 type="text"
                 value={input}
@@ -205,6 +332,7 @@ export default function ChatPage() {
                 placeholder="Type a message..."
                 onKeyDown={e => e.key === 'Enter' && sendMessage()}
               />
+
               <button onClick={sendMessage}>Send</button>
             </div>
           </div>
