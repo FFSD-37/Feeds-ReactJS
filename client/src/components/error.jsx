@@ -1,23 +1,30 @@
 const NotFound = () => {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-10 gap-6">
-      <h1 className="text-8xl font-extrabold text-gray-800 tracking-tight">
-        404
-      </h1>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-blue-50 px-6">
+      <div className="relative max-w-2xl w-full text-center bg-white/70 backdrop-blur-xl rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.08)] px-12 py-16">
 
-      <p className="text-3xl text-gray-600 mt-4">Page not found</p>
+        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-72 h-72 bg-blue-400/20 rounded-full blur-3xl" />
 
-      <p className="text-gray-500 mt-6 text-xl max-w-4xl text-center break-words">
-        We could not locate the page you were trying to open. It might have been
-        removed or renamed.
-      </p>
+        <h1 className="relative text-[10rem] font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 leading-none animate-pulse">
+          404
+        </h1>
 
-      <a
-        href="/"
-        className="block !px-10 !py-4 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition"
-      >
-        Go back to Home
-      </a>
+        <p className="mt-4 text-3xl font-semibold text-gray-800">
+          Page not found
+        </p>
+
+        <p className="mt-6 text-lg text-gray-600 max-w-xl mx-auto">
+          The page you’re looking for doesn’t exist or may have been moved.
+          Let’s get you back somewhere familiar.
+        </p>
+
+        <a
+          href="/"
+          className="inline-flex items-center justify-center mt-10 px-10 py-4 text-lg font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.03] transition-all duration-300"
+        >
+          Go back home
+        </a>
+      </div>
     </div>
   );
 };

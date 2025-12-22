@@ -22,6 +22,7 @@ import {
   fetchOverlayUser,
   followSomeone,
   unfollowSomeone,
+  unRequestSomeone,
   handlegetnotification,
   handlegetsettings,
   togglePP,
@@ -183,6 +184,8 @@ router.post("/fetchUserOverlay", fetchOverlayUser);
 router.post("/follow/:username", isAuthuser, followSomeone);
 
 router.post("/unfollow/:username", isAuthuser, unfollowSomeone);
+
+router.post("/unrequest/:username", isAuthuser, unRequestSomeone);
 
 router.get("/chat/:username", isAuthuser, getChat);
 
