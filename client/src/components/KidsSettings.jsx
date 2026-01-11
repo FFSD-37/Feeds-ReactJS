@@ -4,7 +4,13 @@ import { useUserData } from "../providers/userData.jsx";
 import "../styles/KidsSettings.css";
 import "../styles/alert.css";
 
-// Lightweight modal overlay (local to this page)
+/*
+ISSUES/Improvements:
+1. Deactivate my account not implemented on server side yet.
+2. Time control could use more granular options (e.g., different limits for weekdays/weekends).
+3. Not deactivating account after time limit reached.
+*/
+
 const Modal = ({ title, onClose, children }) => {
   const [mounted, setMounted] = useState(false);
 

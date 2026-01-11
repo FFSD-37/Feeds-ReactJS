@@ -5,6 +5,13 @@ import { useLocation } from 'react-router-dom';
 import { useUserData } from '../providers/userData';
 import base64ToBlobUrl from '../utils/base64toBlob';
 
+/*
+ISSUES/Improvements:
+1. Add progress bar for upload status.
+2. Adding limit to caption length.
+
+*/
+
 const FinalizePost = () => {
   const { userData } = useUserData();
   const [caption, setCaption] = useState('');

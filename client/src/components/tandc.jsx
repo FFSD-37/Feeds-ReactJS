@@ -1,6 +1,13 @@
 import React from "react";
 import "../styles/TandC.css";
 
+/*
+ISSUES/Improvements:
+1. Better styling.
+2. Add more sections as needed.
+3. Add a "Back to Home" button.
+*/
+
 const TandC = () => (
   <div className="tandc-container">
     <main className="tandc-card">

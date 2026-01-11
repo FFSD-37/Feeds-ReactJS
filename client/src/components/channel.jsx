@@ -33,6 +33,13 @@ import './../styles/channel.css';
 import { useUserData } from './../providers/userData.jsx';
 import usePostOverlay from '../hooks/usePostOverlay.jsx';
 
+/*
+ISSUES/Improvements:
+1. When mouse points to options button , change it to hand cursor.
+2. Add pagination or infinite scroll for posts if there are many.
+3. In members modal, show profile pics in a circle, not the default ones.
+*/
+
 function ChannelPage() {
   const { channelName } = useParams();
   const { userData } = useUserData();

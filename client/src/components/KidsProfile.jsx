@@ -4,6 +4,11 @@ import { useUserData } from '../providers/userData.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import '../styles/KidsProfile.css';
 
+/*
+ISSUES/Improvements:
+1. Not yet implemented
+*/
+
 const KidsProfile = () => {
   const [activeTab, setActiveTab] = useState('channels'); // Default to Channels (Posts)
   const { userData } = useUserData();

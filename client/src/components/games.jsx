@@ -1,6 +1,15 @@
 import { useState } from "react";
 import "./../styles/games.css";
 
+/*
+ISSUES/Improvements:
+1. Do something about Motocross video quality.
+2. Add more games to the list.
+3. Implement pagination or infinite scroll for better performance with many games.
+4. Add a "No results found" message when the search yields no games.
+5. Consider adding categories or filters for better game discovery.
+*/
+
 export default function Games() {
   const [searchTerm, setSearchTerm] = useState("");
 

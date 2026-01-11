@@ -5,6 +5,22 @@ import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import '../styles/ProfilePage.css';
 
+/*
+ISSUES/Improvements:
+1. Change the way profile page views in following ways:
+   a. If the user is viewing their own profile, show all tabs (Posts, Liked, Saved, Archived).
+   b. If the user is viewing someone else's profile which is public or a private which he/she follows, show only "Posts" tab.
+   c. If the user is viewing a private profile which he/she does not follow, show a message indicating that the account is private and hide all posts/follwers/followings.
+   d. If the user logged in is channel, then show only "Posts" tab for only public profiles and there is no follow button and followers/followings are not visible.
+   e. If the user is blocked by the profile user, show a message indicating that the user is blocked and add an unblock option.
+2. Add pagination or infinite scroll for posts, followers, and followings to improve performance on profiles with large amounts of data.
+3. Add a "No results found" message when the search yields no followers/followings.
+4. Remove @ from display name in bio section.
+5. Add an option to view posts from the profile itself.
+6. Add an option to archive/unarchive posts directly from the profile page.
+7. Add an option to delete posts directly from the profile page.
+*/
+
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('posts');
   const { userData } = useUserData();

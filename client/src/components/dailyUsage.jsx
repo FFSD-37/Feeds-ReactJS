@@ -2,6 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import Chart from 'chart.js/auto';
 import '../styles/dailyUsage.css';
 
+/*
+ISSUES/Improvements:
+1. Add Daily Usage in sidebar navigation.
+2. Implement date range filter for more granular data viewing.
+3. Optimize data fetching with pagination or lazy loading for large datasets.
+4. Enhance chart interactivity with zoom and pan features.
+5. Make it mobile responsive for better accessibility on different devices.
+6. Include comparison with previous periods (week/month) for trend analysis.
+*/
+
 export default function DailyUsagePage() {
   const [sessions, setSessions] = useState([]);
   const [stats, setStats] = useState(null);

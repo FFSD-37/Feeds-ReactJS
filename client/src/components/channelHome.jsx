@@ -4,6 +4,13 @@ import { useUserData } from './../providers/userData.jsx';
 import ChannelPostOverlay from './ChannelPostOverlay.jsx';
 import './../styles/channelHome.css';
 
+/*
+ISSUES/Improvements:
+1. Close the menu trigger when clicking outside or escape key is pressed.
+2. Close the report modal when clicking outside or escape key is pressed.
+3. Make the posts smaller.
+*/
+
 function ChannelHome() {
   const { userData } = useUserData();
   const navigate = useNavigate();

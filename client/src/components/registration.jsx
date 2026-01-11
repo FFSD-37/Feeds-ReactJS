@@ -1,6 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './../styles/register.css';
 
+/*
+ISSUES/Improvements:
+1. Improve css styling for kids-specific sections
+*/
+
 export default function Register() {
   const initialValues = {
     fullName: '',

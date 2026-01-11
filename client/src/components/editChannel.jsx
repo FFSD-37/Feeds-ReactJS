@@ -3,6 +3,14 @@ import { createPortal } from 'react-dom';
 import ImageKit from 'imagekit-javascript';
 import './../styles/editChannel.css';
 
+/*
+ISSUES/Improvements:
+1. Make it mobile responsive for better accessibility on different devices.
+2. When clicked edit on a field, focus should go to that field automatically i.e. cursor.
+3. Add remove logo option.
+4. Add character limit to channel description.
+*/
+
 function EditChannel() {
   const [edit_channel_data, set_edit_channel_data] = useState({});
   const [edit_channel_logo, set_edit_channel_logo] = useState('');

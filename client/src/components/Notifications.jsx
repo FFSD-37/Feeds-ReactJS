@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
 
+/*
+ISSUES/Improvements:
+1. Better Responsive design for mobile devices.
+2. Add "Mark all as read" button for convenience.
+3. Implement real-time updates using WebSockets.
+4. Add pagination or infinite scroll for large number of notifications.
+5. Add delete notification option.
+*/
+
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);

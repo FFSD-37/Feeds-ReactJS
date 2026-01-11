@@ -2,6 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import ImageKit from 'imagekit-javascript';
 import './../styles/editProfile.css';
 
+/*
+ISSUES/Improvements:
+1. When on smaller screens, the edit profile heading should go above.
+2. Add close button to terms and conditions overlay for better UX.
+3. Add remove profile photo option.
+4. When clicked edit on a field, focus should go to that field automatically i.e. cursor.
+5. Add character limits to bio and display name fields.
+*/
+
 function EditProfile() {
   const [edit_profile_user, set_edit_profile_user] = useState({});
   const [edit_profile_photo, set_edit_profile_photo] = useState('');

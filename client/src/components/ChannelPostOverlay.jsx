@@ -2,6 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import '../styles/channelPostOverlay.css';
 
+/*
+ISSUES/Improvements:
+1. The like number should appear adjacent to the like button, not below it.
+2. Enter Key to send the comment/reply.
+*/
+
 const timeAgo = dateString => {
   const date = new Date(dateString);
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);

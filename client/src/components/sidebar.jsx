@@ -3,6 +3,12 @@ import './../styles/sidebar.css';
 import { useUserData } from './../providers/userData.jsx';
 import { useNavigate } from 'react-router-dom';
 
+/*
+ISSUES/Improvements:
+1. When entering parental password, pressing 'Enter' key does not submit the form.
+2. Add DailyUsage option.
+*/
+
 function Sidebar() {
   const { userData, setUserData } = useUserData();
   const navigate = useNavigate();

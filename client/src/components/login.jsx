@@ -1,101 +1,110 @@
-import React, { useEffect, useState } from "react";
-import "./../styles/login.css";
+import React, { useEffect, useState } from 'react';
+import './../styles/login.css';
+
+/*
+ISSUES/Improvements:
+1. Enter Key not working
+2. Page not dynamic - make the usertypeToggle dropdown based on shorter screens
+3. Forgot password yet to be implemented
+*/
 
 export default function Login() {
-  const [role, setRole] = useState("normal");
-  const [identifierMode, setIdentifierMode] = useState("email");
-  const [serverMessage, setServerMessage] = useState("");
+  const [role, setRole] = useState('normal');
+  const [identifierMode, setIdentifierMode] = useState('email');
+  const [serverMessage, setServerMessage] = useState('');
   const [showAlert, setShowAlert] = useState(false);
 
   const [values, setValues] = useState({
-    childEmail: "",
-    parentPassword: "",
-    identifier: "",
-    password: "",
-    channelName: "",
-    adminName: "",
-    channelPassword: ""
+    childEmail: '',
+    parentPassword: '',
+    identifier: '',
+    password: '',
+    channelName: '',
+    adminName: '',
+    channelPassword: '',
   });
 
   const [visiblePasswords, setVisiblePasswords] = useState({
     parentPassword: false,
     password: false,
-    channelPassword: false
+    channelPassword: false,
   });
 
   const roleTitle = {
-    kids: "Child Account",
-    normal: "Standard Account",
-    channel: "Channel Account"
+    kids: 'Child Account',
+    normal: 'Standard Account',
+    channel: 'Channel Account',
   };
 
   useEffect(() => {
-    if (role !== "normal") setIdentifierMode("email");
+    if (role !== 'normal') setIdentifierMode('email');
     setShowAlert(false);
-    setServerMessage("");
+    setServerMessage('');
   }, [role]);
 
-  const onChange = (e) => {
+  const onChange = e => {
     const { name, value } = e.target;
-    setValues((s) => ({ ...s, [name]: value }));
+    setValues(s => ({ ...s, [name]: value }));
   };
 
-  const togglePasswordVisibility = (key) => {
-    setVisiblePasswords((s) => ({ ...s, [key]: !s[key] }));
+  const togglePasswordVisibility = key => {
+    setVisiblePasswords(s => ({ ...s, [key]: !s[key] }));
   };
 
   const handleSubmit = async () => {
     const payload = {};
-    if (role === "kids") {
+    if (role === 'kids') {
       payload.childEmail = values.childEmail;
       payload.parentPassword = values.parentPassword;
-      payload.userTypeiden = "parent";
-    } else if (role === "normal") {
+      payload.userTypeiden = 'parent';
+    } else if (role === 'normal') {
       payload.identifier = values.identifier;
       payload.password = values.password;
-      payload.userTypeiden = identifierMode === "username" ? "Username" : "Email";
-    } else if (role === "channel") {
+      payload.userTypeiden =
+        identifierMode === 'username' ? 'Username' : 'Email';
+    } else if (role === 'channel') {
       payload.channelName = values.channelName;
       payload.adminName = values.adminName;
       payload.channelPassword = values.channelPassword;
-      payload.userTypeiden = "channel";
+      payload.userTypeiden = 'channel';
     }
 
     payload.type = roleTitle[role];
     console.log(payload);
 
     try {
-      const res = await fetch("http://localhost:3000/atin_job", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('http://localhost:3000/atin_job', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-        credentials: "include"
+        credentials: 'include',
       });
 
       const data = await res.json();
       if (data && data.success) {
         if (data.redirect) window.location.href = data.redirect;
-        else window.location.href = "/home";
+        else window.location.href = '/home';
       } else {
-        setServerMessage((data && data.reason) || "Login failed. Please check credentials.");
+        setServerMessage(
+          (data && data.reason) || 'Login failed. Please check credentials.',
+        );
         setShowAlert(true);
       }
     } catch (err) {
-      console.error("Login error:", err);
-      setServerMessage("An error occurred. Please try again.");
+      console.error('Login error:', err);
+      setServerMessage('An error occurred. Please try again.');
       setShowAlert(true);
     }
   };
 
   const roleIcons = {
-    kids: "👶",
-    normal: "👤",
-    channel: "📺"
+    kids: '👶',
+    normal: '👤',
+    channel: '📺',
   };
 
   return (
     <div className="login-wrap">
-
       <div className="login-heading">
         <h1>Welcome Back</h1>
         <p>Select your account type to continue</p>
@@ -103,18 +112,20 @@ export default function Login() {
 
       <div className="login-roles">
         <div
-          className={`login-role ${role === "kids" ? "login-active" : ""}`}
-          onClick={() => setRole("kids")}
+          className={`login-role ${role === 'kids' ? 'login-active' : ''}`}
+          onClick={() => setRole('kids')}
           tabIndex={0}
         >
           <span className="login-icon">{roleIcons.kids}</span>
           <div className="login-title">Child Account</div>
-          <div className="login-desc">Restricted portal with guardian approval</div>
+          <div className="login-desc">
+            Restricted portal with guardian approval
+          </div>
         </div>
 
         <div
-          className={`login-role ${role === "normal" ? "login-active" : ""}`}
-          onClick={() => setRole("normal")}
+          className={`login-role ${role === 'normal' ? 'login-active' : ''}`}
+          onClick={() => setRole('normal')}
           tabIndex={0}
         >
           <span className="login-icon">{roleIcons.normal}</span>
@@ -123,8 +134,8 @@ export default function Login() {
         </div>
 
         <div
-          className={`login-role ${role === "channel" ? "login-active" : ""}`}
-          onClick={() => setRole("channel")}
+          className={`login-role ${role === 'channel' ? 'login-active' : ''}`}
+          onClick={() => setRole('channel')}
           tabIndex={0}
         >
           <span className="login-icon">{roleIcons.channel}</span>
@@ -137,7 +148,10 @@ export default function Login() {
         {showAlert && (
           <div className="login-alert" role="alert">
             <div>{serverMessage}</div>
-            <button className="login-closebtn" onClick={() => setShowAlert(false)}>
+            <button
+              className="login-closebtn"
+              onClick={() => setShowAlert(false)}
+            >
               ×
             </button>
           </div>
@@ -146,7 +160,7 @@ export default function Login() {
         <h2 id="loginHeading">{roleTitle[role]} Login</h2>
 
         <div>
-          {role === "kids" && (
+          {role === 'kids' && (
             <>
               <div className="login-field-group">
                 <label className="login-label" htmlFor="login-childEmail">
@@ -172,7 +186,7 @@ export default function Login() {
                   <input
                     id="login-parentPassword"
                     name="parentPassword"
-                    type={visiblePasswords.parentPassword ? "text" : "password"}
+                    type={visiblePasswords.parentPassword ? 'text' : 'password'}
                     placeholder="Enter guardian password"
                     value={values.parentPassword}
                     onChange={onChange}
@@ -180,9 +194,9 @@ export default function Login() {
                   <button
                     type="button"
                     className="login-password-toggle"
-                    onClick={() => togglePasswordVisibility("parentPassword")}
+                    onClick={() => togglePasswordVisibility('parentPassword')}
                   >
-                    {visiblePasswords.parentPassword ? "👁️‍🗨️" : "👁️"}
+                    {visiblePasswords.parentPassword ? '👁️‍🗨️' : '👁️'}
                   </button>
                 </div>
                 <div className="login-hint">
@@ -192,7 +206,7 @@ export default function Login() {
             </>
           )}
 
-          {role === "normal" && (
+          {role === 'normal' && (
             <>
               <div className="login-field-group">
                 <div className="login-toggle-wrapper">
@@ -200,15 +214,15 @@ export default function Login() {
                   <div className="login-toggle-group">
                     <button
                       type="button"
-                      className={`login-toggle-btn ${identifierMode === "email" ? "login-active" : ""}`}
-                      onClick={() => setIdentifierMode("email")}
+                      className={`login-toggle-btn ${identifierMode === 'email' ? 'login-active' : ''}`}
+                      onClick={() => setIdentifierMode('email')}
                     >
                       Email
                     </button>
                     <button
                       type="button"
-                      className={`login-toggle-btn ${identifierMode === "username" ? "login-active" : ""}`}
-                      onClick={() => setIdentifierMode("username")}
+                      className={`login-toggle-btn ${identifierMode === 'username' ? 'login-active' : ''}`}
+                      onClick={() => setIdentifierMode('username')}
                     >
                       Username
                     </button>
@@ -218,11 +232,11 @@ export default function Login() {
                 <div className="login-field">
                   <input
                     name="identifier"
-                    type={identifierMode === "username" ? "text" : "email"}
+                    type={identifierMode === 'username' ? 'text' : 'email'}
                     placeholder={
-                      identifierMode === "username"
-                        ? "Enter your username"
-                        : "you@example.com"
+                      identifierMode === 'username'
+                        ? 'Enter your username'
+                        : 'you@example.com'
                     }
                     value={values.identifier}
                     onChange={onChange}
@@ -235,7 +249,7 @@ export default function Login() {
                 <div className="login-field">
                   <input
                     name="password"
-                    type={visiblePasswords.password ? "text" : "password"}
+                    type={visiblePasswords.password ? 'text' : 'password'}
                     placeholder="Enter your password"
                     value={values.password}
                     onChange={onChange}
@@ -243,16 +257,16 @@ export default function Login() {
                   <button
                     type="button"
                     className="login-password-toggle"
-                    onClick={() => togglePasswordVisibility("password")}
+                    onClick={() => togglePasswordVisibility('password')}
                   >
-                    {visiblePasswords.password ? "👁️‍🗨️" : "👁️"}
+                    {visiblePasswords.password ? '👁️‍🗨️' : '👁️'}
                   </button>
                 </div>
               </div>
             </>
           )}
 
-          {role === "channel" && (
+          {role === 'channel' && (
             <>
               <div className="login-field-group">
                 <label className="login-label" htmlFor="login-channelName">
@@ -294,7 +308,9 @@ export default function Login() {
                   <input
                     id="login-channelPassword"
                     name="channelPassword"
-                    type={visiblePasswords.channelPassword ? "text" : "password"}
+                    type={
+                      visiblePasswords.channelPassword ? 'text' : 'password'
+                    }
                     placeholder="Enter password"
                     value={values.channelPassword}
                     onChange={onChange}
@@ -302,9 +318,9 @@ export default function Login() {
                   <button
                     type="button"
                     className="login-password-toggle"
-                    onClick={() => togglePasswordVisibility("channelPassword")}
+                    onClick={() => togglePasswordVisibility('channelPassword')}
                   >
-                    {visiblePasswords.channelPassword ? "👁️‍🗨️" : "👁️"}
+                    {visiblePasswords.channelPassword ? '👁️‍🗨️' : '👁️'}
                   </button>
                 </div>
                 <div className="login-hint">

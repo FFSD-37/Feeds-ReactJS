@@ -29,6 +29,12 @@ import {
   FaPaw,
   FaCar,
 } from 'react-icons/fa';
+
+/*
+ISSUES/Improvements:
+1. Add pagination or infinite scroll for large result sets.
+*/
+
 const Connect = () => {
   const { userData } = useUserData();
   const navigate = useNavigate();

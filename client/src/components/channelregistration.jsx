@@ -1,6 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './../styles/channelRegistration.css';
 
+/*
+ISSUES/Improvements:
+1. Make it more responsive for mobile.
+*/
+
 const PLACEHOLDER_IMAGE_PATH =
   '/Images/channelLogo.webp';
 

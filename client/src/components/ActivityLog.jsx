@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 import "./../styles/activityLog.css";
 
+/*
+ISSUES/Improvements:
+1. All usernames text should start with @
+*/
+
 export default function ActivityLog() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);

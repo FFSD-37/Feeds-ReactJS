@@ -1,6 +1,13 @@
 import React from "react";
 import "../styles/Help.css";
 
+/*
+ISSUES/Improvements:
+1. Add more FAQs based on user feedback.
+2. Implement a search feature for FAQs.
+3. Include links to relevant help articles like forgot password.
+*/
+
 const faqs = [
   {
     q: "How do I reset my password?",

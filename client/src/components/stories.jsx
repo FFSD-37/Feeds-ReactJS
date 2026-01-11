@@ -1,6 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./../styles/stories.css";
 
+/*
+ISSUES/Improvements:
+1. Better responsive design for small screens (e.g. mobile).
+2. Better styling overall.
+3. Like option not yet implemented on server side.
+4. Go to profile from story viewer.
+5. Story upload option.
+6. Story deletion option.
+7. Own story displayed in the page.
+8. Story viewer accessibility improvements.
+*/
+
 /**
  * Stories component
  *

@@ -2,6 +2,13 @@ import { useEffect, useState, useRef } from 'react';
 import { useUserData } from './../providers/userData.jsx';
 import './../styles/Reels.css';
 
+/*
+ISSUES/Improvements:
+1. Fix the audio issue.
+2. Better responsiveness for various screen sizes.
+3. When i click like/save/mute button on a paused reel, it should not start playing automatically.
+*/
+
 const REPORT_OPTIONS = [
   "I just don't like it",
   'Bullying or unwanted contact',

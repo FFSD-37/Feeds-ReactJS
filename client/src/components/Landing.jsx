@@ -12,6 +12,16 @@ import '../styles/Landing.css';
 import { useUserData } from '../providers/userData.jsx';
 import { useNavigate } from 'react-router-dom';
 
+/*
+ISSUES/Improvements:
+1. Optimize API calls with pagination or infinite scroll for posts.
+2. Better Responsive design for mobile devices.
+3. Story indicators for viewed/unviewed stories.
+4. Change the path of stories instead of showing profile on click.
+5. Add tooltips to ads for better user engagement.
+
+*/
+
 const HomePage = () => {
   const { userData } = useUserData();
   const [allPosts, setAllPosts] = useState([]);

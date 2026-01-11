@@ -6,6 +6,11 @@ import "../styles/KidsSettings.css";
 import "../styles/alert.css";
 import { useNavigate } from 'react-router-dom';
 
+/*
+ISSUES/Improvements:
+1. Better Responsiveness for various screen sizes.
+*/
+
 const Modal = ({ children, onClose }) => {
     // ensure modal root exists
     const modalRootId = "modal-root";
