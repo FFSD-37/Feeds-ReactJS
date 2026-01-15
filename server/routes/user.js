@@ -60,7 +60,7 @@ import {
   handlegetkidsTime,
   handlesetkidsTime,
   handledeactivateKid,
-  handlegetBlcokedUsers
+  handlegetBlcokedUsers,
 } from "../controllers/Gourav/profile.js";
 import {
   handlegetchannel,
@@ -106,34 +106,57 @@ import homeRouter from "./home.js";
 
 const router = express.Router();
 
-router.get("/", isAuthuser, (req, res) => {
+// Public routes (no authentication required)
+router.post("/signup", handleSignup);
+router.post("/sendotp", sendotp);
+router.post("/verifyotp", verifyotp);
+router.post("/updatepass", updatepass);
+router.get("/imagKitauth", handleimagKitauth);
+router.get("/fpadmin", handlefpadmin);
+router.post("/updatepassadmin", adminPassUpdate);
+router.post("/fetchUserOverlay", fetchOverlayUser);
+router.post("/atin_job", handleloginsecond);
+router.post("/adminLogin", handleadminlogin);
+
+router.get("/healthCheck", (req, res) => {
+  return res.json({
+    "success": true,
+    "msg": "Server running healthy"
+  }).status(200);
+});
+
+// Protected routes (require authentication)
+router.use(isAuthuser);
+
+router.get("/", (req, res) => {
   res.redirect("/login");
 });
 
-router.get("/home", isAuthuser, handlegetHome);
 
-router.get("/payment", isAuthuser, handlegetpayment);
+router.get("/home", handlegetHome);
 
-// router.get("/profile/:username", isAuthuser, handlegetprofile);
+router.get("/payment", handlegetpayment);
 
-router.get("/connect", isAuthuser, handleGetConnect);
+// router.get("/profile/:username", handlegetprofile);
 
-router.get("/stories", isAuthuser, handlegetstories);
+router.get("/connect", handleGetConnect);
 
-router.get("/create_post", isAuthuser, handlegetcreatepost);
+router.get("/stories", handlegetstories);
 
-router.get("/create_post_2", isAuthuser, handlegetcreatepost2);
+router.get("/create_post", handlegetcreatepost);
 
-router.get("/notifications", isAuthuser, handlegetnotification);
+router.get("/create_post_2", handlegetcreatepost2);
 
-router.get("/login", isAuthuser, (req, res) => {
+router.get("/notifications", handlegetnotification);
+
+router.get("/login", (req, res) => {
   res.render("login", {
     loginType: null,
     msg: null,
   });
 });
 
-router.get("/verify", isAuthuser, (req, res) => {
+router.get("/verify", (req, res) => {
   return res.json({
     username: req.userDetails.data[0],
     email: req.userDetails.data[1],
@@ -143,176 +166,156 @@ router.get("/verify", isAuthuser, (req, res) => {
   });
 });
 
-// router.post("/login", isAuthuser, handleLogin);
+// router.post("/login", handleLogin);
 
-router.post("/signup", handleSignup);
+router.post("/contact", handleContact);
 
-router.post("/contact", isAuthuser, handleContact);
+router.post("/delacc", handledelacc);
 
-router.post("/adminLogin", handleadminlogin);
+router.post("/logout", handlelogout);
 
-router.post("/delacc", isAuthuser, handledelacc);
+router.post("/createpost", handlecreatepost);
 
-router.post("/logout", isAuthuser, handlelogout);
+router.get("/edit_profile", handlegeteditprofile);
 
-router.post("/sendotp", sendotp);
+router.post("/checkout_razorpay", checkOut);
 
-router.post("/verifyotp", verifyotp);
+router.post("/payment", checkOut);
 
-router.post("/createpost", isAuthuser, handlecreatepost);
+router.post("/verify_payment", verify_payment);
 
-router.post("/updatepass", updatepass);
+router.post("/updateUserDetails", updateUserProfile);
 
-router.get("/imagKitauth", handleimagKitauth);
+router.post("/follow/:username", followSomeone);
 
-router.get("/fpadmin", handlefpadmin);
+router.post("/unfollow/:username", unfollowSomeone);
 
-router.get("/edit_profile", isAuthuser, handlegeteditprofile);
+router.post("/unrequest/:username", unRequestSomeone);
 
-router.post("/updatepassadmin", adminPassUpdate);
+router.get("/chat/:username", getChat);
 
-router.post("/checkout_razorpay", isAuthuser, checkOut);
+router.get("/friends", getFriendList);
 
-router.post("/payment", isAuthuser, checkOut);
+router.get("/connect/search", getSearch);
 
-router.post("/verify_payment", isAuthuser, verify_payment);
+router.get("/dailyUsage", getDailyusage);
 
-router.post("/updateUserDetails", isAuthuser, updateUserProfile);
+router.get("/settings", handlegetsettings);
 
-router.post("/fetchUserOverlay", fetchOverlayUser);
+router.get("/togglePublicPrivate", togglePP);
 
-router.post("/follow/:username", isAuthuser, followSomeone);
+router.get("/create_channel", signupChannel);
 
-router.post("/unfollow/:username", isAuthuser, unfollowSomeone);
+router.post("/signupChannel", registerChannel);
 
-router.post("/unrequest/:username", isAuthuser, unRequestSomeone);
+router.post("/finalSubmit", createPostfinalize);
 
-router.get("/chat/:username", isAuthuser, getChat);
+router.get("/activityLog", handlegetlog);
 
-router.get("/friends", isAuthuser, getFriendList);
+router.post("/shareFinalPost", uploadFinalPost);
 
-router.get("/connect/search", isAuthuser, getSearch);
+router.post("/report/:username", reportAccount);
 
-router.get("/dailyUsage", isAuthuser, getDailyusage);
+router.post("/postloginchannel", handleloginchannel);
 
-router.get("/settings", isAuthuser, handlegetsettings);
+router.get("/GetAllNotifications", handlegetallnotifications);
 
-router.get("/togglePublicPrivate", isAuthuser, togglePP);
+router.get("/profile/:username", handlegetUserPost);
 
-router.get("/create_channel", isAuthuser, signupChannel);
+router.post("/posts/like", handlelikereel);
 
-router.post("/signupChannel", isAuthuser, registerChannel);
+router.post("/comment", handlepostcomment);
 
-router.post("/finalSubmit", isAuthuser, createPostfinalize);
+router.post("/report_post", handlereportpost);
 
-router.get("/activityLog", isAuthuser, handlegetlog);
+router.get("/ads", handlegetads);
 
-router.post("/shareFinalPost", isAuthuser, uploadFinalPost);
+router.post("/comment/like/:id", handlelikecomment);
 
-router.post("/report/:username", isAuthuser, reportAccount);
+router.post("/block/:username", handleblockuser);
 
-router.post("/postloginchannel", isAuthuser, handleloginchannel);
+router.get("/block", handlegetBlcokedUsers);
 
-router.get("/GetAllNotifications", isAuthuser, handlegetallnotifications);
+router.post("/delete/:id", handledeletepost);
 
-router.get("/profile/:username", isAuthuser, handlegetUserPost);
+router.post("/archive/:id", handlearchivepost);
 
-router.post("/atin_job", handleloginsecond);
+router.post("/unarchive/:id", handleunarchivepost);
 
-router.post("/posts/like", isAuthuser, handlelikereel);
+router.post("/unsave/:id", handleunsavepost);
 
-router.post("/comment", isAuthuser, handlepostcomment);
+router.get("/getchannel/:channelName", handlegetchannel);
 
-router.post("/report_post", isAuthuser, handlereportpost);
+router.get("/getchannelposts", getChannelPosts);
 
-router.get("/ads", isAuthuser, handlegetads);
+router.get("/edit_channel", handleGetEditChannel);
 
-router.post("/comment/like/:id", isAuthuser, handlelikecomment);
+router.post("/updateChannelDetails", updateChannelProfile);
 
-router.post("/block/:username", isAuthuser, handleblockuser);
+router.get("/getAllChannelPosts", getAllChannelPosts);
 
-router.get("/block", isAuthuser, handlegetBlcokedUsers);
+router.get("/channelPost/:id", getSingleChannelPost);
 
-router.post("/delete/:id", isAuthuser, handledeletepost);
+router.post("/channel/like", likeChannelPost);
 
-router.post("/archive/:id", isAuthuser, handlearchivepost);
+router.post("/channel/save", saveChannelPost);
 
-router.post("/unarchive/:id", isAuthuser, handleunarchivepost);
-
-router.post("/unsave/:id", isAuthuser, handleunsavepost);
-
-router.get("/getchannel/:channelName", isAuthuser, handlegetchannel);
-
-router.get("/getchannelposts", isAuthuser, getChannelPosts);
-
-router.get("/edit_channel", isAuthuser, handleGetEditChannel);
-
-router.post("/updateChannelDetails", isAuthuser, updateChannelProfile);
-
-router.get("/getAllChannelPosts", isAuthuser, getAllChannelPosts);
-
-router.get("/channelPost/:id", isAuthuser, getSingleChannelPost);
-
-router.post("/channel/like", isAuthuser, likeChannelPost);
-
-router.post("/channel/save", isAuthuser, saveChannelPost);
-
-router.post("/channel/comment", isAuthuser, commentOnChannelPost);
+router.post("/channel/comment", commentOnChannelPost);
 
 router.get("/channel/comment/replies/:commentId", getChannelCommentReplies);
 
-router.post("/follow_channel/:channelName", isAuthuser, followChannel);
+router.post("/follow_channel/:channelName", followChannel);
 
-router.post("/unfollow_channel/:channelName", isAuthuser, unfollowChannel);
+router.post("/unfollow_channel/:channelName", unfollowChannel);
 
-router.post("/channel/archive/:postId", isAuthuser, archivePost);
+router.post("/channel/archive/:postId", archivePost);
 
-router.post("/channel/unarchive/:postId", isAuthuser, unarchivePost);
+router.post("/channel/unarchive/:postId", unarchivePost);
 
-router.delete("/channel/delete/:postId", isAuthuser, deletePost);
+router.delete("/channel/delete/:postId", deletePost);
 
-router.post("/connect/follow", isAuthuser, followEntity);
+router.post("/connect/follow", followEntity);
 
-router.post("/connect/unfollow", isAuthuser, unfollowEntity);
+router.post("/connect/unfollow", unfollowEntity);
 
 router.use("/home", homeRouter);
 
-router.get("/profile/getbasic/:username", isAuthuser, handlegetBasicDetails);
+router.get("/profile/getbasic/:username", handlegetBasicDetails);
 
-router.get("/profile/sensitive/:username", isAuthuser, handlegetsensitive);
+router.get("/profile/sensitive/:username", handlegetsensitive);
 
-router.get("/isfriend/:username", isAuthuser, handleisfriend);
+router.get("/isfriend/:username", handleisfriend);
 
-router.post("/checkParentPassword", isAuthuser, handleCheckParentalPass);
+router.post("/checkParentPassword", handleCheckParentalPass);
 
-router.get("/kidshome", isAuthuser, getKidsHomePosts);
+router.get("/kidshome", getKidsHomePosts);
 
-router.get("/getCoins", isAuthuser, getCoins);
+router.get("/getCoins", getCoins);
 
-router.post("/kids/change-password", isAuthuser, handlechangepassKids);
+router.post("/kids/change-password", handlechangepassKids);
 
-router.post("/kids/change-parental-password", isAuthuser, handlechangeparentalpass);
+router.post("/kids/change-parental-password", handlechangeparentalpass);
 
-router.get("/kids/time-control", isAuthuser, handlegetkidsTime);
+router.get("/kids/time-control", handlegetkidsTime);
 
-router.post("/kids/time-control", isAuthuser, handlesetkidsTime);
+router.post("/kids/time-control", handlesetkidsTime);
 
-router.post("/kids/deactivate", isAuthuser, handledeactivateKid);
+router.post("/kids/deactivate", handledeactivateKid);
 
-router.get("/reels", isAuthuser, getReelsFeed);
+router.get("/reels", getReelsFeed);
 
-router.post("/likereel", isAuthuser, likeReel);
+router.post("/likereel", likeReel);
 
-router.post("/unlikereel", isAuthuser, unlikeReel);
+router.post("/unlikereel", unlikeReel);
 
-router.post("/savereel", isAuthuser, saveReel);
+router.post("/savereel", saveReel);
 
-router.post("/unsavereel", isAuthuser, unsaveReel);
+router.post("/unsavereel", unsaveReel);
 
-router.post("/commentreel", isAuthuser, commentReel);
+router.post("/commentreel", commentReel);
 
-router.post("/replyreel", isAuthuser, replyReel);
+router.post("/replyreel", replyReel);
 
-router.get("/reelcomments/:id", isAuthuser, getReelComments);
+router.get("/reelcomments/:id", getReelComments);
 
 export default router;

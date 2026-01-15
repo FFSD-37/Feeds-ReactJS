@@ -38,7 +38,7 @@ import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { connectSocket, disconnectSocket } from './redux/slices/socketSlice.js';
 import DailyUsagePage from './components/dailyUsage.jsx';
-import NotFound from './components/error.jsx';
+import NotFoundRoute from './components/notfound.jsx';
 import KidsSettings from './components/KidsSettings.jsx';
 import DeleteAccount from './components/DeleteAccount.jsx';
 import KidsHome from './components/kidsHome.jsx';
@@ -108,7 +108,7 @@ const AppContent = () => {
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/dailyUsage" element={<DailyUsagePage />} />
         <Route path="/DeleteAccount" element={<DeleteAccount />} />
-        <Route path="*" element={<NotFound />} />
+        <Route path="*" element={<NotFoundRoute />} />
         <Route path="/kids-profile/:username" element={<KidsProfile />} />
       </Routes>
       {userData?.username ? (

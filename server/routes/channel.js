@@ -6,6 +6,9 @@ import{
 
 const router = express.Router();
 
+// All routes require authentication
+router.use(isAuthuser);
+
 router.post('/',create_channel);
 
 export default router;

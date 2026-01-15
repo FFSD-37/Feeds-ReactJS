@@ -6,18 +6,21 @@ import { getChannels } from "../controllers/Gourav/profile.js";
 
 const router = express.Router();
 
-router.get("/getFriends", isAuthuser, getFriends);
+// All routes require authentication
+router.use(isAuthuser);
 
-router.get("/getAllPosts", isAuthuser, suggestedPost2);
+router.get("/getFriends", getFriends);
 
-router.get("/ads", isAuthuser, handlegetads);
+router.get("/getAllPosts", suggestedPost2);
 
-router.post("/userpost_comments", isAuthuser, handlegetComments);
+router.get("/ads", handlegetads);
 
-router.post("/userpost_reply",isAuthuser, handlepostreply);
+router.post("/userpost_comments", handlegetComments);
 
-router.post("/comment_report", isAuthuser, handlecommentreport);
+router.post("/userpost_reply", handlepostreply);
 
-router.get("/getChannels", isAuthuser, getChannels);
+router.post("/comment_report", handlecommentreport);
+
+router.get("/getChannels", getChannels);
 
 export default router;
