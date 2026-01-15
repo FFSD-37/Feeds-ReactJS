@@ -12,12 +12,17 @@ import { isAuthuser } from '../middleware/isAuthuser.js';
 
 const router=express.Router();
 
-router.post('/', isAuthuser,handlePostupload);
+// Public routes (no authentication required)
 router.get('/:id',handleGetpost);
-router.delete('/:id', isAuthuser,handlePostDelete);
 router.get('/suggestedPost/get',suggestedPost);
 router.get('/suggested/reels',suggestedReels);
-router.post('/liked/:id', isAuthuser,handleLikePost);
-router.post('/saved/:id', isAuthuser,handleSavePost);
+
+// Protected routes (require authentication)
+router.use(isAuthuser);
+
+router.post('/', handlePostupload);
+router.delete('/:id', handlePostDelete);
+router.post('/liked/:id', handleLikePost);
+router.post('/saved/:id', handleSavePost);
 
 export default router;

@@ -14,6 +14,7 @@ import User from "./models/users_schema.js";
 import Chat from "./models/chatSchema.js";
 import cors from "cors";
 import { clearSession, setSession } from "./controllers/timout.js";
+import { errorhandler } from "./middleware/handlerError.js";
 
 dotenv.config();
 
@@ -119,6 +120,15 @@ io.on("connection", async (socket) => {
     clearSession(socket.userId);
   });
 });
+
+app.use((req, res, next) => {
+  const error = new Error(`Route not found: ${req.originalUrl}`);
+  error.statusCode = 404;
+  next(error);
+});
+
+// Global error handler
+app.use(errorhandler);
 
 // ✅ Start server
 const PORT = process.env.PORT || 3000;
