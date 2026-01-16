@@ -55,19 +55,44 @@ const handlegetComments = async (req, res) => {
 };
 
 const handlepostreply = async (req, res) => {
+  if (!req.userDetails || !req.userDetails.data) {
+    const err = new Error("Unauthorized");
+    err.statusCode = 401;
+    throw err;
+  }
+
   const { data } = req.userDetails;
   const { commentId, reply, postID } = req.body;
+
+  if (!commentId || !reply || !postID) {
+    const err = new Error("Missing required fields");
+    err.statusCode = 400;
+    throw err;
+  }
+
   const user = await Comment.create({
     text: reply,
     parentCommntID: commentId,
     username: data[0],
     avatarUrl: data[2],
   });
-  await Comment.findOneAndUpdate(
+
+  const parentComment = await Comment.findOneAndUpdate(
     { _id: commentId },
-    { $push: { reply_array: user._id } }
+    { $push: { reply_array: user._id } },
+    { new: true }
   );
-  return res.json({ success: true, reply: user });
+
+  if (!parentComment) {
+    const err = new Error("Parent comment not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  return res.json({
+    success: true,
+    reply: user,
+  });
 };
 
 const handlecommentreport = async (req, res) => {

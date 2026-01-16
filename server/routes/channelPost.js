@@ -7,7 +7,10 @@ import { isAuthuser } from "../middleware/isAuthuser.js";
 
 const router = express.Router();
 
-router.post("/post", isAuthuser, handlechannelPostupload);
-router.get("/categories", isAuthuser, handleGetcategories);
+// All routes require authentication
+router.use(isAuthuser);
+
+router.post("/post", handlechannelPostupload);
+router.get("/categories", handleGetcategories);
 
 export default router;
