@@ -189,20 +189,46 @@ You can create **child components** freely under these parent components.
 
 ## Middlewares Used
 
-### Router level middleware(s)
+### Router-Level Middleware(s)
 
-- isAuthuser : Authenticate the user using cooking parsing
+- Authentication middleware  
+  Used to authenticate users using JWT tokens stored in cookies.  
+  Cookies are parsed and verified before allowing access to protected routes and socket connections.
 
-### Built-in middleware(s)
+---
 
-- express.static() : serves the static assets using server-side rendering
-- express.urlencoded() : parses the incoming requests with URL-encoded payloads and the make the parsed data available in req.body
-- express.json() : parses the incoming requests with JSON payloads.
+### Built-in Express Middleware(s)
 
-### Third party middleware(s)
+- express.json()  
+  Parses incoming requests with JSON payloads and makes the parsed data available in req.body.
 
-- cookie-parser : It parses the Cookie header from incoming HTTP requests and populates req.cookies with an object keyed by the cookie names, making it easy to read and manage cookies in your route handlers. It also supports signed cookies to prevent tampering.
-- cors : It simplifies the process of enabling Cross-Origin Resource Sharing (CORS) in your application. 
+- express.urlencoded({ extended: true })  
+  Parses incoming requests with URL-encoded payloads (typically from HTML form submissions) and exposes the data on req.body.
+
+---
+
+### Third-Party Middleware(s)
+
+- cookie-parser  
+  Parses the Cookie header from incoming HTTP requests and populates req.cookies, making cookie handling simple and reliable.
+
+- cors  
+  Enables Cross-Origin Resource Sharing (CORS), allowing the frontend application running on a different origin to communicate securely with the backend while supporting credentials such as cookies.
+
+- socket.io middleware  
+  Used to authenticate socket connections during the handshake phase by validating JWT tokens extracted from cookies.
+
+---
+
+### Custom Middleware(s)
+
+- 404 route handler  
+  Handles all unmatched routes by forwarding a 404 error to the global error handler.
+
+- Global error handler  
+  Centralized error-handling middleware that captures and formats application errors consistently.
+
+
 
 ## 🧾 Notes
 
