@@ -186,7 +186,51 @@ You can create **child components** freely under these parent components.
 
 ---
 
-### 🧾 Notes
+
+## Middlewares Used
+
+### Router-Level Middleware(s)
+
+- Authentication middleware  
+  Used to authenticate users using JWT tokens stored in cookies.  
+  Cookies are parsed and verified before allowing access to protected routes and socket connections.
+
+---
+
+### Built-in Express Middleware(s)
+
+- express.json()  
+  Parses incoming requests with JSON payloads and makes the parsed data available in req.body.
+
+- express.urlencoded({ extended: true })  
+  Parses incoming requests with URL-encoded payloads (typically from HTML form submissions) and exposes the data on req.body.
+
+---
+
+### Third-Party Middleware(s)
+
+- cookie-parser  
+  Parses the Cookie header from incoming HTTP requests and populates req.cookies, making cookie handling simple and reliable.
+
+- cors  
+  Enables Cross-Origin Resource Sharing (CORS), allowing the frontend application running on a different origin to communicate securely with the backend while supporting credentials such as cookies.
+
+- socket.io middleware  
+  Used to authenticate socket connections during the handshake phase by validating JWT tokens extracted from cookies.
+
+---
+
+### Custom Middleware(s)
+
+- 404 route handler  
+  Handles all unmatched routes by forwarding a 404 error to the global error handler.
+
+- Global error handler  
+  Centralized error-handling middleware that captures and formats application errors consistently.
+
+
+
+## 🧾 Notes
 
 - Please keep all commits meaningful and well-labeled.
 - Follow consistent component naming and folder structure.
