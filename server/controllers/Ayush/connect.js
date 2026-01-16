@@ -244,6 +244,8 @@ const followEntity = async (req, res) => {
       if (!channel)
         return res.status(404).json({ success: false, message: "Channel not found" });
 
+      const targetUser = await User.findOne({ username });
+
       await Promise.all([
         User.updateOne(
           { username },
@@ -251,7 +253,7 @@ const followEntity = async (req, res) => {
         ),
         Channel.updateOne(
           { channelName: target },
-          { $addToSet: { channelMembers: { username } } }
+          { $addToSet: { channelMembers: targetUser._id } }
         ),
       ]);
 
@@ -354,6 +356,8 @@ const unfollowEntity = async (req, res) => {
         });
       }
 
+      const targetUser = await User.findOne({ username });
+
       // Remove follow
       await Promise.all([
         User.updateOne(
@@ -362,7 +366,7 @@ const unfollowEntity = async (req, res) => {
         ),
         Channel.updateOne(
           { channelName: target },
-          { $pull: { channelMembers: { username } } }
+          { $pull: { channelMembers: targetUser._id } }
         ),
       ]);
 
