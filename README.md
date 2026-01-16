@@ -186,7 +186,25 @@ You can create **child components** freely under these parent components.
 
 ---
 
-### 🧾 Notes
+
+## Middlewares Used
+
+### Router level middleware(s)
+
+- isAuthuser : Authenticate the user using cooking parsing
+
+### Built-in middleware(s)
+
+- express.static() : serves the static assets using server-side rendering
+- express.urlencoded() : parses the incoming requests with URL-encoded payloads and the make the parsed data available in req.body
+- express.json() : parses the incoming requests with JSON payloads.
+
+### Third party middleware(s)
+
+- cookie-parser : It parses the Cookie header from incoming HTTP requests and populates req.cookies with an object keyed by the cookie names, making it easy to read and manage cookies in your route handlers. It also supports signed cookies to prevent tampering.
+- cors : It simplifies the process of enabling Cross-Origin Resource Sharing (CORS) in your application. 
+
+## 🧾 Notes
 
 - Please keep all commits meaningful and well-labeled.
 - Follow consistent component naming and folder structure.
