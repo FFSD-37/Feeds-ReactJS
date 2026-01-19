@@ -19,6 +19,7 @@ const handlegetchannel = async (req, res) => {
       channelName: { $regex: new RegExp(`^${channelName}$`, "i") }
     })
       .populate("channelAdmin", "username profilePicture")
+      .populate("channelMembers", "username profilePicture")
       .lean();
 
     if (!channel) {
@@ -48,7 +49,10 @@ const handlegetchannel = async (req, res) => {
       channel_admin: channel.channelAdmin?.username || "Unknown",
       channel_admin_pic: channel.channelAdmin?.profilePicture || null,
       channel_category: channel.channelCategory,
-      channel_members: channel.channelMembers,
+      channel_members: channel.channelMembers?.map(m => ({
+        username: m.username,
+        profilePicture: m.profilePicture
+      })) || [],
       channel_posts: channel.postIds || [],
       channel_archived: channel.archivedPostsIds || [],
       channel_liked: channel.likedPostsIds || [],
@@ -120,7 +124,7 @@ const followChannel = async (req, res) => {
 
     await Channel.updateOne(
       { channelName },
-      { $addToSet: { channelMembers: { username } } }
+      { $addToSet: { channelMembers: user._id } }
     );
 
     await Notification.create({
@@ -151,6 +155,8 @@ const unfollowChannel = async (req, res) => {
         .json({ success: false, message: "Channels cannot unfollow channels" });
     }
 
+    const user = await User.findOne({ username });
+
     await User.updateOne(
       { username },
       { $pull: { channelFollowings: { channelName } } }
@@ -158,7 +164,7 @@ const unfollowChannel = async (req, res) => {
 
     await Channel.updateOne(
       { channelName },
-      { $pull: { channelMembers: { username } } }
+      { $pull: { channelMembers: user._id } }
     );
 
     await Notification.create({

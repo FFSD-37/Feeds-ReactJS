@@ -76,10 +76,8 @@ const channelSchema = new mongoose.Schema({
     }],
 
     channelMembers: [{
-        username: {
-            type: String,
-            required: true
-        }
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
     }],
 
     archivedPostsIds: [{

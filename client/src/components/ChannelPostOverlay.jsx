@@ -303,7 +303,7 @@ export default function ChannelPostOverlay({ id: propId, onClose }) {
                   src={liked ? '/Images/liked.svg' : '/Images/unliked.svg'}
                   className="overlay-action-icon"
                 />
-                <span>{post.likes}</span>
+                <span className="channel-post-overlay-likes">{post.likes}</span>
               </button>
 
               <button onClick={() => setShowEmoji(!showEmoji)}>

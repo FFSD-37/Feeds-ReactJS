@@ -218,6 +218,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
 }
 
 /* === NAV === */
@@ -382,6 +383,13 @@
   font-size: 0.9rem;
   color: var(--text-light);
   padding: 0.3rem 0;
+  display: flex;
+}
+
+.channel-about-section strong {
+  color: white;
+  width: 100px;
+  flex-shrink: 0;
 }
 
 .channel-admin-info {

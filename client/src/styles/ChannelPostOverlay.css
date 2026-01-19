@@ -105,6 +105,10 @@
   transform: scale(1.2);
 }
 
+.channel-post-overlay-likes{
+  margin-top: 0;
+}
+
 .channel-post-overlay-caption {
   padding: 0 18px 18px;
   font-size: 15px;

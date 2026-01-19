@@ -149,7 +149,7 @@ const handledelacc = async (req, res) => {
       {},
       {
         $pull: {
-          channelMembers: { username: user.username },
+          channelMembers: user._id,
           postIds: { $in: user.postIds },
         },
       }
@@ -1690,7 +1690,7 @@ const registerChannel = async (req, res) => {
       channelLogo: profileImageUrl || process.env.DEFAULT_USER_IMG,
       channelPassword: hashedPassword,
       channelAdmin: user._id,
-      channelMembers: [{ username }],
+      channelMembers: [user._id],
     });
 
     // Add channel reference to user
