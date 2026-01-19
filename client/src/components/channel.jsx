@@ -36,7 +36,6 @@ import usePostOverlay from '../hooks/usePostOverlay.jsx';
 /*
 ISSUES/Improvements:
 1. Add pagination or infinite scroll for posts if there are many.
-2. In members modal, show profile pics in a circle, not the default ones.
 */
 
 function ChannelPage() {
