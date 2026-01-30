@@ -555,6 +555,19 @@ const handleadminlogin = async (req, res) => {
       });
     }
 
+    // Create JWT token for admin
+    const token = create_JWTtoken(
+      [username, process.env.adminEmail || '', '', 'Admin', true],
+      process.env.USER_SECRET,
+      '30d'
+    );
+
+    // Set cookie for authentication
+    res.cookie('uuid', token, { 
+      httpOnly: true,
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
+
     // Fetch all necessary admin stats
     const [users, posts, reports, orders, feedbacks] = await Promise.all([
       User.find({}).sort({ createdAt: -1 }).lean(),
