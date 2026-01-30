@@ -23,9 +23,10 @@ auth.post("/login", async (req, res) => {
                 });
             }
             
-            // Create JWT token
+            // Create JWT token with consistent structure
+            // [username, identifier, image/email, role, isPremium/isActive]
             const token = create_JWTtoken(
-                [username, user._id, user.email || '', 'Admin', true],
+                [username, user.email || '', '', 'Admin', true],
                 process.env.USER_SECRET,
                 '30d'
             );
