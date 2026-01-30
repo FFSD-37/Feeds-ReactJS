@@ -2,12 +2,14 @@ import { verify_JWTtoken } from "cookie-string-parser";
 
 const isAuthuser = (req, res, next) => {
   try {
-    const isAuth = verify_JWTtoken(
+    const tokenResult = verify_JWTtoken(
       req.cookies.uuid || req.cookies.cuid,
       process.env.USER_SECRET
     );
-    if (isAuth) {
-      req.userDetails = isAuth;
+    if (tokenResult && tokenResult.data) {
+      // Keep data structure as-is for compatibility with controllers
+      // data structure: [username, email/identifier, image/url, role, isActive]
+      req.userDetails = tokenResult;
       next();
     } else return res.status(401).json({ message: "Unauthorized Access" });
   } catch (e) {
