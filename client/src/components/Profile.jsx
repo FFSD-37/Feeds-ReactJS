@@ -12,7 +12,7 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const { username, type: loggedInUserType } = userData || {};
 
-  // Basic Profile Data
+  
   const [full_name, setFull_name] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -26,7 +26,7 @@ const ProfilePage = () => {
   const [links, setLinks] = useState([]);
   const [display_name, setDisplay_name] = useState('');
 
-  // Content Data
+  
   const [posts, setPosts] = useState([]);
   const [liked, setLiked] = useState([]);
   const [saved, setSaved] = useState([]);
@@ -34,7 +34,7 @@ const ProfilePage = () => {
   const [followers, setFollowers] = useState([]);
   const [followings, setFollowings] = useState([]);
 
-  // UI State
+  
   const [showOverlay, setShowOverlay] = useState(false);
   const [overlayType, setOverlayType] = useState('');
   const [relationship, setRelationship] = useState('');
@@ -51,7 +51,7 @@ const ProfilePage = () => {
   const [followerSearchQuery, setFollowerSearchQuery] = useState('');
   const [followingSearchQuery, setFollowingSearchQuery] = useState('');
 
-  // Pagination
+  
   const [postsPage, setPostsPage] = useState(1);
   const [followersPage, setFollowersPage] = useState(1);
   const [followingsPage, setFollowingsPage] = useState(1);
@@ -258,12 +258,12 @@ const ProfilePage = () => {
       const data = await res.json();
       if (data.data === true) {
         if (isArchived) {
-          // Move from archived to posts
+          
           const post = archived.find(p => p.id === postId);
           setArchived(archived.filter(p => p.id !== postId));
           if (post) setPosts([...posts, post]);
         } else {
-          // Move from posts to archived
+         
           const post = posts.find(p => p.id === postId);
           setPosts(posts.filter(p => p.id !== postId));
           if (post) setArchived([...archived, post]);
@@ -276,16 +276,14 @@ const ProfilePage = () => {
   };
 
   const canSeeContent = useCallback(() => {
-    // Own profile
+   
     if (ProfileUsername.username === username) return true;
 
-    // User is blocked
+    
     if (isBlocked) return false;
 
-    // Public profile
     if (visibility === 'Public') return true;
 
-    // Private profile - can see if following or is follower
     if (visibility === 'Private' && (relationship === 'Unfollow' || sideFollowsMain)) {
       return true;
     }
@@ -294,27 +292,22 @@ const ProfilePage = () => {
   }, [ProfileUsername.username, username, visibility, relationship, sideFollowsMain, isBlocked]);
 
   const shouldShowTabs = useCallback(() => {
-    // Own profile - show all tabs
+    
     if (ProfileUsername.username === username) return true;
 
-    // Logged in user is a channel - no tabs for other profiles
     if (loggedInUserType === 'Channel') return false;
 
-    // Private profile that user doesn't follow - no tabs
     if (visibility === 'Private' && relationship !== 'Unfollow') return false;
 
-    // Public profile or followed private - show only posts tab
     return true;
   }, [ProfileUsername.username, username, loggedInUserType, visibility, relationship]);
 
   const shouldShowFollowStats = useCallback(() => {
-    // Own profile - show all
+    
     if (ProfileUsername.username === username) return true;
 
-    // Logged in user is a channel - don't show followers/followings
     if (loggedInUserType === 'Channel') return false;
 
-    // Private profile that user doesn't follow - don't show
     if (visibility === 'Private' && relationship !== 'Unfollow') return false;
 
     return true;
