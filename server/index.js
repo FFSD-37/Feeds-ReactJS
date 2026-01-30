@@ -8,6 +8,7 @@ import connectToMongo from "./Db/connection.js";
 import notificationRouter from "./routes/notification.js";
 import post from "./routes/userPost.js";
 import channelPost from "./routes/channelPost.js";
+import auth from "./routes/auth.js";
 import { Server } from "socket.io";
 import http from "http";
 import User from "./models/users_schema.js";
@@ -45,6 +46,7 @@ app.use("/", router);
 app.use("/post", post);
 app.use("/notification", notificationRouter);
 app.use("/channel", channelPost);
+app.use("/auth", auth);
 
 // ✅ Socket.IO setup
 const io = new Server(server, {
