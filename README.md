@@ -84,8 +84,43 @@ npm run dev
 
 ## 3️⃣ Run the Server
 
+Before starting the server, create a local `.env` from the provided example and fill in the required values:
+
+- If you are on macOS / Linux:
+
 ```bash
 cd server
+cp .env-example .env
+# then edit .env (e.g. `nano .env` or `code .env`)
+```
+
+- If you are on Windows (cmd/powershell):
+
+```powershell
+cd server
+copy .env-example .env
+# then edit .env (e.g. `notepad .env` or `code .env`)
+```
+
+Common keys (refer to `server/.env-example` for the exact names) — do NOT commit real secrets:
+
+```text
+PORT=3000
+EMAIL_USER=
+EMAIL_PASS=
+DEFAULT_USER_IMG=https://ik.irzp_test_f7KvjxjG0mJxq1magekit.io/FFSD0037/default_user.png?updatedAt=1741701160385
+MONGOPASS=
+adminUsername=admin
+adminPass=pass
+adminEmail=
+USER_SECRET=
+RAZORPAY_SECRET=
+MERCHANT_ID=
+```
+
+Now install and run the server:
+
+```bash
 npm i
 npm start
 ```
