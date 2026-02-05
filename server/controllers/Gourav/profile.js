@@ -1,6 +1,7 @@
 import Post from "../../models/postSchema.js";
 import User from "../../models/users_schema.js";
 import Channel from "../../models/channelSchema.js";
+import { asyncHandler } from "../../middleware/asyncHandler.js";
 
 const handlegetUserPost = async (req, res) => {
     const { data } = req.userDetails;
@@ -140,7 +141,7 @@ const handleisfriend = async (req, res) => {
 
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return next(err);
   }
 };
 
@@ -197,9 +198,7 @@ const handlechangepassKids = async (req, res) => {
 
   } catch (error) {
     console.error("Password change error:", error);
-    return res.status(500).json({
-      message: "Server error while changing password"
-    });
+    return next(error);
   }
 };
 
@@ -235,9 +234,7 @@ const handlechangeparentalpass = async (req, res) => {
 
   } catch (error) {
     console.error("Error updating parental password:", error);
-    return res.status(500).json({
-      message: "Server error while updating parental password"
-    });
+    return next(error);
   }
 };
 
@@ -278,18 +275,32 @@ const handledeactivateKid = async (req, res) => {
   }
 }
 
+const _handlegetUserPost = asyncHandler(handlegetUserPost);
+const _handlegetBasicDetails = asyncHandler(handlegetBasicDetails);
+const _handlegetsensitive = asyncHandler(handlegetsensitive);
+const _handleisfriend = asyncHandler(handleisfriend);
+const _handleCheckParentalPass = asyncHandler(handleCheckParentalPass);
+const _getCoins = asyncHandler(getCoins);
+const _getChannels = asyncHandler(getChannels);
+const _handlechangepassKids = asyncHandler(handlechangepassKids);
+const _handlechangeparentalpass = asyncHandler(handlechangeparentalpass);
+const _handlegetkidsTime = asyncHandler(handlegetkidsTime);
+const _handlesetkidsTime = asyncHandler(handlesetkidsTime);
+const _handledeactivateKid = asyncHandler(handledeactivateKid);
+const _handlegetBlcokedUsers = asyncHandler(handlegetBlcokedUsers);
+
 export {
-    handlegetUserPost,
-    handlegetBasicDetails,
-    handlegetsensitive,
-    handleisfriend,
-    handleCheckParentalPass,
-    getCoins,
-    getChannels,
-    handlechangepassKids,
-    handlechangeparentalpass,
-    handlegetkidsTime,
-    handlesetkidsTime,
-    handledeactivateKid,
-    handlegetBlcokedUsers
+  _handlegetUserPost as handlegetUserPost,
+  _handlegetBasicDetails as handlegetBasicDetails,
+  _handlegetsensitive as handlegetsensitive,
+  _handleisfriend as handleisfriend,
+  _handleCheckParentalPass as handleCheckParentalPass,
+  _getCoins as getCoins,
+  _getChannels as getChannels,
+  _handlechangepassKids as handlechangepassKids,
+  _handlechangeparentalpass as handlechangeparentalpass,
+  _handlegetkidsTime as handlegetkidsTime,
+  _handlesetkidsTime as handlesetkidsTime,
+  _handledeactivateKid as handledeactivateKid,
+  _handlegetBlcokedUsers as handlegetBlcokedUsers
 }
