@@ -15,6 +15,7 @@ import Chat from "./models/chatSchema.js";
 import cors from "cors";
 import { clearSession, setSession } from "./controllers/timout.js";
 import { errorhandler } from "./middleware/handlerError.js";
+// import { fakeRoute } from "./controllers/userPost.js";
 
 dotenv.config();
 
@@ -39,6 +40,15 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.get("/fake", (req, res, next) => {
+  try {
+    throw new Error("Demo error: simulated failure for /fake route");
+  } catch (error) {
+    console.log("❌ Error in /fake route:", error.message);
+    return next(error);
+  }
+});
 
 // ✅ Routes
 app.use("/", router);

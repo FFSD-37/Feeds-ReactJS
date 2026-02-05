@@ -283,5 +283,5 @@ export {
     suggestedReels,
     handleLikePost,
     handleSavePost,
-    suggestedPost2
+    suggestedPost2,
 };
