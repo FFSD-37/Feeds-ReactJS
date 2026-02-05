@@ -40,7 +40,7 @@ const HomePage = () => {
   const [showArrows, setShowArrows] = useState(false);
   const storiesRef = useRef(null);
 
-  const scrollStories = (direction) => {
+  const scrollStories = direction => {
     const container = storiesRef.current;
     const scrollAmount = 200; // adjust
 
@@ -336,10 +336,13 @@ const HomePage = () => {
   };
 
   const fetchChannels = async () => {
-    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/home/getChannels`, {
-      method: 'GET',
-      credentials: 'include',
-    });
+    const res = await fetch(
+      `${import.meta.env.VITE_SERVER_URL}/home/getChannels`,
+      {
+        method: 'GET',
+        credentials: 'include',
+      },
+    );
     const data = await res.json();
     if (data.success) {
       setChannels(data.channels);
@@ -383,20 +386,17 @@ const HomePage = () => {
   // );
 
   const fetchStories = async () => {
-    const res = await fetch(
-      `${import.meta.env.VITE_SERVER_URL}/stories`,
-      {
-        method: "GET",
-        credentials: "include",
-      },
-    );
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/stories`, {
+      method: 'GET',
+      credentials: 'include',
+    });
     const data = await res.json();
     if (data.success) {
       console.log(`Stories: ${data.allStories}`);
       setStories(data.allStories);
-      console.log(data.allStories[0])
+      console.log(data.allStories[0]);
     }
-  }
+  };
 
   useEffect(() => {
     fetchStories();
@@ -409,7 +409,6 @@ const HomePage = () => {
       setShowArrows(needsScroll);
     }
   }, [stories]);
-
 
   return (
     <div className="main-layout">
@@ -425,11 +424,10 @@ const HomePage = () => {
         <div className="content-section">
           {stories.length > 0 && (
             <div className="stories-container">
-
               {showArrows && (
                 <button
                   className="stories-arrow left"
-                  onClick={() => scrollStories("left")}
+                  onClick={() => scrollStories('left')}
                 >
                   &lt;
                 </button>
@@ -455,12 +453,11 @@ const HomePage = () => {
               {showArrows && (
                 <button
                   className="stories-arrow right"
-                  onClick={() => scrollStories("right")}
+                  onClick={() => scrollStories('right')}
                 >
                   &gt;
                 </button>
               )}
-
             </div>
           )}
           {!loadingPosts && (
@@ -645,30 +642,37 @@ const HomePage = () => {
             )}
           </div>
         </div>
-        {(userData.type === "Normal") ? (
+        {userData.type === 'Normal' ? (
           <div className="sidebar-section">
-            <div className="card">
-              <h3 className="card-title">Channels you follow</h3>
-              {channels.length > 0 ? (
-                <div className="friends-grid">
-                  {channels.slice(0, 9).map((channel) => (
-                    <div key={channel._id}
-                      className="friend-item"
-                      onClick={() => navigate(`/channel/${channel.channelName}`)}
-                    >
-                      <img
-                        src={channel.channelLogo}
-                        alt={channel.channelName}
-                        className="friend-avatar"
-                      />
-                      <p className="friend-name">{channel.channelName}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </div>
+            {channels.length > 0 ? (
+              <div className="card">
+                <h3 className="card-title">Channels you follow</h3>
+                {
+                  <div className="friends-grid">
+                    {channels.slice(0, 9).map(channel => (
+                      <div
+                        key={channel._id}
+                        className="friend-item"
+                        onClick={() =>
+                          navigate(`/channel/${channel.channelName}`)
+                        }
+                      >
+                        <img
+                          src={channel.channelLogo}
+                          alt={channel.channelName}
+                          className="friend-avatar"
+                        />
+                        <p className="friend-name">{channel.channelName}</p>
+                      </div>
+                    ))}
+                  </div>
+                }
+              </div>
+            ) : null}
           </div>
-        ) : <div></div>}
+        ) : (
+          <div></div>
+        )}
         <br />
         {!userData.isPremium ? (
           <div className="sidebar-section">
