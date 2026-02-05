@@ -25,4 +25,6 @@ router.delete('/:id', handlePostDelete);
 router.post('/liked/:id', handleLikePost);
 router.post('/saved/:id', handleSavePost);
 
+// fake route to test error handling middleware
+
 export default router;
