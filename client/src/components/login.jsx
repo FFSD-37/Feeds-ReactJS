@@ -1,18 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import './../styles/login.css';
 
-/*
-ISSUES/Improvements:
-1. Enter Key not working
-2. Page not dynamic - make the usertypeToggle dropdown based on shorter screens
-3. Forgot password yet to be implemented
-*/
-
 export default function Login() {
   const [role, setRole] = useState('normal');
   const [identifierMode, setIdentifierMode] = useState('email');
   const [serverMessage, setServerMessage] = useState('');
   const [showAlert, setShowAlert] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   const [values, setValues] = useState({
     childEmail: '',
@@ -36,6 +30,16 @@ export default function Login() {
     channel: 'Channel Account',
   };
 
+  // Handle responsive layout
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   useEffect(() => {
     if (role !== 'normal') setIdentifierMode('email');
     setShowAlert(false);
@@ -49,6 +53,14 @@ export default function Login() {
 
   const togglePasswordVisibility = key => {
     setVisiblePasswords(s => ({ ...s, [key]: !s[key] }));
+  };
+
+  // Handle Enter key press
+  const handleKeyPress = e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
+    }
   };
 
   const handleSubmit = async () => {
@@ -104,53 +116,85 @@ export default function Login() {
   };
 
   return (
-    <div className="login-wrap">
-      <div className="login-heading">
-        <h1>Welcome Back</h1>
-        <p>Select your account type to continue</p>
-      </div>
-
-      <div className="login-roles">
-        <div
-          className={`login-role ${role === 'kids' ? 'login-active' : ''}`}
-          onClick={() => setRole('kids')}
-          tabIndex={0}
-        >
-          <span className="login-icon">{roleIcons.kids}</span>
-          <div className="login-title">Child Account</div>
-          <div className="login-desc">
-            Restricted portal with guardian approval
+    <div className="login-wrap" onKeyDown={handleKeyPress}>
+      <div className="login-container">
+        {/* Left Side - Role Selection */}
+        <div className="login-left-panel">
+          <div className="login-heading">
+            <h1>Welcome Back</h1>
+            <p>Select your account type to continue</p>
           </div>
+
+          {/* Dynamic role selector based on screen size */}
+          {isMobile ? (
+            <div className="login-role-dropdown">
+              <label htmlFor="role-select">Account Type</label>
+              <select
+                id="role-select"
+                value={role}
+                onChange={e => setRole(e.target.value)}
+                className="login-select"
+              >
+                <option value="kids">👶 Child Account</option>
+                <option value="normal">👤 Standard Account</option>
+                <option value="channel">📺 Channel Account</option>
+              </select>
+            </div>
+          ) : (
+            <div className="login-roles">
+              <div
+                className={`login-role ${role === 'kids' ? 'login-active' : ''}`}
+                onClick={() => setRole('kids')}
+                tabIndex={0}
+                onKeyDown={e => e.key === 'Enter' && setRole('kids')}
+              >
+                <span className="login-icon">{roleIcons.kids}</span>
+                <div className="login-role-content">
+                  <div className="login-title">Child Account</div>
+                  <div className="login-desc">
+                    Restricted portal with guardian approval
+                  </div>
+                </div>
+              </div>
+
+              <div
+                className={`login-role ${role === 'normal' ? 'login-active' : ''}`}
+                onClick={() => setRole('normal')}
+                tabIndex={0}
+                onKeyDown={e => e.key === 'Enter' && setRole('normal')}
+              >
+                <span className="login-icon">{roleIcons.normal}</span>
+                <div className="login-role-content">
+                  <div className="login-title">Standard Account</div>
+                  <div className="login-desc">Personal login for all users</div>
+                </div>
+              </div>
+
+              <div
+                className={`login-role ${role === 'channel' ? 'login-active' : ''}`}
+                onClick={() => setRole('channel')}
+                tabIndex={0}
+                onKeyDown={e => e.key === 'Enter' && setRole('channel')}
+              >
+                <span className="login-icon">{roleIcons.channel}</span>
+                <div className="login-role-content">
+                  <div className="login-title">Channel Account</div>
+                  <div className="login-desc">Manage communications and teams</div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        <div
-          className={`login-role ${role === 'normal' ? 'login-active' : ''}`}
-          onClick={() => setRole('normal')}
-          tabIndex={0}
-        >
-          <span className="login-icon">{roleIcons.normal}</span>
-          <div className="login-title">Standard Account</div>
-          <div className="login-desc">Personal login for all users</div>
-        </div>
-
-        <div
-          className={`login-role ${role === 'channel' ? 'login-active' : ''}`}
-          onClick={() => setRole('channel')}
-          tabIndex={0}
-        >
-          <span className="login-icon">{roleIcons.channel}</span>
-          <div className="login-title">Channel Account</div>
-          <div className="login-desc">Manage communications and teams</div>
-        </div>
-      </div>
-
-      <div className="login-card" role="region" aria-labelledby="loginHeading">
+        {/* Right Side - Login Form */}
+        <div className="login-card" role="region" aria-labelledby="loginHeading">
         {showAlert && (
           <div className="login-alert" role="alert">
             <div>{serverMessage}</div>
             <button
               className="login-closebtn"
               onClick={() => setShowAlert(false)}
+              aria-label="Close alert"
             >
               ×
             </button>
@@ -195,6 +239,7 @@ export default function Login() {
                     type="button"
                     className="login-password-toggle"
                     onClick={() => togglePasswordVisibility('parentPassword')}
+                    aria-label="Toggle password visibility"
                   >
                     {visiblePasswords.parentPassword ? '👁️‍🗨️' : '👁️'}
                   </button>
@@ -258,6 +303,7 @@ export default function Login() {
                     type="button"
                     className="login-password-toggle"
                     onClick={() => togglePasswordVisibility('password')}
+                    aria-label="Toggle password visibility"
                   >
                     {visiblePasswords.password ? '👁️‍🗨️' : '👁️'}
                   </button>
@@ -319,6 +365,7 @@ export default function Login() {
                     type="button"
                     className="login-password-toggle"
                     onClick={() => togglePasswordVisibility('channelPassword')}
+                    aria-label="Toggle password visibility"
                   >
                     {visiblePasswords.channelPassword ? '👁️‍🗨️' : '👁️'}
                   </button>
@@ -336,10 +383,13 @@ export default function Login() {
         </div>
 
         <div className="login-footer-links">
-          <a href="/forget-password">Forgot password?</a>
+          <a href="/forget-password" className="login-forgot-link">
+            Forgot password?
+          </a>
           <div className="login-secondary-text">
             Don't have an account? <a href="/signup">Sign up here</a>
           </div>
+        </div>
         </div>
       </div>
     </div>
