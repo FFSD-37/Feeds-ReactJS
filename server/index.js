@@ -15,6 +15,7 @@ import Chat from "./models/chatSchema.js";
 import cors from "cors";
 import { clearSession, setSession } from "./controllers/timout.js";
 import { errorhandler } from "./middleware/handlerError.js";
+import { applicationMiddleware } from "./middleware/applicationMiddleware.js";
 // import { fakeRoute } from "./controllers/userPost.js";
 
 dotenv.config();
@@ -40,6 +41,7 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(applicationMiddleware);
 
 app.get("/fake", (req, res, next) => {
   try {
