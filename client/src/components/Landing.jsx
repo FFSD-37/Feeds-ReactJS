@@ -22,6 +22,8 @@ ISSUES/Improvements:
 
 */
 
+import Stories from './stories';
+
 const HomePage = () => {
   const { userData } = useUserData();
   const [allPosts, setAllPosts] = useState([]);
@@ -37,6 +39,7 @@ const HomePage = () => {
   const [comments, setComments] = useState([]);
   const [showEmoji, setShowEmoji] = useState(false);
   const [stories, setStories] = useState([]);
+  const [storyToOpen, setStoryToOpen] = useState(null);
   const [showArrows, setShowArrows] = useState(false);
   const storiesRef = useRef(null);
 
@@ -422,6 +425,7 @@ const HomePage = () => {
       )}
       <main className="main-content">
         <div className="content-section">
+          {/* ===== STORIES SECTION ===== */}
           {stories.length > 0 && (
             <div className="stories-container">
               {showArrows && (
@@ -438,7 +442,7 @@ const HomePage = () => {
                   <div
                     className="story-item"
                     key={story._id}
-                    onClick={() => navigate(`/profile/${story.username}`)}
+                    onClick={() => setStoryToOpen(story.username)}
                   >
                     <img
                       src={story.avatarUrl}
@@ -458,8 +462,20 @@ const HomePage = () => {
                   &gt;
                 </button>
               )}
+
+              {/* Stories Viewer */}
+              <Stories
+                initialStories={stories}
+                currentUser={userData?.username}
+                openUser={storyToOpen}
+                onClose={() => setStoryToOpen(null)}
+                hideGrid={true}
+                fetchUrl={`${import.meta.env.VITE_SERVER_URL}/stories`}
+              />
             </div>
           )}
+
+          {/* ===== POSTS SECTION ===== */}
           {!loadingPosts && (
             <div className="post-card">
               {allPosts.map((post, index) => (
@@ -470,6 +486,7 @@ const HomePage = () => {
                       alt={post.author}
                       className="post-avatar"
                     />
+
                     <div className="post-author">
                       <h3
                         className="post-author-name"
@@ -482,19 +499,19 @@ const HomePage = () => {
                         {timeAgo(new Date(post.createdAt))}
                       </p>
                     </div>
+
                     <button
                       className="icon-button"
                       onClick={() => {
                         setSelectedPostId(post.id);
                         setShowReportModal(true);
                       }}
-                      style={{ cursor: 'pointer' }}
                     >
                       <AlertTriangle
                         style={{
                           width: '20px',
                           height: '20px',
-                          color: '#ef4444', // red
+                          color: '#ef4444',
                         }}
                       />
                     </button>
@@ -511,57 +528,55 @@ const HomePage = () => {
                         e.target.pause();
                         e.target.currentTime = 0;
                       }}
-                    ></video>
+                    />
                   )}
 
                   <div className="post-stats">
                     <div
                       className="post-stat"
-                      style={{ cursor: 'pointer' }}
                       onClick={() => openComments(post.id)}
                     >
                       <MessageCircle
                         style={{ width: '16px', height: '16px' }}
                       />
                     </div>
+
                     <div
                       className="post-stat"
-                      onClick={() => toggleLike(post.id)} // <— click toggles
-                      style={{ cursor: 'pointer' }}
+                      onClick={() => toggleLike(post.id)}
                     >
                       {post.liked ? (
                         <Heart
                           fill="red"
                           color="red"
-                          style={{ width: '16px', height: '16px' }}
+                          style={{ width: '16px' }}
                         />
                       ) : (
-                        <Heart style={{ width: '16px', height: '16px' }} />
+                        <Heart style={{ width: '16px' }} />
                       )}
                       <span>{post.likes}</span>
                     </div>
+
                     <div
                       className="post-stat"
                       onClick={() => toggleSave(post.id)}
-                      style={{ cursor: 'pointer' }}
                     >
                       {post.saved ? (
                         <Bookmark
                           fill="blue"
                           color="blue"
-                          style={{ width: '16px', height: '16px' }}
+                          style={{ width: '16px' }}
                         />
                       ) : (
-                        <Bookmark style={{ width: '16px', height: '16px' }} />
+                        <Bookmark style={{ width: '16px' }} />
                       )}
                     </div>
 
                     <button
                       className="icon-button post-stat-auto"
-                      style={{ cursor: 'pointer' }}
                       onClick={() => handleShare(post.id)}
                     >
-                      <Share2 style={{ width: '16px', height: '16px' }} />
+                      <Share2 style={{ width: '16px' }} />
                     </button>
                   </div>
 
