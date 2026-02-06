@@ -10,7 +10,7 @@ const handlegetchannel = async (req, res) => {
   try {
     const { channelName } = req.params;
     const { data } = req.userDetails || {};
-    console.log("data:", data);
+    // console.log("data:", data);
 
     // data = [channelName, adminName, logo, type, isPremium]
     // data = [username, email, profileUrl, type, isPremium]

@@ -103,6 +103,7 @@ import { getChat, getFriendList } from "../controllers/chat.js";
 import { getDailyusage } from "../controllers/timout.js";
 import { handlegetstories } from "../controllers/userStory.js";
 import homeRouter from "./home.js";
+import { applicationMiddleware } from "../middleware/applicationMiddleware.js";
 
 const router = express.Router();
 
@@ -127,6 +128,8 @@ router.get("/healthCheck", (req, res) => {
 
 // Protected routes (require authentication)
 router.use(isAuthuser);
+
+router.use(applicationMiddleware);
 
 router.get("/", (req, res) => {
   res.redirect("/login");

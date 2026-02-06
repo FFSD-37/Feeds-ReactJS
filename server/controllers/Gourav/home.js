@@ -12,7 +12,6 @@ const getFriends = async (req, res) => {
   let friends = user.followings.filter((f) =>
     user.followers.some((fr) => fr.username === f.username)
   );
-  console.log(friends, user);
 
   friends = await User.find({
     username: { $in: friends.map((f) => f.username) },
@@ -100,7 +99,6 @@ const handlecommentreport = async (req, res) => {
     const { data } = req.userDetails;
     const reporter = data[0];
     const { commentId } = req.body;
-    console.log(commentId);
 
     if (!commentId) {
       return res.status(400).json({
