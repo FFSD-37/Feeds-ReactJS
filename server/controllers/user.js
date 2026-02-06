@@ -1258,8 +1258,6 @@ const unRequestSomeone = async (req, res) => {
         message: "User not found.",
       });
     }
-    console.log(me.requested);
-    console.log(targetUsername);
     if (me.requested.some((r) => r.username === targetUsername)) {
       await User.updateOne(
         { username: unrequesterUsername },
@@ -1486,7 +1484,6 @@ const togglePP = async (req, res) => {
   try {
     const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
     const username = data[0];
-    console.log("HIT");
 
     const user = await User.findOne({ username });
     if (!user) {
@@ -2063,7 +2060,6 @@ const handlegetallnotifications = async (req, res) => {
 };
 
 const handleloginsecond = async (req, res) => {
-  console.log(req.body);
   if (req.body.type === "Standard Account") {
     try {
       const user = await User.findOne(
@@ -2371,7 +2367,7 @@ const handlelikecomment = async (req, res) => {
 };
 
 const handleblockuser = async (req, res) => {
-  console.log("BLOCK HIT");
+  // console.log("BLOCK HIT");
   const { username } = req.params;
   const { data } = req.userDetails;
   const user = await User.findOne({ username: data[0] });
@@ -2504,7 +2500,7 @@ const handlepostcomment = async (req, res) => {
     });
 
     // Create notification for post author
-    console.log(post.author);
+    // console.log(post.author);
     if (data[0] !== post.author) {
       const noti8 = await Notification.create({
         mainUser: post.author,

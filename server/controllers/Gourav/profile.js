@@ -5,10 +5,8 @@ import { asyncHandler } from "../../middleware/asyncHandler.js";
 
 const handlegetUserPost = async (req, res) => {
     const { data } = req.userDetails;
-    console.log(req.params)
     const userAsking = req.params.username;
     const user = await User.findOne({ username: userAsking });
-    console.log(user);
     const posts = await Post.find({ _id: { $in: user.postIds || [] } });
     return res.json({ posts: posts });
 }

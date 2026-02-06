@@ -102,8 +102,7 @@ const suggestedPost=async(req,res)=>{
         
             if(user.likedPostsIds?.includes(post.id)){
                 post={...post,liked:true};
-                console.log('post',post);
-                
+                // console.log('post',post);                
             }
             if(user.savedPostsIds?.includes(post.id)){
                 post={...post,saved:true};
@@ -144,7 +143,7 @@ const suggestedReels=async(req,res)=>{
 const handleLikePost=async(req,res)=>{
     try{
         const {id}=req.params;
-        console.log(id);
+        // console.log(id);
         if(!id) return res.status(400).json({ err: "Post ID is required" });
         const userDetails=verify_JWTtoken(req.cookies.uuid, process.env.USER_SECRET);
         if(!userDetails) return res.status(401).json({ err: "Unauthorized" });
