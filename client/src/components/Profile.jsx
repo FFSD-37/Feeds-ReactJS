@@ -1,45 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { User, Settings, Grid, Heart, Bookmark, Archive, Flag, Ban } from 'lucide-react';
-import { UserDataProvider, useUserData } from '../providers/userData.jsx';
-import { useParams } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import { Settings, Grid, Heart, Bookmark, Archive, Flag, Ban } from 'lucide-react';
+import { useUserData } from '../providers/userData.jsx';
+import { useParams, useNavigate } from 'react-router-dom';
 import '../styles/ProfilePage.css';
-
-/*
-ISSUES/Improvements:
-1. Change the way profile page views in following ways:
-   a. If the user is viewing their own profile, show all tabs (Posts, Liked, Saved, Archived).
-   b. If the user is viewing someone else's profile which is public or a private which he/she follows, show only "Posts" tab.
-   c. If the user is viewing a private profile which he/she does not follow, show a message indicating that the account is private and hide all posts/follwers/followings.
-   d. If the user logged in is channel, then show only "Posts" tab for only public profiles and there is no follow button and followers/followings are not visible.
-   e. If the user is blocked by the profile user, show a message indicating that the user is blocked and add an unblock option.
-2. Add pagination or infinite scroll for posts, followers, and followings to improve performance on profiles with large amounts of data.
-3. Add a "No results found" message when the search yields no followers/followings.
-4. Remove @ from display name in bio section.
-5. Add an option to view posts from the profile itself.
-6. Add an option to archive/unarchive posts directly from the profile page.
-7. Add an option to delete posts directly from the profile page.
-*/
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('posts');
   const { userData } = useUserData();
-  const ProfileUsername = useParams();
+  const { username: targetUsername } = useParams();
   const navigate = useNavigate();
-  const { username } = userData || {};
 
-  const [full_name, setFull_name] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [dob, setDob] = useState('');
+  const viewerType = userData?.type;
+  const viewerUsername = userData?.username;
+  const viewerIsChannel = viewerType === 'Channel';
+  const ownProfile = !viewerIsChannel && viewerUsername === targetUsername;
+
+  const [fullName, setFullName] = useState('');
   const [pfp, setPfp] = useState('');
   const [bio, setBio] = useState('');
-  const [gender, setGender] = useState('');
-  const [isPremium, setIsPremium] = useState(false);
-  const [type, setType] = useState('');
+  const [profileType, setProfileType] = useState('');
   const [visibility, setVisibility] = useState('');
   const [links, setLinks] = useState([]);
-  const [display_name, setDisplay_name] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [posts, setPosts] = useState([]);
   const [liked, setLiked] = useState([]);
   const [saved, setSaved] = useState([]);
@@ -50,10 +32,17 @@ const ProfilePage = () => {
   const [overlayType, setOverlayType] = useState('');
   const [relationship, setRelationship] = useState('');
   const [href, setHref] = useState('');
-  const [mainFollowsSide, setMainFollowsSide] = useState(false);
-  const [sideFollowsMain, setSideFollowsMain] = useState(false);
-  const [sideUser, setSideUser] = useState({});
+  const [canFollow, setCanFollow] = useState(false);
+  const [relationshipReason, setRelationshipReason] = useState('');
   const [loading, setLoading] = useState(true);
+  const [access, setAccess] = useState({
+    isOwnProfile: false,
+    blockedByTarget: false,
+    viewerBlockedTarget: false,
+    kidsBoundary: false,
+    canViewPosts: false,
+    canViewSocial: false,
+  });
 
   const handleShare = async (username) => {
     const url = `http://localhost:5173/profile/${username}`;
@@ -70,62 +59,78 @@ const ProfilePage = () => {
   };
 
   const fetchBasic = async (username) => {
-    const res = await fetch(
-      `${import.meta.env.VITE_SERVER_URL}/profile/getbasic/${username}`,
-      { method: 'GET', credentials: 'include' }
-    );
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/profile/getbasic/${username}`, {
+      method: 'GET',
+      credentials: 'include',
+    });
     const data = await res.json();
-    if (data.success) {
-      const details = data.details;
-      setFull_name(details.full_name);
-      setEmail(details.email);
-      setPhone(details.phone);
-      setDob(details.dob);
-      setPfp(details.pfp);
-      setBio(details.bio);
-      setGender(details.gender);
-      setIsPremium(details.isPremium);
-      setType(details.type);
-      setVisibility(details.visibility);
-      setLinks(details.links || []);
-      setDisplay_name(details.display_name);
-    } else {
-      console.log('error');
+    if (!data.success) return;
+
+    const details = data.details;
+    setFullName(details.full_name || '');
+    setPfp(details.pfp || '');
+    setBio(details.bio || '');
+    setProfileType(details.type || '');
+    setVisibility(details.visibility || '');
+    setLinks(details.links || []);
+    setDisplayName(details.display_name || '');
+    if (details.access) {
+      setAccess((prev) => ({ ...prev, ...details.access }));
     }
   };
 
   const fetchSensitive = async (username) => {
-    const res = await fetch(
-      `${import.meta.env.VITE_SERVER_URL}/profile/sensitive/${username}`,
-      { method: 'GET', credentials: 'include' }
-    );
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/profile/sensitive/${username}`, {
+      method: 'GET',
+      credentials: 'include',
+    });
     const data = await res.json();
-    if (data.success) {
-      const { followers, followings, posts, saved, liked, archived } = data.details;
-      setFollowers(followers || []);
-      setFollowings(followings || []);
-      setPosts(posts || []);
-      setSaved(saved || []);
-      setLiked(liked || []);
-      setArchived(archived || []);
-    } else {
-      console.log('Error');
+    if (!data.success) return;
+
+    const details = data.details || {};
+    setFollowers(details.followers || []);
+    setFollowings(details.followings || []);
+    setPosts(details.posts || []);
+    setSaved(details.saved || []);
+    setLiked(details.liked || []);
+    setArchived(details.archived || []);
+    if (details.access) {
+      setAccess((prev) => ({ ...prev, ...details.access }));
     }
   };
 
-  useEffect(() => {
-    if (ProfileUsername.username) {
-      setLoading(true);
-      Promise.all([fetchBasic(ProfileUsername.username), fetchSensitive(ProfileUsername.username)]).then(() => setLoading(false));
-    }
-  }, [ProfileUsername.username]);
+  const isFriend = async (username) => {
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/isfriend/${username}`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    const data = await res.json();
+    setRelationship(data.relationship || '');
+    setHref(data.href || '');
+    setCanFollow(Boolean(data.canFollow));
+    setRelationshipReason(data.reason || '');
+  };
 
-  const OpenFollower = () => {
+  useEffect(() => {
+    if (!targetUsername) return;
+    setLoading(true);
+    Promise.all([fetchBasic(targetUsername), fetchSensitive(targetUsername)])
+      .then(async () => {
+        if (!ownProfile) await isFriend(targetUsername);
+      })
+      .finally(() => setLoading(false));
+  }, [targetUsername, ownProfile]);
+
+  useEffect(() => {
+    if (!ownProfile) setActiveTab('posts');
+  }, [ownProfile]);
+
+  const openFollowers = () => {
     setOverlayType('followers');
     setShowOverlay(true);
   };
 
-  const OpenFollowings = () => {
+  const openFollowings = () => {
     setOverlayType('followings');
     setShowOverlay(true);
   };
@@ -135,39 +140,8 @@ const ProfilePage = () => {
     setOverlayType('');
   };
 
-  const isFriend = async (username) => {
-    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/isfriend/${username}`, { method: 'GET', credentials: 'include' });
-    const data = await res.json();
-    setRelationship(data.relationship);
-    setHref(data.href);
-  };
-
-  useEffect(() => {
-    if (ProfileUsername.username && ProfileUsername.username !== username) isFriend(ProfileUsername.username);
-  }, [ProfileUsername.username, username]);
-
-  const updateRelationship = (mf, sf, username) => {
-    let r = '';
-    let h = '';
-    if (!sf && mf) {
-      r = 'Requested';
-      h = `/unrequest/${username}`;
-    } else if (!sf && !mf) {
-      r = 'Follow';
-      h = `/follow/${username}`;
-    } else if (sf && mf) {
-      r = 'Unfollow';
-      h = `/unfollow/${username}`;
-    } else if (sf && !mf) {
-      r = 'Follow back';
-      h = `/follow/${username}`;
-    }
-    setRelationship(r);
-    setHref(h);
-  };
-
   const handleBlockUser = async () => {
-    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/block/${ProfileUsername.username}`, {
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/block/${targetUsername}`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -179,24 +153,49 @@ const ProfilePage = () => {
 
   const handleReportUser = () => {};
 
-  const canSeeContent = () => {
-    if (ProfileUsername.username === username) return true;
-    if (visibility === 'Public') return true;
-    if (relationship === 'Unfollow') return true;
-    return false;
-  };
-
-  const Action = async () => {
-    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}${href}`, { method: 'POST', credentials: 'include', body: JSON.stringify({}) });
+  const action = async () => {
+    if (!href) return;
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}${href}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
     const data = await res.json();
     if (data.success) {
-      if (relationship === 'Follow' || relationship === 'Follow back') setMainFollowsSide(true);
-      else setMainFollowsSide(false);
-      updateRelationship(mainFollowsSide, sideFollowsMain, sideUser.username);
+      if (data.status === 'requested') {
+        setRelationship('Requested');
+        setHref(`/unrequest/${targetUsername}`);
+      } else if (data.status === 'following' || data.status === 'friend') {
+        setRelationship('Unfollow');
+        setHref(`/unfollow/${targetUsername}`);
+      } else if (data.status === 'request_canceled' || data.status === 'unfollowed') {
+        setRelationship('Follow');
+        setHref(`/follow/${targetUsername}`);
+      }
+      await Promise.all([isFriend(targetUsername), fetchSensitive(targetUsername)]);
+    } else {
+      alert(data.message || 'Action failed. Please try again.');
     }
   };
 
+  const blockedByTarget = access.blockedByTarget || relationship === 'Blocked';
+  const viewerBlockedTarget = access.viewerBlockedTarget || relationshipReason === 'You have blocked this user.';
+  const kidsBoundary =
+    access.kidsBoundary ||
+    (!ownProfile && ((viewerType === 'Kids' && profileType !== 'Kids') || (viewerType !== 'Kids' && profileType === 'Kids')));
+
+  const canSeeContent =
+    !blockedByTarget &&
+    !viewerBlockedTarget &&
+    !kidsBoundary &&
+    (ownProfile || access.canViewPosts || visibility === 'Public' || relationship === 'Unfollow');
+
+  const canSeeSocial = !viewerIsChannel && !blockedByTarget && !viewerBlockedTarget && !kidsBoundary && (ownProfile || access.canViewSocial);
+  const canShowFollow = !ownProfile && !viewerIsChannel && !blockedByTarget && !viewerBlockedTarget && !kidsBoundary;
+
   const getContent = () => {
+    if (!ownProfile) return posts;
     switch (activeTab) {
       case 'posts':
         return posts;
@@ -215,44 +214,46 @@ const ProfilePage = () => {
     <div className="profile-container">
       <div className="profile-card">
         <header className="profile-header">
-          <h2 className="profile-username">{display_name} <span className="profile-slug">- {ProfileUsername.username}</span></h2>
-          {ProfileUsername.username === username ? (
+          <h2 className="profile-username">{displayName} <span className="profile-slug">- {targetUsername}</span></h2>
+          {ownProfile ? (
             <button className="profile-settings-btn" onClick={() => navigate('/settings')} aria-label="settings">
               <Settings size={18} />
             </button>
           ) : (
-            <div className="profile-action-icons">
-              <button className="profile-icon-btn" title="Report this user" onClick={handleReportUser}><Flag size={16} /></button>
-              <button className="profile-icon-btn" title="Block this user" onClick={handleBlockUser}><Ban size={16} /></button>
-            </div>
+            !viewerIsChannel && (
+              <div className="profile-action-icons">
+                <button className="profile-icon-btn" title="Report this user" onClick={handleReportUser}><Flag size={16} /></button>
+                <button className="profile-icon-btn" title="Block this user" onClick={handleBlockUser}><Ban size={16} /></button>
+              </div>
+            )
           )}
         </header>
 
         <section className="profile-top">
           <div className="profile-avatar-wrap">
-            <img className="profile-avatar" src={pfp || ''} alt={`${display_name || ProfileUsername.username} avatar`} />
+            <img className="profile-avatar" src={pfp || ''} alt={`${displayName || targetUsername} avatar`} />
           </div>
 
           <div className="profile-stats">
             <div className="profile-stat">
-              <div className="profile-stat-num">{posts.length + archived.length}</div>
+              <div className="profile-stat-num">{canSeeContent ? posts.length + (ownProfile ? archived.length : 0) : '-'}</div>
               <div className="profile-stat-label">Posts</div>
             </div>
-            <div className="profile-stat" onClick={OpenFollower}>
-              <div className="profile-stat-num">{followers.length}</div>
+            <div className="profile-stat" onClick={canSeeSocial ? openFollowers : undefined}>
+              <div className="profile-stat-num">{canSeeSocial ? followers.length : '-'}</div>
               <div className="profile-stat-label">Followers</div>
             </div>
-            <div className="profile-stat" onClick={OpenFollowings}>
-              <div className="profile-stat-num">{followings.length}</div>
+            <div className="profile-stat" onClick={canSeeSocial ? openFollowings : undefined}>
+              <div className="profile-stat-num">{canSeeSocial ? followings.length : '-'}</div>
               <div className="profile-stat-label">Following</div>
             </div>
           </div>
         </section>
 
         <section className="profile-bio">
-          <h3 className="profile-display">@{full_name}</h3>
+          <h3 className="profile-display">{fullName}</h3>
           <p className="profile-bio-text">{bio}</p>
-          {links && links.length > 0 && (
+          {links.length > 0 && (
             <div className="profile-links">
               {links.map((link, index) => (
                 <p key={index} className="profile-link-item"><a href={link} target="_blank" rel="noopener noreferrer">{link}</a></p>
@@ -262,31 +263,41 @@ const ProfilePage = () => {
         </section>
 
         <div className="profile-actions">
-          {ProfileUsername.username === username ? (
+          {ownProfile ? (
             <>
               <button className="profile-btn primary" onClick={() => navigate('/edit_profile')}>Edit Profile</button>
-              <button className="profile-btn" onClick={() => handleShare(ProfileUsername.username)}>Share Profile</button>
+              <button className="profile-btn" onClick={() => handleShare(targetUsername)}>Share Profile</button>
+            </>
+          ) : canShowFollow ? (
+            <>
+              <button className="profile-btn primary" onClick={action} disabled={!canFollow || !href}>
+                {(canFollow && (relationship || 'Follow')) || 'Follow'}
+              </button>
+              <button className="profile-btn" onClick={() => handleShare(targetUsername)}>Share Profile</button>
             </>
           ) : (
-            <>
-              <button className="profile-btn primary" onClick={Action}>{relationship || 'Follow'}</button>
-              <button className="profile-btn" onClick={() => handleShare(ProfileUsername.username)}>Share Profile</button>
-            </>
+            <button className="profile-btn" onClick={() => handleShare(targetUsername)}>Share Profile</button>
           )}
         </div>
 
-        {canSeeContent() ? (
+        {loading ? (
+          <div className="profile-private">Loading...</div>
+        ) : canSeeContent ? (
           <>
             <nav className="profile-tabs">
               <button className={`profile-tab ${activeTab === 'posts' ? 'active' : ''}`} onClick={() => setActiveTab('posts')}><Grid size={16} /> <span>Posts</span></button>
-              <button className={`profile-tab ${activeTab === 'liked' ? 'active' : ''}`} onClick={() => setActiveTab('liked')}><Heart size={16} /> <span>Liked</span></button>
-              <button className={`profile-tab ${activeTab === 'saved' ? 'active' : ''}`} onClick={() => setActiveTab('saved')}><Bookmark size={16} /> <span>Saved</span></button>
-              <button className={`profile-tab ${activeTab === 'archived' ? 'active' : ''}`} onClick={() => setActiveTab('archived')}><Archive size={16} /> <span>Archived</span></button>
+              {ownProfile && (
+                <>
+                  <button className={`profile-tab ${activeTab === 'liked' ? 'active' : ''}`} onClick={() => setActiveTab('liked')}><Heart size={16} /> <span>Liked</span></button>
+                  <button className={`profile-tab ${activeTab === 'saved' ? 'active' : ''}`} onClick={() => setActiveTab('saved')}><Bookmark size={16} /> <span>Saved</span></button>
+                  <button className={`profile-tab ${activeTab === 'archived' ? 'active' : ''}`} onClick={() => setActiveTab('archived')}><Archive size={16} /> <span>Archived</span></button>
+                </>
+              )}
             </nav>
 
             <div className="profile-grid">
               {getContent().length === 0 ? (
-                <div className="profile-empty">No {activeTab} yet</div>
+                <div className="profile-empty">No {ownProfile ? activeTab : 'posts'} yet</div>
               ) : (
                 getContent().map((post) => (
                   <div key={post.id} className="profile-grid-item">
@@ -300,16 +311,35 @@ const ProfilePage = () => {
               )}
             </div>
           </>
+        ) : viewerBlockedTarget ? (
+          <div className="profile-private">
+            You blocked this user.
+            {!viewerIsChannel && (
+              <div style={{ marginTop: '12px' }}>
+                <button className="profile-btn" onClick={handleBlockUser}>Unblock User</button>
+              </div>
+            )}
+          </div>
+        ) : blockedByTarget ? (
+          <div className="profile-private">You are blocked by this user.</div>
+        ) : kidsBoundary ? (
+          <div className="profile-private">This profile is restricted. Kids and non-kids accounts cannot view or follow each other.</div>
+        ) : viewerIsChannel && visibility === 'Private' ? (
+          <div className="profile-private">This account is private.</div>
         ) : (
-          <div className="profile-private">🔒 This account is private<br />Follow to see their posts.</div>
+          <div className="profile-private">This account is private.<br />Follow to see their posts.</div>
+        )}
+
+        {!loading && relationshipReason && !canFollow && canShowFollow && (
+          <div className="profile-private">{relationshipReason}</div>
         )}
       </div>
 
-      {showOverlay && canSeeContent() && (
+      {showOverlay && canSeeSocial && (
         <div className="profile-overlay" role="dialog">
           <div className="profile-overlay-content">
             <h3>{overlayType === 'followers' ? 'Followers' : 'Following'}</h3>
-            <button className="profile-close-btn" onClick={closeOverlay}>×</button>
+            <button className="profile-close-btn" onClick={closeOverlay}>x</button>
             <div className="profile-overlay-list">
               {(overlayType === 'followers' ? followers : followings).map((user, index) => (
                 <div key={index} className="profile-overlay-user" onClick={() => { closeOverlay(); navigate(`/profile/${user.username}`); }}>{user.username}</div>

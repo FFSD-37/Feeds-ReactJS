@@ -37,27 +37,33 @@ export default function Notifications() {
     fetchAllNotification();
   }, []);
 
-  const followBack = async (username, index) => {
-    const updated = [...notifications];
-    updated[index].isFollowingBack = true;
-    setNotifications(updated);
+  const acceptFollowRequest = async (notificationId, username) => {
+    const previousNotifications = notifications;
+
+    setNotifications(prev => prev.filter(n => n._id !== notificationId));
 
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_SERVER_URL}/follow/${username}`, {
+        `${import.meta.env.VITE_SERVER_URL}/follow-request/accept/${username}`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
       });
-      await res.json();
+      const data = await res.json();
 
-      setTimeout(() => {
-        setNotifications(prev => prev.filter((_, i) => i !== index));
-      }, 1500);
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to accept request');
+      }
+
+      await fetchAllNotification();
     } catch (error) {
       console.error(error);
-      alert('Failed to follow. Please try again.');
-      updated[index].isFollowingBack = false;
-      setNotifications(updated);
+      const friendlyMessage = /internal server error/i.test(error.message || '')
+        ? 'Could not accept follow request right now. Please try again.'
+        : (error.message || 'Failed to accept follow request. Please try again.');
+      alert(friendlyMessage);
+      setNotifications(previousNotifications);
+      await fetchAllNotification();
     }
   };
 
@@ -594,7 +600,7 @@ export default function Notifications() {
 
                           {noti.msgSerial === 4 && (
                             <button
-                              onClick={() => followBack(noti.userInvolved, index)}
+                              onClick={() => acceptFollowRequest(noti._id, noti.userInvolved)}
                               disabled={noti.isFollowingBack}
                               className={`follow-btn ${noti.isFollowingBack ? 'success' : 'primary'}`}
                             >
@@ -603,10 +609,10 @@ export default function Notifications() {
                                   <svg className="check-icon" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                   </svg>
-                                  Following
+                                  Accepted
                                 </>
                               ) : (
-                                'Follow Back'
+                                'Accept'
                               )}
                             </button>
                           )}

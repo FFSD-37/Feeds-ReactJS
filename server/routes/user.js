@@ -21,6 +21,7 @@ import {
   updateUserProfile,
   fetchOverlayUser,
   followSomeone,
+  acceptFollowRequest,
   unfollowSomeone,
   unRequestSomeone,
   handlegetnotification,
@@ -190,6 +191,8 @@ router.post("/verify_payment", verify_payment);
 router.post("/updateUserDetails", updateUserProfile);
 
 router.post("/follow/:username", followSomeone);
+
+router.post("/follow-request/accept/:username", acceptFollowRequest);
 
 router.post("/unfollow/:username", unfollowSomeone);
 
