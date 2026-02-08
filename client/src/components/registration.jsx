@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './../styles/register.css';
+import ImageKit from 'imagekit-javascript';
 
 /*
 ISSUES/Improvements:
@@ -134,16 +135,15 @@ export default function Register() {
     setUploading(true);
 
     try {
-      const authRes = await fetch('/imagKitauth');
+      const authRes = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/imagKitauth`,
+      );
       if (!authRes.ok) throw new Error('Failed to fetch imagekit auth');
       const authData = await authRes.json();
 
-      if (!window.ImageKit) throw new Error('ImageKit is not loaded');
-
-      const imagekit = new window.ImageKit({
-        publicKey: authData.publicKey || 'public_wbpheuS28ohGGR1W5QtPU+uv/z8=',
-        urlEndpoint:
-          authData.urlEndpoint || 'https://ik.imagekit.io/lidyx2zxm/',
+      const imagekit = new ImageKit({
+        publicKey: 'public_kFHkU6GMQrtHeX9lEvE8hn7bOqM=',
+        urlEndpoint: 'https://ik.imagekit.io/vzp8taxcnc/',
       });
 
       const uploadOptions = {
@@ -244,9 +244,9 @@ export default function Register() {
       ...values,
       terms: Boolean(values.terms),
       parentalPassword:
-      values.acctype === 'Kids' ? values.parentalPassword : null,
+        values.acctype === 'Kids' ? values.parentalPassword : null,
       confirmParentalPassword:
-      values.acctype === 'Kids' ? values.confirmParentalPassword : null,
+        values.acctype === 'Kids' ? values.confirmParentalPassword : null,
     };
     console.log(payload);
 

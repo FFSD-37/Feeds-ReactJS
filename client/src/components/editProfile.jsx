@@ -135,7 +135,6 @@ function EditProfile() {
   const imagekit = new ImageKit({
     publicKey: 'public_kFHkU6GMQrtHeX9lEvE8hn7bOqM=',
     urlEndpoint: 'https://ik.imagekit.io/vzp8taxcnc/',
-    authenticationEndpoint: `${import.meta.env.VITE_SERVER_URL}/api/imagekit/auth`,
   });
 
   // Handle Terms Modal closing conditions
@@ -204,9 +203,17 @@ function EditProfile() {
     let edit_profile_profileImageUrl = '';
     try {
       if (edit_profile_photo) {
+        const authRes = await fetch(
+          import.meta.env.VITE_SERVER_URL + '/imagKitauth',
+        );
+        const authData = await authRes.json();
+
         const uploadResponse = await imagekit.upload({
           file: edit_profile_photo,
           fileName: edit_profile_photo.name,
+          token: authData.token,
+          signature: authData.signature,
+          expire: authData.expire,
         });
         edit_profile_profileImageUrl = uploadResponse.url;
       }
