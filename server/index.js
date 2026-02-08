@@ -16,6 +16,7 @@ import cors from "cors";
 import { clearSession, setSession } from "./controllers/timout.js";
 import { errorhandler } from "./middleware/handlerError.js";
 // import { fakeRoute } from "./controllers/userPost.js";
+// import { applicationMiddleware } from "./middleware/applicationMiddleware.js";
 
 dotenv.config();
 

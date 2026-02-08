@@ -1095,8 +1095,39 @@ const followSomeone = async (req, res) => {
       });
     }
 
-    // 🔹 Already requested
-    if (me.requested.some((r) => r.username === targetUsername)) {
+    if (!me) {
+      return res.status(403).json({
+        success: false,
+        message: "Only user accounts can follow profiles.",
+      });
+    }
+
+    if (
+      (me.type === "Kids" && targetUser.type !== "Kids") ||
+      (me.type !== "Kids" && targetUser.type === "Kids")
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Kids accounts cannot follow non-kids users and vice-versa.",
+      });
+    }
+
+    if (targetUser.blockedUsers.includes(followerUsername)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are blocked by this user.",
+      });
+    }
+
+    if (me.blockedUsers.includes(targetUsername)) {
+      return res.status(400).json({
+        success: false,
+        message: "Unblock this user before following.",
+      });
+    }
+
+    // 🔹 Already requested (stored on target/private user's document)
+    if (targetUser.requested.some((r) => r.username === followerUsername)) {
       return res.status(200).json({
         success: true,
         status: "requested",
@@ -1113,62 +1144,11 @@ const followSomeone = async (req, res) => {
       });
     }
 
-    const alreadyFollowsMe = targetUser.followings.some(
-      (f) => f.username === followerUsername
-    );
-
-    // 🧩 Private account handling
     if (targetUser.visibility === "Private") {
-      // If they already follow you → mutual follow
-      if (alreadyFollowsMe) {
-        await Promise.all([
-          User.updateOne(
-            { username: followerUsername },
-            { $addToSet: { followings: { username: targetUsername } } }
-          ),
-          User.updateOne(
-            { username: targetUsername },
-            { $addToSet: { followers: { username: followerUsername } } }
-          ),
-        ]);
-
-        await ActivityLog.create({
-          username: followerUsername,
-          id: `#${Date.now()}`,
-          message: `You and @${targetUsername} are now friends!`,
-        });
-
-        await Notification.create({
-          mainUser: targetUsername,
-          mainUserType: "Normal",
-          msgSerial: 1, // Normal user follows another normal user
-          userInvolved: followerUsername,
-        });
-
-        await User.updateOne(
-          { username: followerUsername },
-          { $inc: { coins: 1 } }
-        );
-
-        // Notification for getting coins
-        await Notification.create({
-          mainUser: targetUsername,
-          mainUserType: "Normal",
-          msgSerial: 6, // Normal user get some coins
-          userInvolved: followerUsername,
-        });
-
-        return res.status(200).json({
-          success: true,
-          status: "friend",
-          message: `You and @${targetUsername} are now friends!`,
-        });
-      }
-
-      // Otherwise → Send follow request
+      // Always send follow request for private accounts
       await User.updateOne(
-        { username: followerUsername },
-        { $addToSet: { requested: { username: targetUsername } } }
+        { username: targetUsername },
+        { $addToSet: { requested: { username: followerUsername } } }
       );
 
       await Notification.create({
@@ -1258,13 +1238,33 @@ const unRequestSomeone = async (req, res) => {
         message: "User not found.",
       });
     }
-    console.log(me.requested);
-    console.log(targetUsername);
-    if (me.requested.some((r) => r.username === targetUsername)) {
+
+    if (!me) {
+      return res.status(403).json({
+        success: false,
+        message: "Only user accounts can unrequest profiles.",
+      });
+    }
+
+    if (
+      (me.type === "Kids" && targetUser.type !== "Kids") ||
+      (me.type !== "Kids" && targetUser.type === "Kids")
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Kids accounts cannot follow non-kids users and vice-versa.",
+      });
+    }
+    if (targetUser.requested.some((r) => r.username === unrequesterUsername)) {
       await User.updateOne(
-        { username: unrequesterUsername },
-        { $pull: { requested: { username: targetUsername } } }
+        { username: targetUsername },
+        { $pull: { requested: { username: unrequesterUsername } } }
       );
+      await Notification.deleteMany({
+        mainUser: targetUsername,
+        userInvolved: unrequesterUsername,
+        msgSerial: 4,
+      });
       await ActivityLog.create({
         username: unrequesterUsername,
         id: `#${Date.now()}`,
@@ -1318,12 +1318,34 @@ const unfollowSomeone = async (req, res) => {
       });
     }
 
+    if (!me) {
+      return res.status(403).json({
+        success: false,
+        message: "Only user accounts can unfollow profiles.",
+      });
+    }
+
+    if (
+      (me.type === "Kids" && targetUser.type !== "Kids") ||
+      (me.type !== "Kids" && targetUser.type === "Kids")
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Kids accounts cannot follow non-kids users and vice-versa.",
+      });
+    }
+
     // 🧩 Case 1: Cancel follow request (Private account)
-    if (me.requested.some((r) => r.username === targetUsername)) {
+    if (targetUser.requested.some((r) => r.username === unfollowerUsername)) {
       await User.updateOne(
-        { username: unfollowerUsername },
-        { $pull: { requested: { username: targetUsername } } }
+        { username: targetUsername },
+        { $pull: { requested: { username: unfollowerUsername } } }
       );
+      await Notification.deleteMany({
+        mainUser: targetUsername,
+        userInvolved: unfollowerUsername,
+        msgSerial: 4,
+      });
 
       await ActivityLog.create({
         username: unfollowerUsername,
@@ -1391,6 +1413,130 @@ const unfollowSomeone = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error while unfollowing user",
+    });
+  }
+};
+
+const acceptFollowRequest = async (req, res) => {
+  try {
+    const { data } = req.userDetails;
+    const accepterUsername = data[0];
+    const { username: requesterUsername } = req.params;
+
+    if (!requesterUsername || requesterUsername === accepterUsername) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid requester username.",
+      });
+    }
+
+    const [accepter, requester] = await Promise.all([
+      User.findOne({ username: accepterUsername }),
+      User.findOne({ username: requesterUsername }),
+    ]);
+
+    if (!accepter || !requester) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    if (
+      (accepter.type === "Kids" && requester.type !== "Kids") ||
+      (accepter.type !== "Kids" && requester.type === "Kids")
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Kids accounts cannot follow non-kids users and vice-versa.",
+      });
+    }
+
+    const accepterBlocked = Array.isArray(accepter.blockedUsers)
+      ? accepter.blockedUsers
+      : [];
+    const requesterBlocked = Array.isArray(requester.blockedUsers)
+      ? requester.blockedUsers
+      : [];
+
+    if (
+      accepterBlocked.includes(requesterUsername) ||
+      requesterBlocked.includes(accepterUsername)
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Follow request cannot be accepted due to blocking.",
+      });
+    }
+
+    const pendingRequests = Array.isArray(accepter.requested)
+      ? accepter.requested
+      : [];
+    const hasPendingRequest = pendingRequests.some(
+      (r) => r.username === requesterUsername
+    );
+
+    if (!hasPendingRequest) {
+      return res.status(400).json({
+        success: false,
+        message: `No pending follow request from @${requesterUsername}.`,
+      });
+    }
+
+    await Promise.all([
+      User.updateOne(
+        { username: accepterUsername },
+        {
+          $pull: { requested: { username: requesterUsername } },
+        }
+      ),
+      User.updateOne(
+        { username: requesterUsername },
+        {
+          $addToSet: { followings: { username: accepterUsername } },
+          $inc: { coins: 1 },
+        }
+      ),
+      User.updateOne(
+        { username: accepterUsername },
+        { $addToSet: { followers: { username: requesterUsername } } }
+      ),
+      Notification.deleteOne({
+        mainUser: accepterUsername,
+        userInvolved: requesterUsername,
+        msgSerial: 4,
+      }),
+    ]);
+
+    await Promise.allSettled([
+      Notification.create({
+        mainUser: requesterUsername,
+        mainUserType: requester.type || "Normal",
+        msgSerial: 1,
+        userInvolved: accepterUsername,
+      }),
+      ActivityLog.create({
+        username: accepterUsername,
+        id: `#${Date.now()}`,
+        message: `You accepted @${requesterUsername}'s follow request`,
+      }),
+      ActivityLog.create({
+        username: requesterUsername,
+        id: `#${Date.now()}`,
+        message: `Your follow request to @${accepterUsername} was accepted`,
+      }),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      status: "accepted",
+      message: `Follow request from @${requesterUsername} accepted.`,
+    });
+  } catch (error) {
+    console.error("❌ Error in acceptFollowRequest:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while accepting follow request.",
     });
   }
 };
@@ -1486,7 +1632,6 @@ const togglePP = async (req, res) => {
   try {
     const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
     const username = data[0];
-    console.log("HIT");
 
     const user = await User.findOne({ username });
     if (!user) {
@@ -2063,7 +2208,6 @@ const handlegetallnotifications = async (req, res) => {
 };
 
 const handleloginsecond = async (req, res) => {
-  console.log(req.body);
   if (req.body.type === "Standard Account") {
     try {
       const user = await User.findOne(
@@ -2371,7 +2515,7 @@ const handlelikecomment = async (req, res) => {
 };
 
 const handleblockuser = async (req, res) => {
-  console.log("BLOCK HIT");
+  // console.log("BLOCK HIT");
   const { username } = req.params;
   const { data } = req.userDetails;
   const user = await User.findOne({ username: data[0] });
@@ -2504,7 +2648,7 @@ const handlepostcomment = async (req, res) => {
     });
 
     // Create notification for post author
-    console.log(post.author);
+    // console.log(post.author);
     if (data[0] !== post.author) {
       const noti8 = await Notification.create({
         mainUser: post.author,
@@ -2677,6 +2821,7 @@ export {
   updateUserProfile,
   fetchOverlayUser,
   followSomeone,
+  acceptFollowRequest,
   unfollowSomeone,
   handlegetnotification,
   handlegetsettings,
@@ -2704,3 +2849,4 @@ export {
   updateChannelProfile,
   unRequestSomeone,
 };
+
