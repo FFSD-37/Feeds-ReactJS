@@ -1,11 +1,20 @@
-import fs from "fs";
+import morgan from "morgan";
+import { Logs } from "../models/FeedsLogs.js";
 
-export const applicationMiddleware = (req, res, next) => {
-    let data = req.userDetails?.data || ["unknown_user"];
-    console.log(req.userDetails);
-    const logFilePath = `./responses/${data[0] || "unknown_user"}.log`;
-    // console.log(logFilePath);
-    const logEntry = `${new Date().toISOString()} - ${req.method} ${req.originalUrl}\n`;
-    fs.appendFileSync(logFilePath, logEntry);
-    next();
-};
+export const Logger = morgan(
+  function (tokens, req, res) {
+    const logData = {
+      method: tokens.method(req, res),
+      url: tokens.url(req, res),
+      status: Number(tokens.status(req, res)),
+      responseTime: Number(tokens["response-time"](req, res)),
+      ip: req.ip,
+      userAgent: req.headers["user-agent"],
+    };
+
+    Logs.create(logData).catch(() => {});
+  },
+  {
+    skip: (req, res) => req.method !== "POST",
+  }
+);

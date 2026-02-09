@@ -1,7 +1,6 @@
 import express from "express";
 import router from "./routes/user.js";
 import dotenv from "dotenv";
-import { fileURLToPath } from "url";
 import cookieParser from "cookie-parser";
 import { parseCookieString, verify_JWTtoken } from "cookie-string-parser";
 import connectToMongo from "./Db/connection.js";
@@ -15,8 +14,8 @@ import Chat from "./models/chatSchema.js";
 import cors from "cors";
 import { clearSession, setSession } from "./controllers/timout.js";
 import { errorhandler } from "./middleware/handlerError.js";
+import { Logger } from "./middleware/applicationMiddleware.js"
 // import { fakeRoute } from "./controllers/userPost.js";
-// import { applicationMiddleware } from "./middleware/applicationMiddleware.js";
 
 dotenv.config();
 
@@ -41,6 +40,9 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Application level middleware
+app.use(Logger);
 
 app.get("/fake", (req, res, next) => {
   try {
