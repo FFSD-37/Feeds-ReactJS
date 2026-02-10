@@ -263,10 +263,13 @@ You can create **child components** freely under these parent components.
 - Global error handler  
   Centralized error-handling middleware that captures and formats application errors consistently.
 
+- Logger using morgan  
+  Centralized logging middleware for POST, PUT and DELETE requests to be logged in mongodb schema.
 
 
 ## 🧾 Notes
 
 - Please keep all commits meaningful and well-labeled.
 - Follow consistent component naming and folder structure.
+
 - Always work on your **own branch** for each feature before working on it.
