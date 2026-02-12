@@ -4,8 +4,7 @@ import '../styles/channelPostOverlay.css';
 
 /*
 ISSUES/Improvements:
-1. The like number should appear adjacent to the like button, not below it.
-2. Enter Key to send the comment/reply.
+
 */
 
 const timeAgo = dateString => {
@@ -163,6 +162,13 @@ export default function ChannelPostOverlay({ id: propId, onClose }) {
         setComments(prev => [data.comment, ...prev]);
       }
       setNewComment('');
+    }
+  };
+
+  const handleKeyDown = e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddComment();
     }
   };
 
@@ -437,6 +443,7 @@ export default function ChannelPostOverlay({ id: propId, onClose }) {
                 type="text"
                 value={newComment}
                 onChange={e => setNewComment(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder="Add a comment..."
                 className="channel-post-overlay-comment-input"
               />

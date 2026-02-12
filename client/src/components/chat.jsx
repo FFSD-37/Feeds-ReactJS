@@ -30,6 +30,7 @@ export default function ChatPage() {
   const [showColor, setShowColor] = useState(false);
   const [bgColor, setBgColor] = useState('#020617');
   const colorRef = useRef(null);
+  const [showSidebarMobile, setShowSidebarMobile] = useState(false);
 
   const scrollBottom = useCallback(() => {
     const el = chatBoxRef.current;
@@ -143,7 +144,15 @@ export default function ChatPage() {
   };
 
   useEffect(() => {
-    document.documentElement.style.setProperty('--chat-bg', bgColor);
+    // apply bgColor or previously saved background (color or url)
+    const saved = localStorage.getItem('chatBg');
+    if (saved) {
+      document.documentElement.style.setProperty('--chat-bg', saved);
+      // if saved is a color value keep bgColor for the picker
+      if (!saved.startsWith('url(')) setBgColor(saved);
+    } else {
+      document.documentElement.style.setProperty('--chat-bg', bgColor);
+    }
   }, [bgColor]);
 
   useEffect(() => {
@@ -181,13 +190,13 @@ export default function ChatPage() {
   return (
     <div style={{ display: 'flex', height: '100vh', width: '90vw' }}>
       {/* Sidebar */}
-      <div className="chatList">
-        <div className="me">{userData.username}</div>
+      <div className="chat-list">
+        <div className="chat-me">{userData.username}</div>
 
         {friends.map(friend => (
           <div
             key={friend.username}
-            className={`user ${activeUser === friend.username ? 'active' : ''}`}
+            className={`chat-user ${activeUser === friend.username ? 'active' : ''}`}
             onClick={() => loadMessages(friend.username)}
           >
             <img src={friend.avatarUrl} alt="" />
@@ -195,7 +204,7 @@ export default function ChatPage() {
           </div>
         ))}
 
-        <a href="/home" className="back-button">
+        <a href="/home" className="chat-back-button">
           ← Back to Home
         </a>
       </div>
@@ -203,15 +212,18 @@ export default function ChatPage() {
       {/* Conversation area */}
       <div className="chat-area">
         <div className="chat-header">
-          <span>{activeUser}</span>
-          <select
-            onChange={e =>
-              document.documentElement.style.setProperty(
-                '--chat-bg',
-                `url(${e.target.value})`,
-              )
-            }
-          >
+          <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+            <button className="chat-toggle" onClick={() => setShowSidebarMobile(true)}>☰</button>
+            <span>{activeUser}</span>
+          </div>
+          <div className="chat-bg-controls">
+            <select
+              onChange={e => {
+                const v = `url(${e.target.value})`;
+                document.documentElement.style.setProperty('--chat-bg', v);
+                localStorage.setItem('chatBg', v);
+              }}
+            >
             <option value="https://img.freepik.com/free-vector/night-ocean-landscape-full-moon-stars-shine_107791-7397.jpg?semt=ais_hybrid&w=740">
               🌃 Night Scene
             </option>
@@ -236,58 +248,61 @@ export default function ChatPage() {
             <option value="https://images.unsplash.com/photo-1533709752211-118fcffe3312?w=1200&h=800&fit=crop">
               ✨ Lights
             </option>
-          </select>
-          <div className="color-wrapper" ref={colorRef}>
-            <button
-              className="color-btn"
-              onClick={e => {
-                e.stopPropagation();
-                setShowEmoji(false);
-                setShowColor(p => !p);
-              }}
-            >
-              🎨
-            </button>
+            </select>
+            <div className="chat-color-wrapper" ref={colorRef}>
+              <button
+                className="chat-color-btn"
+                onClick={e => {
+                  e.stopPropagation();
+                  setShowEmoji(false);
+                  setShowColor(p => !p);
+                }}
+                title="Pick background color"
+              >
+                🎨
+              </button>
 
-            {showColor && (
-              <div className="color-popover">
-                <HexColorPicker
-                  color={bgColor}
-                  onChange={c => {
-                    setBgColor(c);
-                    document.documentElement.style.setProperty('--chat-bg', c);
-                  }}
-                />
-              </div>
-            )}
+              {showColor && (
+                <div className="chat-color-popover">
+                  <HexColorPicker
+                    color={bgColor}
+                    onChange={c => {
+                      setBgColor(c);
+                      document.documentElement.style.setProperty('--chat-bg', c);
+                      localStorage.setItem('chatBg', c);
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="messages" ref={chatBoxRef}>
+        <div className="chat-messages" ref={chatBoxRef}>
           {!activeUser ? (
-            <div className="empty-state">Select a user to start chatting</div>
+            <div className="chat-empty-state">Select a user to start chatting</div>
           ) : messages.length === 0 ? (
-            <div className="empty-state">
+            <div className="chat-empty-state">
               No messages yet. Start the conversation.
             </div>
           ) : (
             Object.entries(groupByDate(messages)).map(([date, msgs]) => (
-              <div key={date} className="date-group">
-                <div className="date-separator">{date}</div>
+              <div key={date} className="chat-date-group">
+                  <div className="chat-date-separator">{date}</div>
                 {msgs.map((msg, i) => (
                   <div
                     key={i}
-                    className={`message ${msg.from === userData.username ? 'sent' : 'received'}`}
+                    className={`chat-message ${msg.from === userData.username ? 'sent' : 'received'}`}
                   >
-                    <div className="bubble">
-                      <div>{msg.text}</div>
-                      <div className="timestamp-inline">
-                        {(msg.dateTime || msg.createdAt)
-                          .split(' ')
-                          .slice(-2)
-                          .join(' ')}
+                      <div className="chat-bubble">
+                        <div>{msg.text}</div>
+                        <div className="chat-timestamp-inline">
+                          {(msg.dateTime || msg.createdAt)
+                            .split(' ')
+                            .slice(-2)
+                            .join(' ')}
+                        </div>
                       </div>
-                    </div>
                   </div>
                 ))}
               </div>
@@ -298,10 +313,10 @@ export default function ChatPage() {
         {/* Input */}
         {activeUser && (
           <div className="chat-controls">
-            <div className="input-area">
-              <div className="emoji-wrapper" ref={emojiRef}>
+            <div className="chat-input-area">
+              <div className="chat-emoji-wrapper" ref={emojiRef}>
                 <button
-                  className="emoji-btn"
+                  className="chat-emoji-btn"
                   onClick={e => {
                     e.stopPropagation();
                     setShowColor(false);
@@ -312,7 +327,7 @@ export default function ChatPage() {
                 </button>
 
                 {showEmoji && (
-                  <div className="emoji-popover">
+                  <div className="chat-emoji-popover">
                     <EmojiPicker
                       theme="dark"
                       onEmojiClick={e => {
@@ -338,6 +353,31 @@ export default function ChatPage() {
           </div>
         )}
       </div>
+      {/* Mobile sidebar overlay */}
+      {showSidebarMobile && (
+        <div className={`chat-list mobile-open`}>
+          <button className="chat-mobile-close" onClick={() => setShowSidebarMobile(false)}>✕</button>
+          <div className="chat-me">{userData.username}</div>
+
+          {friends.map(friend => (
+            <div
+              key={friend.username}
+              className={`chat-user ${activeUser === friend.username ? 'active' : ''}`}
+              onClick={() => {
+                loadMessages(friend.username);
+                if (window.innerWidth <= 640) setShowSidebarMobile(false);
+              }}
+            >
+              <img src={friend.avatarUrl} alt="" />
+              <span>{friend.username}</span>
+            </div>
+          ))}
+
+          <a href="/home" className="chat-back-button">
+            ← Back to Home
+          </a>
+        </div>
+      )}
     </div>
   );
 }
