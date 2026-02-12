@@ -99,6 +99,9 @@
   color: #fff;
   cursor: pointer;
   transition: transform 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .channel-post-overlay-actions button:hover {
@@ -107,6 +110,15 @@
 
 .channel-post-overlay-likes{
   margin-top: 0;
+  margin-left: 6px;
+  font-size: 15px;
+}
+
+/* small utility for action icons inside buttons */
+.overlay-action-icon{
+  width: 22px;
+  height: 22px;
+  display: inline-block;
 }
 
 .channel-post-overlay-caption {

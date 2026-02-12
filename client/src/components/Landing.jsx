@@ -19,7 +19,7 @@ ISSUES/Improvements:
 3. Story indicators for viewed/unviewed stories.
 4. Change the path of stories instead of showing profile on click.
 5. Add tooltips to ads for better user engagement.
-
+6. Show channel posts that the user follows
 */
 
 import Stories from './stories';

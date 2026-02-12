@@ -11,6 +11,7 @@
 .icon-button {
   background-color: white;
   border: none;
+  cursor: pointer;
 }
 
 .friend-item {
@@ -367,6 +368,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  cursor: pointer;
 }
 
 .post-stat-auto {
