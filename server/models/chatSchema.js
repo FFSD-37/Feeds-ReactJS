@@ -7,10 +7,20 @@ const chatSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
+    fromType: {
+      type: String,
+      enum: ["Normal", "Kids", "Channel"],
+      default: "Normal",
+    },
     to: {
       type: String,
       required: true,
       trim: true
+    },
+    toType: {
+      type: String,
+      enum: ["Normal", "Kids", "Channel"],
+      default: "Normal",
     },
     text: {
       type: String,

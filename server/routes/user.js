@@ -71,6 +71,9 @@ import {
   archivePost,
   unarchivePost,
   deletePost,
+  getChannelSettings,
+  deactivateChannel,
+  deleteChannelAccount,
 } from "../controllers/Ayush/channel.js";
 import {
   getAllChannelPosts,
@@ -100,9 +103,10 @@ import {
 import { handleimagKitauth } from "../services/imagKit.js";
 import { isAuthuser } from "../middleware/isAuthuser.js";
 import { checkOut, verify_payment } from "../controllers/payment.js";
-import { getChat, getFriendList } from "../controllers/chat.js";
+import { getChat, getFriendList, deleteChat } from "../controllers/chat.js";
 import { getDailyusage } from "../controllers/timout.js";
 import { handlegetstories } from "../controllers/userStory.js";
+import Channel from "../models/channelSchema.js";
 import homeRouter from "./home.js";
 
 const router = express.Router();
@@ -157,14 +161,30 @@ router.get("/login", (req, res) => {
   });
 });
 
-router.get("/verify", (req, res) => {
-  return res.json({
-    username: req.userDetails.data[0],
-    email: req.userDetails.data[1],
-    profileUrl: req.userDetails.data[2],
-    type: req.userDetails.data[3],
-    isPremium: req.userDetails.data[4],
-  });
+router.get("/verify", async (req, res) => {
+  try {
+    const type = req.userDetails?.data?.[3];
+    const username = req.userDetails?.data?.[0];
+
+    if (type === "Channel") {
+      const channel = await Channel.findOne({ channelName: username }).select("isDeactivated").lean();
+      if (!channel || channel.isDeactivated) {
+        res.clearCookie("cuid", { httpOnly: true, sameSite: "strict", secure: true });
+        return res.status(401).json({ message: "Channel is deactivated" });
+      }
+    }
+
+    return res.json({
+      username: req.userDetails.data[0],
+      email: req.userDetails.data[1],
+      profileUrl: req.userDetails.data[2],
+      type: req.userDetails.data[3],
+      isPremium: req.userDetails.data[4],
+    });
+  } catch (error) {
+    console.error("Error in /verify:", error);
+    return res.status(500).json({ message: "Failed to verify user" });
+  }
 });
 
 // router.post("/login", handleLogin);
@@ -196,6 +216,7 @@ router.post("/unfollow/:username", unfollowSomeone);
 router.post("/unrequest/:username", unRequestSomeone);
 
 router.get("/chat/:username", getChat);
+router.delete("/chat/:username", deleteChat);
 
 router.get("/friends", getFriendList);
 
@@ -276,6 +297,9 @@ router.post("/channel/archive/:postId", archivePost);
 router.post("/channel/unarchive/:postId", unarchivePost);
 
 router.delete("/channel/delete/:postId", deletePost);
+router.get("/channel/settings", getChannelSettings);
+router.post("/channel/deactivate", deactivateChannel);
+router.delete("/channel/delete-account", deleteChannelAccount);
 
 router.post("/connect/follow", followEntity);
 

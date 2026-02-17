@@ -1836,6 +1836,12 @@ const registerChannel = async (req, res) => {
       channelPassword: hashedPassword,
       channelAdmin: user._id,
       channelMembers: [user._id],
+      channelSettings: {
+        allowProfileSharing: true,
+        supportEmail: "",
+        supportPhone: "",
+        supportUrl: "",
+      },
     });
 
     // Add channel reference to user
@@ -2103,6 +2109,13 @@ const handleloginchannel = async (req, res) => {
       });
     }
 
+    if (channel.isDeactivated) {
+      return res.status(403).json({
+        success: false,
+        message: "This channel is deactivated. Contact support to reactivate.",
+      });
+    }
+
     if (!user || String(channel.channelAdmin) !== String(user._id)) {
       return res.status(403).json({
         success: false,
@@ -2288,6 +2301,12 @@ const handleloginsecond = async (req, res) => {
     const user = await Channel.findOne({ channelName: req.body.channelName });
     if (!user)
       return res.json({ success: false, reason: "Invalid channel Name" });
+    if (user.isDeactivated) {
+      return res.json({
+        success: false,
+        reason: "This channel is currently deactivated",
+      });
+    }
     // console.log(user);
     const mainUser = await User.findOne({ _id: user.channelAdmin._id });
     // console.log(mainUser);

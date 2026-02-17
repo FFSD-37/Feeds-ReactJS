@@ -3,6 +3,53 @@ import User from "../../models/users_schema.js";
 import channelPost from "../../models/channelPost.js";
 import ChannelComment from "../../models/channelPost_comment.js";
 import Notification from "../../models/notification_schema.js";
+import ActivityLog from "../../models/activityLogSchema.js";
+import bcrypt from "bcrypt";
+
+const CHANNEL_SETTINGS_DEFAULTS = {
+  allowProfileSharing: true,
+  supportEmail: "",
+  supportPhone: "",
+  supportUrl: "",
+};
+
+const CHANNEL_INTERACTION_SERIALS = [9, 10, 11, 12, 13, 14, 15, 16];
+
+const toDateKey = (dateValue) => {
+  const d = new Date(dateValue);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+const ensureChannelSettingsDefaults = async (channelDoc) => {
+  const existing = channelDoc?.channelSettings || {};
+  const merged = {
+    ...CHANNEL_SETTINGS_DEFAULTS,
+    ...existing,
+    allowProfileSharing: true,
+  };
+
+  const changed =
+    existing.allowProfileSharing !== merged.allowProfileSharing ||
+    (existing.supportEmail || "") !== merged.supportEmail ||
+    (existing.supportPhone || "") !== merged.supportPhone ||
+    (existing.supportUrl || "") !== merged.supportUrl;
+
+  if (changed && channelDoc?._id) {
+    await Channel.updateOne(
+      { _id: channelDoc._id },
+      {
+        $set: {
+          channelSettings: merged,
+        },
+      }
+    );
+  }
+
+  return merged;
+};
 
 // GET /getchannel/:channelName
 // GET /getchannel/:channelName
@@ -24,6 +71,9 @@ const handlegetchannel = async (req, res) => {
 
     if (!channel) {
       return res.status(404).json({ error: "Channel not found" });
+    }
+    if (channel.isDeactivated) {
+      return res.status(403).json({ error: "Channel is currently deactivated" });
     }
 
     // 🔔 PREVENT SELF-VIEW NOTIFICATION
@@ -108,6 +158,9 @@ const followChannel = async (req, res) => {
 
     if (!channel)
       return res.status(404).json({ success: false, message: "Channel not found" });
+    if (channel.isDeactivated) {
+      return res.status(403).json({ success: false, message: "Channel is deactivated" });
+    }
 
     const alreadyFollowing = user.channelFollowings.some(
       f => f.channelName === channelName
@@ -321,6 +374,401 @@ const deletePost = async (req, res) => {
   }
 };
 
+const getChannelSettings = async (req, res) => {
+  try {
+    const channelName = req.userDetails?.data?.[0];
+    const accountType = req.userDetails?.data?.[3];
+
+    if (accountType !== "Channel") {
+      return res.status(403).json({
+        success: false,
+        message: "Only channel accounts can access channel settings",
+      });
+    }
+
+    const channel = await Channel.findOne({ channelName })
+      .populate("channelAdmin", "username profilePicture email")
+      .lean();
+
+    if (!channel) {
+      return res.status(404).json({
+        success: false,
+        message: "Channel not found",
+      });
+    }
+
+    const channelSettings = await ensureChannelSettingsDefaults(channel);
+
+    const posts = await channelPost
+      .find({ channel: channelName })
+      .select("id content url likes comments createdAt isArchived category type")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const postIds = posts.map((p) => String(p._id));
+
+    const [userSavedAgg, channelSavedAgg, recentNotifications, activityLogs] =
+      await Promise.all([
+        User.aggregate([
+          {
+            $match: {
+              savedPostsIds: { $exists: true, $ne: [] },
+            },
+          },
+          { $unwind: "$savedPostsIds" },
+          { $match: { savedPostsIds: { $in: postIds } } },
+          {
+            $group: {
+              _id: "$savedPostsIds",
+              count: { $sum: 1 },
+            },
+          },
+        ]),
+        Channel.aggregate([
+          {
+            $match: {
+              savedPostsIds: { $exists: true, $ne: [] },
+            },
+          },
+          { $unwind: "$savedPostsIds" },
+          { $match: { savedPostsIds: { $in: postIds } } },
+          {
+            $group: {
+              _id: "$savedPostsIds",
+              count: { $sum: 1 },
+            },
+          },
+        ]),
+        Notification.find({
+          mainUser: channelName,
+          msgSerial: { $in: CHANNEL_INTERACTION_SERIALS },
+        })
+          .select("msgSerial userInvolved createdAt")
+          .sort({ createdAt: -1 })
+          .limit(2000)
+          .lean(),
+        ActivityLog.find({ username: channelName })
+          .sort({ createdAt: -1 })
+          .limit(15)
+          .lean(),
+      ]);
+
+    const savesByPost = {};
+    userSavedAgg.forEach((entry) => {
+      savesByPost[String(entry._id)] =
+        (savesByPost[String(entry._id)] || 0) + (entry.count || 0);
+    });
+    channelSavedAgg.forEach((entry) => {
+      savesByPost[String(entry._id)] =
+        (savesByPost[String(entry._id)] || 0) + (entry.count || 0);
+    });
+
+    const postStats = posts.map((post) => {
+      const mongoId = String(post._id);
+      const likes = Number(post.likes || 0);
+      const saves = Number(savesByPost[mongoId] || 0);
+      const commentsCount = Array.isArray(post.comments) ? post.comments.length : 0;
+
+      return {
+        id: post.id,
+        mongoId,
+        type: post.type,
+        category: post.category,
+        url: post.url || "",
+        contentPreview: (post.content || "").slice(0, 90),
+        likes,
+        saves,
+        commentsCount,
+        createdAt: post.createdAt,
+        isArchived: Boolean(post.isArchived),
+      };
+    });
+
+    const totalLikesReceived = postStats.reduce((sum, p) => sum + p.likes, 0);
+    const totalSavesReceived = postStats.reduce((sum, p) => sum + p.saves, 0);
+    const totalCommentsReceived = postStats.reduce(
+      (sum, p) => sum + p.commentsCount,
+      0
+    );
+
+    const dailyMap = new Map();
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() - i);
+      const key = toDateKey(date);
+      dailyMap.set(key, {
+        date: key,
+        postsCreated: 0,
+        interactions: 0,
+      });
+    }
+
+    posts.forEach((post) => {
+      const key = toDateKey(post.createdAt);
+      if (dailyMap.has(key)) {
+        dailyMap.get(key).postsCreated += 1;
+      }
+    });
+
+    const interactionByUser = new Map();
+    const interactionTypeCounts = {
+      follows: 0,
+      unfollows: 0,
+      likes: 0,
+      comments: 0,
+      others: 0,
+    };
+
+    recentNotifications.forEach((entry) => {
+      const key = toDateKey(entry.createdAt);
+      if (dailyMap.has(key)) {
+        dailyMap.get(key).interactions += 1;
+      }
+
+      const actor = entry.userInvolved || "Unknown";
+      interactionByUser.set(actor, (interactionByUser.get(actor) || 0) + 1);
+
+      if (entry.msgSerial === 9) interactionTypeCounts.follows += 1;
+      else if (entry.msgSerial === 10) interactionTypeCounts.unfollows += 1;
+      else if (entry.msgSerial === 11 || entry.msgSerial === 13) {
+        interactionTypeCounts.likes += 1;
+      } else if (entry.msgSerial === 15 || entry.msgSerial === 16) {
+        interactionTypeCounts.comments += 1;
+      } else {
+        interactionTypeCounts.others += 1;
+      }
+    });
+
+    const topActiveUsers = [...interactionByUser.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([username, interactions]) => ({ username, interactions }));
+
+    const topPostsByLikes = [...postStats]
+      .sort((a, b) => b.likes - a.likes)
+      .slice(0, 5);
+
+    const topPostsBySaves = [...postStats]
+      .sort((a, b) => b.saves - a.saves)
+      .slice(0, 5);
+
+    return res.status(200).json({
+      success: true,
+      settings: {
+        profileSharing: {
+          enabled: true,
+          profileUrl: `${process.env.FRONTEND_URL || "http://localhost:5173"}/channel/${channel.channelName}`,
+        },
+        channelInformation: {
+          channelName: channel.channelName,
+          channelDescription: channel.channelDescription || "",
+          channelCategory: channel.channelCategory || [],
+          channelLogo: channel.channelLogo || process.env.DEFAULT_USER_IMG,
+          links: channel.links || [],
+          membersCount: Array.isArray(channel.channelMembers)
+            ? channel.channelMembers.length
+            : 0,
+          createdAt: channel.createdAt,
+          adminUsername: channel.channelAdmin?.username || "",
+          adminProfilePicture: channel.channelAdmin?.profilePicture || "",
+          supportEmail: channelSettings.supportEmail || "",
+          supportPhone: channelSettings.supportPhone || "",
+          supportUrl: channelSettings.supportUrl || "",
+        },
+        dashboard: {
+          overview: {
+            totalPosts: posts.filter((p) => !p.isArchived).length,
+            archivedPosts: posts.filter((p) => p.isArchived).length,
+            membersCount: Array.isArray(channel.channelMembers)
+              ? channel.channelMembers.length
+              : 0,
+            totalLikesReceived,
+            totalSavesReceived,
+            totalCommentsReceived,
+          },
+          dailyUsage: [...dailyMap.values()],
+          userActivity: {
+            topActiveUsers,
+            interactionTypeCounts,
+          },
+          topPosts: {
+            byLikes: topPostsByLikes,
+            bySaves: topPostsBySaves,
+          },
+        },
+        activityLog: {
+          total: activityLogs.length,
+          entries: activityLogs,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error in getChannelSettings:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while loading channel settings",
+    });
+  }
+};
+
+const deactivateChannel = async (req, res) => {
+  try {
+    const channelName = req.userDetails?.data?.[0];
+    const accountType = req.userDetails?.data?.[3];
+    const { password } = req.body || {};
+
+    if (accountType !== "Channel") {
+      return res.status(403).json({
+        success: false,
+        message: "Only channel accounts can deactivate a channel",
+      });
+    }
+
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: "Channel password is required",
+      });
+    }
+
+    const channel = await Channel.findOne({ channelName });
+    if (!channel) {
+      return res.status(404).json({
+        success: false,
+        message: "Channel not found",
+      });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, channel.channelPassword);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid channel password",
+      });
+    }
+
+    if (!channel.isDeactivated) {
+      channel.isDeactivated = true;
+      await channel.save();
+      await ActivityLog.create({
+        username: channelName,
+        mainUserType: "Channel",
+        id: `#${Date.now()}`,
+        message: "Channel account deactivated",
+      });
+    }
+
+    res.clearCookie("cuid", { httpOnly: true, sameSite: "strict", secure: true });
+    res.clearCookie("uuid", { httpOnly: true, sameSite: "strict", secure: true });
+
+    return res.status(200).json({
+      success: true,
+      message: "Channel deactivated successfully",
+    });
+  } catch (error) {
+    console.error("Error in deactivateChannel:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while deactivating channel",
+    });
+  }
+};
+
+const deleteChannelAccount = async (req, res) => {
+  try {
+    const channelName = req.userDetails?.data?.[0];
+    const accountType = req.userDetails?.data?.[3];
+    const { password, confirmation } = req.body || {};
+
+    if (accountType !== "Channel") {
+      return res.status(403).json({
+        success: false,
+        message: "Only channel accounts can delete a channel",
+      });
+    }
+
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: "Channel password is required",
+      });
+    }
+
+    if ((confirmation || "").toUpperCase() !== "DELETE") {
+      return res.status(400).json({
+        success: false,
+        message: 'Please type "DELETE" to confirm',
+      });
+    }
+
+    const channel = await Channel.findOne({ channelName });
+    if (!channel) {
+      return res.status(404).json({
+        success: false,
+        message: "Channel not found",
+      });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, channel.channelPassword);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid channel password",
+      });
+    }
+
+    const postDocs = await channelPost.find({ channel: channelName }).select("_id").lean();
+    const postMongoIds = postDocs.map((p) => p._id);
+    const postIdsAsString = postMongoIds.map((id) => String(id));
+
+    if (postMongoIds.length) {
+      await ChannelComment.deleteMany({ postId: { $in: postMongoIds } });
+    }
+
+    await Promise.all([
+      channelPost.deleteMany({ channel: channelName }),
+      User.updateMany(
+        {},
+        {
+          $pull: {
+            channelFollowings: { channelName },
+            likedPostsIds: { $in: postIdsAsString },
+            savedPostsIds: { $in: postIdsAsString },
+          },
+        }
+      ),
+      Channel.updateMany(
+        { channelName: { $ne: channelName } },
+        { $pull: { likedPostsIds: { $in: postIdsAsString }, savedPostsIds: { $in: postIdsAsString } } }
+      ),
+      User.updateOne(
+        { _id: channel.channelAdmin },
+        { $pull: { channelName: channelName } }
+      ),
+      Notification.deleteMany({
+        $or: [{ mainUser: channelName }, { userInvolved: channelName }],
+      }),
+      ActivityLog.deleteMany({ username: channelName }),
+      Channel.deleteOne({ _id: channel._id }),
+    ]);
+
+    res.clearCookie("cuid", { httpOnly: true, sameSite: "strict", secure: true });
+    res.clearCookie("uuid", { httpOnly: true, sameSite: "strict", secure: true });
+
+    return res.status(200).json({
+      success: true,
+      message: "Channel deleted permanently",
+    });
+  } catch (error) {
+    console.error("Error in deleteChannelAccount:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while deleting channel",
+    });
+  }
+};
+
 export {
   handlegetchannel,
   getChannelPosts,
@@ -329,4 +777,7 @@ export {
   archivePost,
   unarchivePost,
   deletePost,
+  getChannelSettings,
+  deactivateChannel,
+  deleteChannelAccount,
 };

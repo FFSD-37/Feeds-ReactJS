@@ -61,7 +61,7 @@ function Sidebar() {
         setShowPasswordModal(!showPasswordModal);
         setParentPass('');
       }
-    } catch (err) {
+    } catch {
       alert('Error verifying password');
       setShowPasswordModal(!showPasswordModal);
       setParentPass('');
@@ -121,6 +121,7 @@ function Sidebar() {
       icon: '/Images/Notifications.svg',
     },
     { name: 'Create', href: '/create_post', icon: '/Images/Create.svg' },
+    { name: 'Chat', href: '/chat', icon: '/Images/Chat.svg' },
     { name: 'Connect', href: '/connect', icon: '/Images/Connect.svg' },
     { name: 'Reels', href: '/reels', icon: '/Images/Reels.svg' },
   ];
@@ -206,7 +207,9 @@ function Sidebar() {
             <a href="/settings">Settings</a>
             <button onClick={toggleLogoutModal}>Logout</button>
             <a href="/help">Help & Support</a>
-            <a href="/DeleteAccount">Delete Account</a>
+            <a href="/DeleteAccount">
+              {type === 'Channel' ? 'Delete Channel' : 'Delete Account'}
+            </a>
           </div>
         )}
       </div>

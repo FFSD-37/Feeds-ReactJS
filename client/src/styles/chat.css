@@ -7,7 +7,8 @@
   flex-direction: column;
   border-right: 1px solid rgba(148, 163, 184, 0.1);
   transition: width 0.3s ease;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 .chat-me {
   padding: 20px 16px;
@@ -55,6 +56,13 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 14px;
+}
+.chat-type-tag {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+  padding: 2px 6px;
 }
 .chat-back-button {
   margin: auto 16px 20px;
@@ -136,6 +144,18 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+.chat-delete-btn {
+  background: linear-gradient(135deg, #c73939, #9f1f1f);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  padding: 7px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.chat-delete-btn:hover {
+  background: linear-gradient(135deg, #b82f2f, #8c1b1b);
 }
 
 /* ====== MESSAGES CONTAINER ====== */
