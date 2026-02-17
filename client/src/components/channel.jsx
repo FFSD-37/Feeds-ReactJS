@@ -60,6 +60,7 @@ function ChannelPage() {
   const [activePost, setActivePost] = useState(null);
 
   const isViewerUser = userData?.type === 'Normal' || userData?.type === 'Kids';
+  const isViewerNormal = userData?.type === 'Normal';
   const isMyChannel =
     userData?.type === 'Channel' &&
     userData?.channelName === channelData?.channel_name;
@@ -353,13 +354,44 @@ function ChannelPage() {
                 ...
               </button>
             ) : !isFollowing ? (
-              <button className="channel-follow-btn" onClick={handleFollow}>
-                Follow
-              </button>
+              <>
+                <button className="channel-follow-btn" onClick={handleFollow}>
+                  Follow
+                </button>
+                {isViewerNormal && (
+                  <button
+                    className="channel-follow-btn"
+                    onClick={() =>
+                      navigate(
+                        `/chat?target=${encodeURIComponent(channelData.channel_name)}&targetType=Channel`,
+                      )
+                    }
+                  >
+                    Chat
+                  </button>
+                )}
+              </>
             ) : (
-              <button className="channel-unfollow-btn" onClick={handleUnfollow}>
-                Unfollow
-              </button>
+              <>
+                <button
+                  className="channel-unfollow-btn"
+                  onClick={handleUnfollow}
+                >
+                  Unfollow
+                </button>
+                {isViewerNormal && (
+                  <button
+                    className="channel-follow-btn"
+                    onClick={() =>
+                      navigate(
+                        `/chat?target=${encodeURIComponent(channelData.channel_name)}&targetType=Channel`,
+                      )
+                    }
+                  >
+                    Chat
+                  </button>
+                )}
+              </>
             ))}
 
           <button

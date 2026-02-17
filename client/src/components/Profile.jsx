@@ -193,6 +193,13 @@ const ProfilePage = () => {
 
   const canSeeSocial = !viewerIsChannel && !blockedByTarget && !viewerBlockedTarget && !kidsBoundary && (ownProfile || access.canViewSocial);
   const canShowFollow = !ownProfile && !viewerIsChannel && !blockedByTarget && !viewerBlockedTarget && !kidsBoundary;
+  const canShowChat =
+    !ownProfile &&
+    viewerType === 'Normal' &&
+    profileType === 'Normal' &&
+    !blockedByTarget &&
+    !viewerBlockedTarget &&
+    !kidsBoundary;
 
   const getContent = () => {
     if (!ownProfile) return posts;
@@ -273,10 +280,36 @@ const ProfilePage = () => {
               <button className="profile-btn primary" onClick={action} disabled={!canFollow || !href}>
                 {(canFollow && (relationship || 'Follow')) || 'Follow'}
               </button>
+              {canShowChat && (
+                <button
+                  className="profile-btn"
+                  onClick={() =>
+                    navigate(
+                      `/chat?target=${encodeURIComponent(targetUsername)}&targetType=Normal`,
+                    )
+                  }
+                >
+                  Chat
+                </button>
+              )}
               <button className="profile-btn" onClick={() => handleShare(targetUsername)}>Share Profile</button>
             </>
           ) : (
-            <button className="profile-btn" onClick={() => handleShare(targetUsername)}>Share Profile</button>
+            <>
+              {canShowChat && (
+                <button
+                  className="profile-btn"
+                  onClick={() =>
+                    navigate(
+                      `/chat?target=${encodeURIComponent(targetUsername)}&targetType=Normal`,
+                    )
+                  }
+                >
+                  Chat
+                </button>
+              )}
+              <button className="profile-btn" onClick={() => handleShare(targetUsername)}>Share Profile</button>
+            </>
           )}
         </div>
 
