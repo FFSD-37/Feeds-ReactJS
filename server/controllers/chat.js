@@ -15,6 +15,19 @@ const normalizeTargetType = (targetType = "") => {
   return "Normal";
 };
 
+const markConversationAsSeen = async ({ meName, meType, target, targetType }) => {
+  await Chat.updateMany(
+    {
+      from: target,
+      fromType: targetType,
+      to: meName,
+      toType: meType,
+      seen: false,
+    },
+    { $set: { seen: true } }
+  );
+};
+
 const getFriendList = async (req, res) => {
   try {
     const me = getAuthIdentity(req);
@@ -143,6 +156,13 @@ const getChat = async (req, res) => {
     const target = req.params.username;
     const targetType = normalizeTargetType(req.query.targetType);
 
+    await markConversationAsSeen({
+      meName: me.name,
+      meType: me.type,
+      target,
+      targetType,
+    });
+
     const chats = await Chat.find({
       $or: [
         { from: me.name, fromType: me.type, to: target, toType: targetType },
@@ -178,4 +198,26 @@ const deleteChat = async (req, res) => {
   }
 };
 
-export { getChat, getFriendList, deleteChat };
+const markChatSeen = async (req, res) => {
+  try {
+    const me = getAuthIdentity(req);
+    if (me.type === "Kids") {
+      return res.status(403).json({ success: false, message: "Kids accounts cannot access chat" });
+    }
+    const target = req.params.username;
+    const targetType = normalizeTargetType(req.query.targetType);
+
+    await markConversationAsSeen({
+      meName: me.name,
+      meType: me.type,
+      target,
+      targetType,
+    });
+
+    return res.json({ success: true, message: "Chat marked as seen" });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export { getChat, getFriendList, deleteChat, markChatSeen };

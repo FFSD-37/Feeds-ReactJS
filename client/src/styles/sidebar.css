@@ -23,6 +23,24 @@
   justify-content: center;
   width: 100%;
   padding: 0;
+  position: relative;
+}
+
+.sidebar-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  padding: 0 5px;
+  border: 1px solid #111;
 }
 
 .icon-img {

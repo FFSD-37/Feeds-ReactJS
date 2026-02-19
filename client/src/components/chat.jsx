@@ -34,6 +34,22 @@ export default function ChatPage() {
     if (el) el.scrollTop = el.scrollHeight;
   }, []);
 
+  const markConversationSeen = useCallback(async friend => {
+    if (!friend?.username) return;
+    try {
+      await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/chat/${encodeURIComponent(friend.username)}/seen?targetType=${encodeURIComponent(friend.type)}`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+    } catch (err) {
+      console.error('Failed to mark chat as seen', err);
+    }
+  }, []);
+
   useEffect(() => {
     const onReceive = msg => {
       if (normalizeType(msg.fromType) === 'Kids') return;
@@ -58,6 +74,7 @@ export default function ChatPage() {
       if (!activeChat) return;
       if (msg.from === activeChat.username && normalizeType(msg.fromType) === activeChat.type) {
         setMessages(prev => [...prev, msg]);
+        markConversationSeen(activeChat);
         setTimeout(scrollBottom, 30);
       }
     };
@@ -75,7 +92,7 @@ export default function ChatPage() {
       socket.off('receiveMessage', onReceive);
       socket.off('chatDeleted', onDeleted);
     };
-  }, [activeChat, scrollBottom, selfName]);
+  }, [activeChat, scrollBottom, selfName, markConversationSeen]);
 
   useEffect(() => {
     async function loadFriends() {
@@ -108,6 +125,7 @@ export default function ChatPage() {
       );
       const data = await res.json();
       setMessages(data.chats || []);
+      markConversationSeen(friend);
       setTimeout(scrollBottom, 50);
     } catch (err) {
       console.error('Failed to fetch chat history', err);

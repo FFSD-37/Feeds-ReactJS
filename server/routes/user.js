@@ -35,6 +35,8 @@ import {
   reportAccount,
   handleloginchannel,
   handlegetallnotifications,
+  markNotificationsAsSeen,
+  getUnseenCounts,
   handleloginsecond,
   handlelikereel,
   handlereportpost,
@@ -103,7 +105,7 @@ import {
 import { handleimagKitauth } from "../services/imagKit.js";
 import { isAuthuser } from "../middleware/isAuthuser.js";
 import { checkOut, verify_payment } from "../controllers/payment.js";
-import { getChat, getFriendList, deleteChat } from "../controllers/chat.js";
+import { getChat, getFriendList, deleteChat, markChatSeen } from "../controllers/chat.js";
 import { getDailyusage } from "../controllers/timout.js";
 import { handlegetstories } from "../controllers/userStory.js";
 import Channel from "../models/channelSchema.js";
@@ -216,6 +218,7 @@ router.post("/unfollow/:username", unfollowSomeone);
 router.post("/unrequest/:username", unRequestSomeone);
 
 router.get("/chat/:username", getChat);
+router.post("/chat/:username/seen", markChatSeen);
 router.delete("/chat/:username", deleteChat);
 
 router.get("/friends", getFriendList);
@@ -243,6 +246,8 @@ router.post("/report/:username", reportAccount);
 router.post("/postloginchannel", handleloginchannel);
 
 router.get("/GetAllNotifications", handlegetallnotifications);
+router.post("/notifications/mark-seen", markNotificationsAsSeen);
+router.get("/unseen-counts", getUnseenCounts);
 
 router.get("/profile/:username", handlegetUserPost);
 
