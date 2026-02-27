@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './../styles/sidebar.css';
 import { useUserData } from './../providers/userData.jsx';
 import { useNavigate } from 'react-router-dom';
@@ -15,6 +15,7 @@ function Sidebar() {
 
   const [showDropdown, setShowDropdown] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [unseenCounts, setUnseenCounts] = useState({ notifications: 0, chats: 0 });
 
   const toggleDropdown = () => {
     if (userData.type === 'Kids') {
@@ -90,6 +91,43 @@ function Sidebar() {
 
   const { username, channelName, profileUrl, type, isPremium } = userData || {};
 
+  useEffect(() => {
+    if (!type) return undefined;
+
+    let mounted = true;
+    let intervalId;
+
+    const loadUnseenCounts = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/unseen-counts`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success || !mounted) return;
+        setUnseenCounts({
+          notifications: Number(data?.counts?.notifications || 0),
+          chats: Number(data?.counts?.chats || 0),
+        });
+      } catch (err) {
+        console.error('Failed to fetch unseen counts', err);
+      }
+    };
+
+    loadUnseenCounts();
+    intervalId = setInterval(loadUnseenCounts, 15000);
+    window.addEventListener('focus', loadUnseenCounts);
+    document.addEventListener('visibilitychange', loadUnseenCounts);
+
+    return () => {
+      mounted = false;
+      if (intervalId) clearInterval(intervalId);
+      window.removeEventListener('focus', loadUnseenCounts);
+      document.removeEventListener('visibilitychange', loadUnseenCounts);
+    };
+  }, [type]);
+
   // Sidebar items
   const allItems = [
     { name: 'Home', href: '/home', icon: '/Images/Home.svg' },
@@ -146,9 +184,18 @@ function Sidebar() {
     <>
       <div className="sidebar">
         {/* Main Nav Icons */}
-        {filteredItems.map(item => (
+        {filteredItems.map(item => {
+          const badgeCount =
+            item.name === 'Notifications'
+              ? unseenCounts.notifications
+              : item.name === 'Chat'
+                ? unseenCounts.chats
+                : 0;
+
+          return (
           <div key={item.name} className="icon-container">
             <a href={item.href} className="nav-item">
+              {badgeCount > 0 && <span className="sidebar-badge">{badgeCount > 99 ? '99+' : badgeCount}</span>}
               <img
                 src={item.icon}
                 alt={item.name}
@@ -159,7 +206,8 @@ function Sidebar() {
             </a>
             <span className="sidebar_tooltip">{item.name}</span>
           </div>
-        ))}
+          );
+        })}
 
         {/* Menu Icon */}
         <div className="icon-container" onClick={toggleDropdown}>

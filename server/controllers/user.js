@@ -12,6 +12,7 @@ import bcrypt, { compare } from "bcrypt";
 import Feedback from "../models/feedbackForm.js";
 import DelUser from "../models/SoftDelUsers.js";
 import Notification from "../models/notification_schema.js";
+import Chat from "../models/chatSchema.js";
 import Channel from "../models/channelSchema.js";
 import channelPost from "../models/channelPost.js";
 import Story from "../models/storiesSchema.js";
@@ -2220,6 +2221,84 @@ const handlegetallnotifications = async (req, res) => {
   }
 };
 
+const markNotificationsAsSeen = async (req, res) => {
+  try {
+    const { data } = req.userDetails;
+    if (!data || !data[0]) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized access. Please log in again.",
+      });
+    }
+
+    const username = data[0];
+    const result = await Notification.updateMany(
+      { mainUser: username, seen: false },
+      { $set: { seen: true } }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Notifications marked as seen.",
+      updatedCount: result.modifiedCount || 0,
+    });
+  } catch (error) {
+    console.error("❌ Error in markNotificationsAsSeen:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while marking notifications as seen.",
+    });
+  }
+};
+
+const getUnseenCounts = async (req, res) => {
+  try {
+    const { data } = req.userDetails;
+    if (!data || !data[0]) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized access. Please log in again.",
+      });
+    }
+
+    const username = data[0];
+    const userType = data[3];
+
+    const notificationsPromise = Notification.countDocuments({
+      mainUser: username,
+      seen: false,
+    });
+
+    const chatsPromise =
+      userType === "Kids"
+        ? Promise.resolve(0)
+        : Chat.countDocuments({
+            to: username,
+            toType: userType === "Channel" ? "Channel" : "Normal",
+            seen: false,
+          });
+
+    const [unseenNotifications, unseenChats] = await Promise.all([
+      notificationsPromise,
+      chatsPromise,
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      counts: {
+        notifications: unseenNotifications,
+        chats: unseenChats,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error in getUnseenCounts:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching unseen counts.",
+    });
+  }
+};
+
 const handleloginsecond = async (req, res) => {
   if (req.body.type === "Standard Account") {
     try {
@@ -2853,6 +2932,8 @@ export {
   reportAccount,
   handleloginchannel,
   handlegetallnotifications,
+  markNotificationsAsSeen,
+  getUnseenCounts,
   handleloginsecond,
   handlelikereel,
   handlereportpost,

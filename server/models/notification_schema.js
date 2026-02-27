@@ -19,6 +19,10 @@ const notificationSchema = new mongoose.Schema({
     userInvolved: {
         type: String,
         required: true
+    },
+    seen: {
+        type: Boolean,
+        default: false
     }
 }, { timestamps: true });
 

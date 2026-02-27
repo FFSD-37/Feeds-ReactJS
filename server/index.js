@@ -133,6 +133,7 @@ io.on("connection", async (socket) => {
         to,
         toType: normalizedToType,
         text,
+        seen: false,
         createdAt: dateTime,
       });
 

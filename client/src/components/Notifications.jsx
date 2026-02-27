@@ -15,26 +15,50 @@ export default function Notifications() {
   const [filter, setFilter] = useState('all');
 
   const fetchAllNotification = async () => {
-    const res = await fetch(
-      `${import.meta.env.VITE_SERVER_URL}/GetAllNotifications`,
-      {
-        method: "GET",
-        credentials: "include"
-      },
-    );
-    const data = await res.json();
-    // console.log(data);
-    if (data.success){
-      setNotifications(data.notifications);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/GetAllNotifications`,
+        {
+          method: "GET",
+          credentials: "include"
+        },
+      );
+      const data = await res.json();
+      if (data.success){
+        setNotifications(data.notifications);
+      }
+      else{
+        console.log("error fetching notifications")
+      }
+    } finally {
       setLoading(false);
     }
-    else{
-      console.log("error fetching notifications")
+  };
+
+  const markAllAsSeen = async () => {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/notifications/mark-seen`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+      const data = await res.json();
+      if (!res.ok || !data.success) return;
+      setNotifications(prev => prev.map(n => ({ ...n, seen: true })));
+    } catch (err) {
+      console.error('Failed to mark notifications as seen', err);
     }
   };
   
   useEffect(() => {
-    fetchAllNotification();
+    const init = async () => {
+      await fetchAllNotification();
+      await markAllAsSeen();
+    };
+    init();
   }, []);
 
   const acceptFollowRequest = async (notificationId, username) => {
@@ -321,6 +345,10 @@ export default function Notifications() {
           transition: background-color 0.2s;
         }
 
+        .notification-item.unseen {
+          background: #eff6ff;
+        }
+
         .notification-item:last-child {
           border-bottom: none;
         }
@@ -578,7 +606,10 @@ export default function Notifications() {
                 const timeAgo = getTimeAgo(noti.createdAt);
 
                 return (
-                  <div key={noti._id || index} className="notification-item">
+                  <div
+                    key={noti._id || index}
+                    className={`notification-item ${noti.seen ? '' : 'unseen'}`}
+                  >
                     <div className="notification-content-wrapper">
                       <div className="notification-icon" style={{ backgroundColor: color }}>
                         <span>{icon}</span>
