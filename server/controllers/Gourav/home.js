@@ -4,6 +4,7 @@ import Post from "../../models/postSchema.js";
 import Comment from "../../models/comment_schema.js";
 import Report from "../../models/reports.js";
 import ActivityLog from "../../models/activityLogSchema.js";
+import Channel from "../../models/channelSchema.js";
 
 const getFriends = async (req, res) => {
   const { data } = req.userDetails;
@@ -129,8 +130,16 @@ const handlecommentreport = async (req, res) => {
       });
     }
 
+    // Classify chat/comment report:
+    // normal user chat => 5, channel chat => 6
+    const isChannelComment = Boolean(
+      await Channel.findOne({ channelName: comment.username }).select("channelName")
+    );
+    const reportId = isChannelComment ? 6 : 5;
+
     // Create new report entry
     const report = await Report.create({
+      report_id: reportId,
       post_id: commentId,
       report_number: Date.now(),
       user_reported: reporter,

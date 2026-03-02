@@ -2041,12 +2041,16 @@ const reportAccount = async (req, res) => {
     const { username } = req.params;
     const { reason } = req.body;
 
-    // Validate target user
-    const reportedUser = await User.findOne({ username });
-    if (!reportedUser) {
+    // Validate target account (normal/kids user or channel)
+    const [reportedUser, reportedChannel] = await Promise.all([
+      User.findOne({ username }),
+      Channel.findOne({ channelName: username }),
+    ]);
+
+    if (!reportedUser && !reportedChannel) {
       return res.status(404).json({
         success: false,
-        message: "User to be reported not found.",
+        message: "Account to be reported not found.",
       });
     }
 
@@ -2058,8 +2062,11 @@ const reportAccount = async (req, res) => {
       });
     }
 
+    const reportId = reportedChannel ? 2 : 1;
+
     // Create report record
     const report = await Report.create({
+      report_id: reportId,
       post_id: "On account",
       report_number: Date.now(),
       user_reported: reporter,
@@ -2526,8 +2533,13 @@ const handlereportpost = async (req, res) => {
       });
     }
 
+    // Classify: normal/kids post => 3, channel post => 4
+    const channelAuthor = await Channel.findOne({ channelName: post.author }).select("channelName");
+    const reportId = channelAuthor ? 4 : 3;
+
     // Create new report entry
     const report = await Report.create({
+      report_id: reportId,
       post_id,
       report_number: Date.now(),
       user_reported: reporter,
