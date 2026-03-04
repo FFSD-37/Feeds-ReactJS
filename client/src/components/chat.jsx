@@ -23,6 +23,7 @@ export default function ChatPage() {
   const [bgColor, setBgColor] = useState('#020617');
   const colorRef = useRef(null);
   const [showSidebarMobile, setShowSidebarMobile] = useState(false);
+  const [messageMenuId, setMessageMenuId] = useState(null);
 
   const selfName =
     userData?.type === 'Channel' ? userData?.channelName : userData?.username;
@@ -235,6 +236,43 @@ export default function ChatPage() {
     }
   };
 
+  const reportChatMessage = async msg => {
+    if (!msg?._id) {
+      alert('This message cannot be reported yet. Please refresh and try again.');
+      return;
+    }
+
+    const reason = window.prompt('Reason for reporting this chat message?');
+    if (!reason || !reason.trim()) return;
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/report_chat`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: msg._id,
+          reason: reason.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Chat reported - id: ${data.reportId}`);
+      } else {
+        alert(data.message || 'Failed to report chat');
+      }
+    } catch (err) {
+      console.error('Failed to report chat', err);
+      alert('Failed to report chat');
+    }
+  };
+
+  const handleReplyToMessage = msg => {
+    if (!msg?.from) return;
+    setInput(prev => `@${msg.from} ${prev}`.trimStart());
+    setMessageMenuId(null);
+  };
+
   const groupByDate = msgs => {
     const map = {};
     msgs.forEach(m => {
@@ -277,10 +315,21 @@ export default function ChatPage() {
   }, []);
 
   useEffect(() => {
+    const closeMessageMenu = e => {
+      if (!e.target.closest('.chat-message-actions')) {
+        setMessageMenuId(null);
+      }
+    };
+    document.addEventListener('click', closeMessageMenu);
+    return () => document.removeEventListener('click', closeMessageMenu);
+  }, []);
+
+  useEffect(() => {
     const onKeyDown = e => {
       if (e.key === 'Escape') {
         setShowEmoji(false);
         setShowColor(false);
+        setMessageMenuId(null);
       }
     };
     document.addEventListener('keydown', onKeyDown);
@@ -421,6 +470,43 @@ export default function ChatPage() {
                       <div className="chat-timestamp-inline">
                         {(msg.dateTime || msg.createdAt).toString().split(' ').slice(-2).join(' ')}
                       </div>
+                      {!(msg.from === selfName && normalizeType(msg.fromType) === selfType) && (
+                        <div className="chat-message-actions">
+                          <button
+                            type="button"
+                            className="chat-message-menu-btn"
+                            onClick={() =>
+                              setMessageMenuId(prev =>
+                                prev === msg._id ? null : msg._id,
+                              )
+                            }
+                            aria-label="Message options"
+                          >
+                            ⋮
+                          </button>
+                          {messageMenuId === msg._id && (
+                            <div className="chat-message-menu">
+                              <button
+                                type="button"
+                                className="chat-message-menu-item"
+                                onClick={() => handleReplyToMessage(msg)}
+                              >
+                                Reply
+                              </button>
+                              <button
+                                type="button"
+                                className="chat-message-menu-item danger"
+                                onClick={() => {
+                                  reportChatMessage(msg);
+                                  setMessageMenuId(null);
+                                }}
+                              >
+                                Report
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

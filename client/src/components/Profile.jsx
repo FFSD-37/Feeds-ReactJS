@@ -151,7 +151,32 @@ const ProfilePage = () => {
     window.location.href = '/home';
   };
 
-  const handleReportUser = () => {};
+  const handleReportUser = async () => {
+    try {
+      const reason =
+        window.prompt('Why are you reporting this user?', 'Inappropriate behavior') ||
+        'Inappropriate behavior';
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/report/${encodeURIComponent(targetUsername)}`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason }),
+        },
+      );
+      const data = await res.json();
+      if (data.success) {
+        alert(`User reported - id: ${data.reportId}`);
+      } else {
+        alert(data.message || 'Failed to report user');
+      }
+    } catch (err) {
+      console.error('Error reporting user:', err);
+      alert('Failed to report user');
+    }
+  };
 
   const action = async () => {
     if (!href) return;

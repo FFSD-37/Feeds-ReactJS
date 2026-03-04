@@ -40,6 +40,7 @@ import {
   handleloginsecond,
   handlelikereel,
   handlereportpost,
+  handleReportChat,
   handlegetads,
   handlelikecomment,
   handleblockuser,
@@ -242,6 +243,7 @@ router.get("/activityLog", handlegetlog);
 router.post("/shareFinalPost", uploadFinalPost);
 
 router.post("/report/:username", reportAccount);
+router.post("/report_channel/:username", reportAccount);
 
 router.post("/postloginchannel", handleloginchannel);
 
@@ -256,6 +258,7 @@ router.post("/posts/like", handlelikereel);
 router.post("/comment", handlepostcomment);
 
 router.post("/report_post", handlereportpost);
+router.post("/report_chat", handleReportChat);
 
 router.get("/ads", handlegetads);
 

@@ -98,7 +98,7 @@ const handlepostreply = async (req, res) => {
 const handlecommentreport = async (req, res) => {
   try {
     const { data } = req.userDetails;
-    const reporter = data[0];
+    const reporterUsername = data[0];
     const { commentId } = req.body;
 
     if (!commentId) {
@@ -117,19 +117,6 @@ const handlecommentreport = async (req, res) => {
       });
     }
 
-    // Prevent duplicate reports by the same user
-    const existingReport = await Report.findOne({
-      post_id: commentId,
-      user_reported: reporter,
-    });
-
-    if (existingReport) {
-      return res.status(400).json({
-        success: false,
-        message: "You have already reported this comment.",
-      });
-    }
-
     // Classify chat/comment report:
     // normal user chat => 5, channel chat => 6
     const isChannelComment = Boolean(
@@ -142,14 +129,14 @@ const handlecommentreport = async (req, res) => {
       report_id: reportId,
       post_id: commentId,
       report_number: Date.now(),
-      user_reported: reporter,
+      user_reported: comment.username,
       reason: "REPORT",
       status: "Pending",
     });
 
     // Add to activity log
     await ActivityLog.create({
-      username: reporter,
+      username: reporterUsername,
       id: `#${Date.now()}`,
       message: `You reported a comment.`,
     });
