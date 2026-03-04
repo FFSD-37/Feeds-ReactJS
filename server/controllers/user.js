@@ -2037,14 +2037,14 @@ const uploadFinalPost = async (req, res) => {
 const reportAccount = async (req, res) => {
   try {
     const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
-    const reporter = data[0];
-    const { username } = req.params;
+    const reporterUsername = data[0];
+    const { username: targetName } = req.params;
     const { reason } = req.body;
 
     // Validate target account (normal/kids user or channel)
     const [reportedUser, reportedChannel] = await Promise.all([
-      User.findOne({ username }),
-      Channel.findOne({ channelName: username }),
+      User.findOne({ username: targetName }),
+      Channel.findOne({ channelName: targetName }),
     ]);
 
     if (!reportedUser && !reportedChannel) {
@@ -2055,7 +2055,7 @@ const reportAccount = async (req, res) => {
     }
 
     // Prevent self-reporting
-    if (reporter === username) {
+    if (reporterUsername === targetName) {
       return res.status(400).json({
         success: false,
         message: "You cannot report your own account.",
@@ -2069,16 +2069,16 @@ const reportAccount = async (req, res) => {
       report_id: reportId,
       post_id: "On account",
       report_number: Date.now(),
-      user_reported: reporter,
+      user_reported: targetName,
       reason: reason || "No reason provided",
       status: "Pending",
     });
 
     // Optional: add activity log
     await ActivityLog.create({
-      username: reporter,
+      username: reporterUsername,
       id: `#${Date.now()}`,
-      message: `You reported the account of @${username}.`,
+      message: `You reported the account of @${targetName}.`,
     });
 
     return res.status(201).json({
@@ -2501,7 +2501,7 @@ const handlelikereel = async (req, res) => {
 const handlereportpost = async (req, res) => {
   try {
     const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
-    const reporter = data[0];
+    const reporterUsername = data[0];
     const { reason, post_id } = req.body;
 
     if (!post_id || !reason) {
@@ -2511,58 +2511,40 @@ const handlereportpost = async (req, res) => {
       });
     }
 
-    // Check if post exists
-    const post = await Post.findOne({ id: post_id });
-    if (!post) {
+    const [userPost, reportedChannelPost] = await Promise.all([
+      Post.findOne({ id: post_id }),
+      channelPost.findOne({ id: post_id }),
+    ]);
+
+    if (!userPost && !reportedChannelPost) {
       return res.status(404).json({
         success: false,
         message: "Post not found.",
       });
     }
 
-    // Prevent duplicate reports by the same user
-    const existingReport = await Report.findOne({
-      post_id,
-      user_reported: reporter,
-    });
-
-    if (existingReport) {
-      return res.status(400).json({
-        success: false,
-        message: "You have already reported this post.",
-      });
-    }
-
-    // Classify: normal/kids post => 3, channel post => 4
-    const channelAuthor = await Channel.findOne({ channelName: post.author }).select("channelName");
-    const reportId = channelAuthor ? 4 : 3;
+    const isChannelPost = Boolean(reportedChannelPost);
+    const reportId = isChannelPost ? 4 : 3;
+    const reportedOwner = isChannelPost
+      ? reportedChannelPost.channel
+      : userPost.author;
 
     // Create new report entry
     const report = await Report.create({
       report_id: reportId,
       post_id,
       report_number: Date.now(),
-      user_reported: reporter,
+      user_reported: reportedOwner,
       reason,
       status: "Pending",
     });
 
     // Add to activity log
     await ActivityLog.create({
-      username: reporter,
+      username: reporterUsername,
       id: `#${Date.now()}`,
-      message: `You reported a post by @${post.author} for "${reason}".`,
+      message: `You reported a post by @${reportedOwner} for "${reason}".`,
     });
-
-    // Optional: notify post author
-    if (post.author !== reporter) {
-      await Notification.create({
-        mainUser: post.author,
-        mainUserType: "Normal",
-        msgSerial: 13, // example serial for 'report received'
-        userInvolved: reporter,
-      });
-    }
 
     return res.status(201).json({
       success: true,
@@ -2574,6 +2556,71 @@ const handlereportpost = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error while reporting post.",
+    });
+  }
+};
+
+const handleReportChat = async (req, res) => {
+  try {
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const reporterUsername = data[0];
+    const reporterType = data[3] === "Channel" ? "Channel" : "Normal";
+    const { chat_id, reason } = req.body;
+
+    if (!chat_id || !reason) {
+      return res.status(400).json({
+        success: false,
+        message: "Chat ID and reason are required.",
+      });
+    }
+
+    const chat = await Chat.findById(chat_id);
+    if (!chat) {
+      return res.status(404).json({
+        success: false,
+        message: "Chat message not found.",
+      });
+    }
+
+    const isFromMe = chat.from === reporterUsername && chat.fromType === reporterType;
+    const isToMe = chat.to === reporterUsername && chat.toType === reporterType;
+
+    if (!isFromMe && !isToMe) {
+      return res.status(403).json({
+        success: false,
+        message: "You can report only chats that involve your account.",
+      });
+    }
+
+    const userReported = isFromMe ? chat.to : chat.from;
+    const userReportedType = isFromMe ? chat.toType : chat.fromType;
+    const reportId = userReportedType === "Channel" ? 6 : 5;
+
+    const report = await Report.create({
+      report_id: reportId,
+      post_id: String(chat._id),
+      report_number: Date.now(),
+      user_reported: userReported,
+      reason,
+      status: "Pending",
+    });
+
+    await ActivityLog.create({
+      username: reporterUsername,
+      id: `#${Date.now()}`,
+      message: `You reported a chat with @${userReported}.`,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Chat reported successfully.",
+      reportId: report._id,
+    });
+  } catch (error) {
+    console.error("❌ Error in handleReportChat:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while reporting chat.",
     });
   }
 };
@@ -2949,6 +2996,7 @@ export {
   handleloginsecond,
   handlelikereel,
   handlereportpost,
+  handleReportChat,
   handlegetads,
   handlelikecomment,
   handleblockuser,

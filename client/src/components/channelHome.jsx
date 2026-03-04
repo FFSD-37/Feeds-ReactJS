@@ -128,9 +128,27 @@ function ChannelHome() {
     setReportPostId(null);
   };
 
-  const handleReasonSelect = reason => {
-    alert(`Reported post ${reportPostId} for: ${reason}`);
-    handleCloseReport();
+  const handleReasonSelect = async reason => {
+    if (!reportPostId) return;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/report_post`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ reason, post_id: reportPostId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Post reported - id: ${data.reportId}`);
+      } else {
+        alert(data.message || 'Failed to report post');
+      }
+    } catch (err) {
+      console.error('Error reporting post:', err);
+      alert('Failed to report post');
+    } finally {
+      handleCloseReport();
+    }
   };
 
   const handleVideoClick = id => {
