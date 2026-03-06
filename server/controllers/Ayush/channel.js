@@ -57,6 +57,7 @@ const handlegetchannel = async (req, res) => {
   try {
     const { channelName } = req.params;
     const { data } = req.userDetails || {};
+    // console.log(data);
     // console.log("data:", data);
 
     // data = [channelName, adminName, logo, type, isPremium]
@@ -75,9 +76,10 @@ const handlegetchannel = async (req, res) => {
     if (channel.isDeactivated) {
       return res.status(403).json({ error: "Channel is currently deactivated" });
     }
-
+    // console.log(channel.channelName);
     // 🔔 PREVENT SELF-VIEW NOTIFICATION
-    if (data[3] === "Channel" && data[1] === channel.channelName) {
+    if (data[3] === "Channel" && data[0] === channel.channelName) {
+      // console.log("HERE");
       // skip creating notification
     } else {
       // 🔔 CREATE NOTIFICATION
