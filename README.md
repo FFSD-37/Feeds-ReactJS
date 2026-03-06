@@ -139,14 +139,6 @@ git push origin branchname
 
 ---
 
-## ⚙️ Project Component Assignment
-
-Each member is assigned **parent components** to develop.  
-All components must be placed inside the **`components/`** folder and style should be created in **`styles/`** folder.  
-You can create **child components** freely under these parent components.
-
----
-
 ### 🧠 Guidelines
 
 - Inside every component, **variable names should start with the component name** to prevent naming conflicts.  
@@ -169,23 +161,24 @@ You can create **child components** freely under these parent components.
 ### 👤 Ayush
 
 - [✅] Sidebar
-- [✅] Post Overlay
+- [✅] Channel Post Overlay
 - [✅] Edit Profile/Channel
 - [✅] Connect
 - [✅] Channel Profile (Self/Other)
 - [✅] Channel Home
-- [✅] Kids Home(Landing Page)
+- [✅] Kids Home
+- [✅] Channel Settings
 
 ---
 
 ### 👤 Gourav Khakse
 
-- [❌] Admin Portal
+- [✅] Admin Portal
 - [✅] Home (Normal User)
 - [✅] Profile (Self/Other)
-- [✅] Notification (Normal, Channel)
+- [✅] Notification
 - [✅] Games
-- [✅] Setting
+- [✅] Settings
 - [✅] Kids Settings
 
 ---
@@ -195,7 +188,7 @@ You can create **child components** freely under these parent components.
 - [✅] Payment / Premium
 - [✅] Chat
 - [✅] Daily Usage
-- [✅] Create Post / Reels / Stories (Channel, Normal)
+- [✅] Create Post / Reels / Stories
 - [✅] Error Page(Incorrect Route)
 - [✅] Redux integration
 
@@ -207,7 +200,7 @@ You can create **child components** freely under these parent components.
 - [✅] Login Page (All Types)
 - [✅] Activity Log
 - [✅] Stories
-- [✅] Delete (Normal, Kids, Channel)
+- [✅] Delete (Normal, Kids)
 
 ---
 
@@ -263,10 +256,13 @@ You can create **child components** freely under these parent components.
 - Global error handler  
   Centralized error-handling middleware that captures and formats application errors consistently.
 
+- Logger using morgan  
+  Centralized logging middleware for POST, PUT and DELETE requests to be logged in mongodb schema.
 
 
 ## 🧾 Notes
 
 - Please keep all commits meaningful and well-labeled.
 - Follow consistent component naming and folder structure.
+
 - Always work on your **own branch** for each feature before working on it.

@@ -66,8 +66,7 @@ function EditChannel() {
 
   const imagekit = new ImageKit({
     publicKey: 'public_kFHkU6GMQrtHeX9lEvE8hn7bOqM=',
-    urlEndpoint: 'https://ik.imagekit.io/vzp8taxcnc/',
-    authenticationEndpoint: `${import.meta.env.VITE_SERVER_URL}/api/imagekit/auth`,
+    urlEndpoint: 'https://ik.imagekit.io/vzp8taxcnc/'
   });
 
   const enable = field => setEditableFields(p => ({ ...p, [field]: true }));
@@ -186,9 +185,16 @@ function EditChannel() {
     try {
       // Upload image if changed
       if (edit_channel_logo) {
+        const authRes = await fetch(
+          import.meta.env.VITE_SERVER_URL + '/imagKitauth',
+        );
+        const authData = await authRes.json();
         const upload = await imagekit.upload({
           file: edit_channel_logo,
           fileName: edit_channel_logo.name,
+          token: authData.token,
+          signature: authData.signature,
+          expire: authData.expire,
         });
 
         logoUrl = upload.url;

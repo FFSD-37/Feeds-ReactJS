@@ -12,6 +12,7 @@ import bcrypt, { compare } from "bcrypt";
 import Feedback from "../models/feedbackForm.js";
 import DelUser from "../models/SoftDelUsers.js";
 import Notification from "../models/notification_schema.js";
+import Chat from "../models/chatSchema.js";
 import Channel from "../models/channelSchema.js";
 import channelPost from "../models/channelPost.js";
 import Story from "../models/storiesSchema.js";
@@ -1095,8 +1096,39 @@ const followSomeone = async (req, res) => {
       });
     }
 
-    // 🔹 Already requested
-    if (me.requested.some((r) => r.username === targetUsername)) {
+    if (!me) {
+      return res.status(403).json({
+        success: false,
+        message: "Only user accounts can follow profiles.",
+      });
+    }
+
+    if (
+      (me.type === "Kids" && targetUser.type !== "Kids") ||
+      (me.type !== "Kids" && targetUser.type === "Kids")
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Kids accounts cannot follow non-kids users and vice-versa.",
+      });
+    }
+
+    if (targetUser.blockedUsers.includes(followerUsername)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are blocked by this user.",
+      });
+    }
+
+    if (me.blockedUsers.includes(targetUsername)) {
+      return res.status(400).json({
+        success: false,
+        message: "Unblock this user before following.",
+      });
+    }
+
+    // 🔹 Already requested (stored on target/private user's document)
+    if (targetUser.requested.some((r) => r.username === followerUsername)) {
       return res.status(200).json({
         success: true,
         status: "requested",
@@ -1113,62 +1145,11 @@ const followSomeone = async (req, res) => {
       });
     }
 
-    const alreadyFollowsMe = targetUser.followings.some(
-      (f) => f.username === followerUsername
-    );
-
-    // 🧩 Private account handling
     if (targetUser.visibility === "Private") {
-      // If they already follow you → mutual follow
-      if (alreadyFollowsMe) {
-        await Promise.all([
-          User.updateOne(
-            { username: followerUsername },
-            { $addToSet: { followings: { username: targetUsername } } }
-          ),
-          User.updateOne(
-            { username: targetUsername },
-            { $addToSet: { followers: { username: followerUsername } } }
-          ),
-        ]);
-
-        await ActivityLog.create({
-          username: followerUsername,
-          id: `#${Date.now()}`,
-          message: `You and @${targetUsername} are now friends!`,
-        });
-
-        await Notification.create({
-          mainUser: targetUsername,
-          mainUserType: "Normal",
-          msgSerial: 1, // Normal user follows another normal user
-          userInvolved: followerUsername,
-        });
-
-        await User.updateOne(
-          { username: followerUsername },
-          { $inc: { coins: 1 } }
-        );
-
-        // Notification for getting coins
-        await Notification.create({
-          mainUser: targetUsername,
-          mainUserType: "Normal",
-          msgSerial: 6, // Normal user get some coins
-          userInvolved: followerUsername,
-        });
-
-        return res.status(200).json({
-          success: true,
-          status: "friend",
-          message: `You and @${targetUsername} are now friends!`,
-        });
-      }
-
-      // Otherwise → Send follow request
+      // Always send follow request for private accounts
       await User.updateOne(
-        { username: followerUsername },
-        { $addToSet: { requested: { username: targetUsername } } }
+        { username: targetUsername },
+        { $addToSet: { requested: { username: followerUsername } } }
       );
 
       await Notification.create({
@@ -1258,13 +1239,33 @@ const unRequestSomeone = async (req, res) => {
         message: "User not found.",
       });
     }
-    console.log(me.requested);
-    console.log(targetUsername);
-    if (me.requested.some((r) => r.username === targetUsername)) {
+
+    if (!me) {
+      return res.status(403).json({
+        success: false,
+        message: "Only user accounts can unrequest profiles.",
+      });
+    }
+
+    if (
+      (me.type === "Kids" && targetUser.type !== "Kids") ||
+      (me.type !== "Kids" && targetUser.type === "Kids")
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Kids accounts cannot follow non-kids users and vice-versa.",
+      });
+    }
+    if (targetUser.requested.some((r) => r.username === unrequesterUsername)) {
       await User.updateOne(
-        { username: unrequesterUsername },
-        { $pull: { requested: { username: targetUsername } } }
+        { username: targetUsername },
+        { $pull: { requested: { username: unrequesterUsername } } }
       );
+      await Notification.deleteMany({
+        mainUser: targetUsername,
+        userInvolved: unrequesterUsername,
+        msgSerial: 4,
+      });
       await ActivityLog.create({
         username: unrequesterUsername,
         id: `#${Date.now()}`,
@@ -1318,12 +1319,34 @@ const unfollowSomeone = async (req, res) => {
       });
     }
 
+    if (!me) {
+      return res.status(403).json({
+        success: false,
+        message: "Only user accounts can unfollow profiles.",
+      });
+    }
+
+    if (
+      (me.type === "Kids" && targetUser.type !== "Kids") ||
+      (me.type !== "Kids" && targetUser.type === "Kids")
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Kids accounts cannot follow non-kids users and vice-versa.",
+      });
+    }
+
     // 🧩 Case 1: Cancel follow request (Private account)
-    if (me.requested.some((r) => r.username === targetUsername)) {
+    if (targetUser.requested.some((r) => r.username === unfollowerUsername)) {
       await User.updateOne(
-        { username: unfollowerUsername },
-        { $pull: { requested: { username: targetUsername } } }
+        { username: targetUsername },
+        { $pull: { requested: { username: unfollowerUsername } } }
       );
+      await Notification.deleteMany({
+        mainUser: targetUsername,
+        userInvolved: unfollowerUsername,
+        msgSerial: 4,
+      });
 
       await ActivityLog.create({
         username: unfollowerUsername,
@@ -1391,6 +1414,130 @@ const unfollowSomeone = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error while unfollowing user",
+    });
+  }
+};
+
+const acceptFollowRequest = async (req, res) => {
+  try {
+    const { data } = req.userDetails;
+    const accepterUsername = data[0];
+    const { username: requesterUsername } = req.params;
+
+    if (!requesterUsername || requesterUsername === accepterUsername) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid requester username.",
+      });
+    }
+
+    const [accepter, requester] = await Promise.all([
+      User.findOne({ username: accepterUsername }),
+      User.findOne({ username: requesterUsername }),
+    ]);
+
+    if (!accepter || !requester) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    if (
+      (accepter.type === "Kids" && requester.type !== "Kids") ||
+      (accepter.type !== "Kids" && requester.type === "Kids")
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Kids accounts cannot follow non-kids users and vice-versa.",
+      });
+    }
+
+    const accepterBlocked = Array.isArray(accepter.blockedUsers)
+      ? accepter.blockedUsers
+      : [];
+    const requesterBlocked = Array.isArray(requester.blockedUsers)
+      ? requester.blockedUsers
+      : [];
+
+    if (
+      accepterBlocked.includes(requesterUsername) ||
+      requesterBlocked.includes(accepterUsername)
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Follow request cannot be accepted due to blocking.",
+      });
+    }
+
+    const pendingRequests = Array.isArray(accepter.requested)
+      ? accepter.requested
+      : [];
+    const hasPendingRequest = pendingRequests.some(
+      (r) => r.username === requesterUsername
+    );
+
+    if (!hasPendingRequest) {
+      return res.status(400).json({
+        success: false,
+        message: `No pending follow request from @${requesterUsername}.`,
+      });
+    }
+
+    await Promise.all([
+      User.updateOne(
+        { username: accepterUsername },
+        {
+          $pull: { requested: { username: requesterUsername } },
+        }
+      ),
+      User.updateOne(
+        { username: requesterUsername },
+        {
+          $addToSet: { followings: { username: accepterUsername } },
+          $inc: { coins: 1 },
+        }
+      ),
+      User.updateOne(
+        { username: accepterUsername },
+        { $addToSet: { followers: { username: requesterUsername } } }
+      ),
+      Notification.deleteOne({
+        mainUser: accepterUsername,
+        userInvolved: requesterUsername,
+        msgSerial: 4,
+      }),
+    ]);
+
+    await Promise.allSettled([
+      Notification.create({
+        mainUser: requesterUsername,
+        mainUserType: requester.type || "Normal",
+        msgSerial: 1,
+        userInvolved: accepterUsername,
+      }),
+      ActivityLog.create({
+        username: accepterUsername,
+        id: `#${Date.now()}`,
+        message: `You accepted @${requesterUsername}'s follow request`,
+      }),
+      ActivityLog.create({
+        username: requesterUsername,
+        id: `#${Date.now()}`,
+        message: `Your follow request to @${accepterUsername} was accepted`,
+      }),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      status: "accepted",
+      message: `Follow request from @${requesterUsername} accepted.`,
+    });
+  } catch (error) {
+    console.error("❌ Error in acceptFollowRequest:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while accepting follow request.",
     });
   }
 };
@@ -1486,7 +1633,6 @@ const togglePP = async (req, res) => {
   try {
     const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
     const username = data[0];
-    console.log("HIT");
 
     const user = await User.findOne({ username });
     if (!user) {
@@ -1691,6 +1837,12 @@ const registerChannel = async (req, res) => {
       channelPassword: hashedPassword,
       channelAdmin: user._id,
       channelMembers: [user._id],
+      channelSettings: {
+        allowProfileSharing: true,
+        supportEmail: "",
+        supportPhone: "",
+        supportUrl: "",
+      },
     });
 
     // Add channel reference to user
@@ -1885,41 +2037,48 @@ const uploadFinalPost = async (req, res) => {
 const reportAccount = async (req, res) => {
   try {
     const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
-    const reporter = data[0];
-    const { username } = req.params;
+    const reporterUsername = data[0];
+    const { username: targetName } = req.params;
     const { reason } = req.body;
 
-    // Validate target user
-    const reportedUser = await User.findOne({ username });
-    if (!reportedUser) {
+    // Validate target account (normal/kids user or channel)
+    const [reportedUser, reportedChannel] = await Promise.all([
+      User.findOne({ username: targetName }),
+      Channel.findOne({ channelName: targetName }),
+    ]);
+
+    if (!reportedUser && !reportedChannel) {
       return res.status(404).json({
         success: false,
-        message: "User to be reported not found.",
+        message: "Account to be reported not found.",
       });
     }
 
     // Prevent self-reporting
-    if (reporter === username) {
+    if (reporterUsername === targetName) {
       return res.status(400).json({
         success: false,
         message: "You cannot report your own account.",
       });
     }
 
+    const reportId = reportedChannel ? 2 : 1;
+
     // Create report record
     const report = await Report.create({
+      report_id: reportId,
       post_id: "On account",
       report_number: Date.now(),
-      user_reported: reporter,
+      user_reported: targetName,
       reason: reason || "No reason provided",
       status: "Pending",
     });
 
     // Optional: add activity log
     await ActivityLog.create({
-      username: reporter,
+      username: reporterUsername,
       id: `#${Date.now()}`,
-      message: `You reported the account of @${username}.`,
+      message: `You reported the account of @${targetName}.`,
     });
 
     return res.status(201).json({
@@ -1955,6 +2114,13 @@ const handleloginchannel = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Channel not found.",
+      });
+    }
+
+    if (channel.isDeactivated) {
+      return res.status(403).json({
+        success: false,
+        message: "This channel is deactivated. Contact support to reactivate.",
       });
     }
 
@@ -2062,8 +2228,85 @@ const handlegetallnotifications = async (req, res) => {
   }
 };
 
+const markNotificationsAsSeen = async (req, res) => {
+  try {
+    const { data } = req.userDetails;
+    if (!data || !data[0]) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized access. Please log in again.",
+      });
+    }
+
+    const username = data[0];
+    const result = await Notification.updateMany(
+      { mainUser: username, seen: false },
+      { $set: { seen: true } }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Notifications marked as seen.",
+      updatedCount: result.modifiedCount || 0,
+    });
+  } catch (error) {
+    console.error("❌ Error in markNotificationsAsSeen:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while marking notifications as seen.",
+    });
+  }
+};
+
+const getUnseenCounts = async (req, res) => {
+  try {
+    const { data } = req.userDetails;
+    if (!data || !data[0]) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized access. Please log in again.",
+      });
+    }
+
+    const username = data[0];
+    const userType = data[3];
+
+    const notificationsPromise = Notification.countDocuments({
+      mainUser: username,
+      seen: false,
+    });
+
+    const chatsPromise =
+      userType === "Kids"
+        ? Promise.resolve(0)
+        : Chat.countDocuments({
+            to: username,
+            toType: userType === "Channel" ? "Channel" : "Normal",
+            seen: false,
+          });
+
+    const [unseenNotifications, unseenChats] = await Promise.all([
+      notificationsPromise,
+      chatsPromise,
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      counts: {
+        notifications: unseenNotifications,
+        chats: unseenChats,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error in getUnseenCounts:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching unseen counts.",
+    });
+  }
+};
+
 const handleloginsecond = async (req, res) => {
-  console.log(req.body);
   if (req.body.type === "Standard Account") {
     try {
       const user = await User.findOne(
@@ -2144,6 +2387,12 @@ const handleloginsecond = async (req, res) => {
     const user = await Channel.findOne({ channelName: req.body.channelName });
     if (!user)
       return res.json({ success: false, reason: "Invalid channel Name" });
+    if (user.isDeactivated) {
+      return res.json({
+        success: false,
+        reason: "This channel is currently deactivated",
+      });
+    }
     // console.log(user);
     const mainUser = await User.findOne({ _id: user.channelAdmin._id });
     // console.log(mainUser);
@@ -2252,7 +2501,7 @@ const handlelikereel = async (req, res) => {
 const handlereportpost = async (req, res) => {
   try {
     const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
-    const reporter = data[0];
+    const reporterUsername = data[0];
     const { reason, post_id } = req.body;
 
     if (!post_id || !reason) {
@@ -2262,53 +2511,40 @@ const handlereportpost = async (req, res) => {
       });
     }
 
-    // Check if post exists
-    const post = await Post.findOne({ id: post_id });
-    if (!post) {
+    const [userPost, reportedChannelPost] = await Promise.all([
+      Post.findOne({ id: post_id }),
+      channelPost.findOne({ id: post_id }),
+    ]);
+
+    if (!userPost && !reportedChannelPost) {
       return res.status(404).json({
         success: false,
         message: "Post not found.",
       });
     }
 
-    // Prevent duplicate reports by the same user
-    const existingReport = await Report.findOne({
-      post_id,
-      user_reported: reporter,
-    });
-
-    if (existingReport) {
-      return res.status(400).json({
-        success: false,
-        message: "You have already reported this post.",
-      });
-    }
+    const isChannelPost = Boolean(reportedChannelPost);
+    const reportId = isChannelPost ? 4 : 3;
+    const reportedOwner = isChannelPost
+      ? reportedChannelPost.channel
+      : userPost.author;
 
     // Create new report entry
     const report = await Report.create({
+      report_id: reportId,
       post_id,
       report_number: Date.now(),
-      user_reported: reporter,
+      user_reported: reportedOwner,
       reason,
       status: "Pending",
     });
 
     // Add to activity log
     await ActivityLog.create({
-      username: reporter,
+      username: reporterUsername,
       id: `#${Date.now()}`,
-      message: `You reported a post by @${post.author} for "${reason}".`,
+      message: `You reported a post by @${reportedOwner} for "${reason}".`,
     });
-
-    // Optional: notify post author
-    if (post.author !== reporter) {
-      await Notification.create({
-        mainUser: post.author,
-        mainUserType: "Normal",
-        msgSerial: 13, // example serial for 'report received'
-        userInvolved: reporter,
-      });
-    }
 
     return res.status(201).json({
       success: true,
@@ -2320,6 +2556,71 @@ const handlereportpost = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error while reporting post.",
+    });
+  }
+};
+
+const handleReportChat = async (req, res) => {
+  try {
+    const { data } = req.userDetails; // [username, email, profilePicture, type, isPremium]
+    const reporterUsername = data[0];
+    const reporterType = data[3] === "Channel" ? "Channel" : "Normal";
+    const { chat_id, reason } = req.body;
+
+    if (!chat_id || !reason) {
+      return res.status(400).json({
+        success: false,
+        message: "Chat ID and reason are required.",
+      });
+    }
+
+    const chat = await Chat.findById(chat_id);
+    if (!chat) {
+      return res.status(404).json({
+        success: false,
+        message: "Chat message not found.",
+      });
+    }
+
+    const isFromMe = chat.from === reporterUsername && chat.fromType === reporterType;
+    const isToMe = chat.to === reporterUsername && chat.toType === reporterType;
+
+    if (!isFromMe && !isToMe) {
+      return res.status(403).json({
+        success: false,
+        message: "You can report only chats that involve your account.",
+      });
+    }
+
+    const userReported = isFromMe ? chat.to : chat.from;
+    const userReportedType = isFromMe ? chat.toType : chat.fromType;
+    const reportId = userReportedType === "Channel" ? 6 : 5;
+
+    const report = await Report.create({
+      report_id: reportId,
+      post_id: String(chat._id),
+      report_number: Date.now(),
+      user_reported: userReported,
+      reason,
+      status: "Pending",
+    });
+
+    await ActivityLog.create({
+      username: reporterUsername,
+      id: `#${Date.now()}`,
+      message: `You reported a chat with @${userReported}.`,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Chat reported successfully.",
+      reportId: report._id,
+    });
+  } catch (error) {
+    console.error("❌ Error in handleReportChat:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while reporting chat.",
     });
   }
 };
@@ -2371,7 +2672,7 @@ const handlelikecomment = async (req, res) => {
 };
 
 const handleblockuser = async (req, res) => {
-  console.log("BLOCK HIT");
+  // console.log("BLOCK HIT");
   const { username } = req.params;
   const { data } = req.userDetails;
   const user = await User.findOne({ username: data[0] });
@@ -2504,7 +2805,7 @@ const handlepostcomment = async (req, res) => {
     });
 
     // Create notification for post author
-    console.log(post.author);
+    // console.log(post.author);
     if (data[0] !== post.author) {
       const noti8 = await Notification.create({
         mainUser: post.author,
@@ -2677,6 +2978,7 @@ export {
   updateUserProfile,
   fetchOverlayUser,
   followSomeone,
+  acceptFollowRequest,
   unfollowSomeone,
   handlegetnotification,
   handlegetsettings,
@@ -2689,9 +2991,12 @@ export {
   reportAccount,
   handleloginchannel,
   handlegetallnotifications,
+  markNotificationsAsSeen,
+  getUnseenCounts,
   handleloginsecond,
   handlelikereel,
   handlereportpost,
+  handleReportChat,
   handlegetads,
   handlelikecomment,
   handleblockuser,
@@ -2704,3 +3009,4 @@ export {
   updateChannelProfile,
   unRequestSomeone,
 };
+

@@ -21,6 +21,7 @@
     "fs": "^0.0.1-security",
     "imagekit": "^6.0.0",
     "mongoose": "^8.10.1",
+    "morgan": "^1.10.1",
     "nodemailer": "^6.10.0",
     "razorpay": "^2.9.6",
     "socket.io": "^4.8.1",

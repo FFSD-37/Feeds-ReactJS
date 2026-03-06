@@ -21,6 +21,7 @@ import {
   updateUserProfile,
   fetchOverlayUser,
   followSomeone,
+  acceptFollowRequest,
   unfollowSomeone,
   unRequestSomeone,
   handlegetnotification,
@@ -34,9 +35,12 @@ import {
   reportAccount,
   handleloginchannel,
   handlegetallnotifications,
+  markNotificationsAsSeen,
+  getUnseenCounts,
   handleloginsecond,
   handlelikereel,
   handlereportpost,
+  handleReportChat,
   handlegetads,
   handlelikecomment,
   handleblockuser,
@@ -70,6 +74,9 @@ import {
   archivePost,
   unarchivePost,
   deletePost,
+  getChannelSettings,
+  deactivateChannel,
+  deleteChannelAccount,
 } from "../controllers/Ayush/channel.js";
 import {
   getAllChannelPosts,
@@ -99,9 +106,10 @@ import {
 import { handleimagKitauth } from "../services/imagKit.js";
 import { isAuthuser } from "../middleware/isAuthuser.js";
 import { checkOut, verify_payment } from "../controllers/payment.js";
-import { getChat, getFriendList } from "../controllers/chat.js";
+import { getChat, getFriendList, deleteChat, markChatSeen } from "../controllers/chat.js";
 import { getDailyusage } from "../controllers/timout.js";
 import { handlegetstories } from "../controllers/userStory.js";
+import Channel from "../models/channelSchema.js";
 import homeRouter from "./home.js";
 
 const router = express.Router();
@@ -156,14 +164,30 @@ router.get("/login", (req, res) => {
   });
 });
 
-router.get("/verify", (req, res) => {
-  return res.json({
-    username: req.userDetails.data[0],
-    email: req.userDetails.data[1],
-    profileUrl: req.userDetails.data[2],
-    type: req.userDetails.data[3],
-    isPremium: req.userDetails.data[4],
-  });
+router.get("/verify", async (req, res) => {
+  try {
+    const type = req.userDetails?.data?.[3];
+    const username = req.userDetails?.data?.[0];
+
+    if (type === "Channel") {
+      const channel = await Channel.findOne({ channelName: username }).select("isDeactivated").lean();
+      if (!channel || channel.isDeactivated) {
+        res.clearCookie("cuid", { httpOnly: true, sameSite: "strict", secure: true });
+        return res.status(401).json({ message: "Channel is deactivated" });
+      }
+    }
+
+    return res.json({
+      username: req.userDetails.data[0],
+      email: req.userDetails.data[1],
+      profileUrl: req.userDetails.data[2],
+      type: req.userDetails.data[3],
+      isPremium: req.userDetails.data[4],
+    });
+  } catch (error) {
+    console.error("Error in /verify:", error);
+    return res.status(500).json({ message: "Failed to verify user" });
+  }
 });
 
 // router.post("/login", handleLogin);
@@ -188,11 +212,15 @@ router.post("/updateUserDetails", updateUserProfile);
 
 router.post("/follow/:username", followSomeone);
 
+router.post("/follow-request/accept/:username", acceptFollowRequest);
+
 router.post("/unfollow/:username", unfollowSomeone);
 
 router.post("/unrequest/:username", unRequestSomeone);
 
 router.get("/chat/:username", getChat);
+router.post("/chat/:username/seen", markChatSeen);
+router.delete("/chat/:username", deleteChat);
 
 router.get("/friends", getFriendList);
 
@@ -215,10 +243,13 @@ router.get("/activityLog", handlegetlog);
 router.post("/shareFinalPost", uploadFinalPost);
 
 router.post("/report/:username", reportAccount);
+router.post("/report_channel/:username", reportAccount);
 
 router.post("/postloginchannel", handleloginchannel);
 
 router.get("/GetAllNotifications", handlegetallnotifications);
+router.post("/notifications/mark-seen", markNotificationsAsSeen);
+router.get("/unseen-counts", getUnseenCounts);
 
 router.get("/profile/:username", handlegetUserPost);
 
@@ -227,6 +258,7 @@ router.post("/posts/like", handlelikereel);
 router.post("/comment", handlepostcomment);
 
 router.post("/report_post", handlereportpost);
+router.post("/report_chat", handleReportChat);
 
 router.get("/ads", handlegetads);
 
@@ -273,6 +305,9 @@ router.post("/channel/archive/:postId", archivePost);
 router.post("/channel/unarchive/:postId", unarchivePost);
 
 router.delete("/channel/delete/:postId", deletePost);
+router.get("/channel/settings", getChannelSettings);
+router.post("/channel/deactivate", deactivateChannel);
+router.delete("/channel/delete-account", deleteChannelAccount);
 
 router.post("/connect/follow", followEntity);
 
