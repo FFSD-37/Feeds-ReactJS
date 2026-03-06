@@ -249,9 +249,9 @@ function Sidebar() {
                 <a href="/edit_profile">Edit Profile</a>
               </>
             )}
-            {userData.type === 'User' && (
+            {userData.type === 'Normal' && (
               <a href="/dailyUsage">See Daily Usage</a>
-            )}
+            )} 
             <a href="/settings">Settings</a>
             <button onClick={toggleLogoutModal}>Logout</button>
             <a href="/help">Help & Support</a>
