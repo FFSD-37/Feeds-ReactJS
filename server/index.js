@@ -16,6 +16,7 @@ import cors from "cors";
 import { clearSession, setSession } from "./controllers/timout.js";
 import { errorhandler } from "./middleware/handlerError.js";
 import { Logger } from "./middleware/applicationMiddleware.js"
+import { rewardChatParticipantsIfEligible } from "./services/coinRewards.js";
 // import { fakeRoute } from "./controllers/userPost.js";
 
 dotenv.config();
@@ -135,6 +136,13 @@ io.on("connection", async (socket) => {
         text,
         seen: false,
         createdAt: dateTime,
+      });
+
+      await rewardChatParticipantsIfEligible({
+        from: socket.userId,
+        fromType,
+        to,
+        toType: normalizedToType,
       });
 
       let receiver = null;

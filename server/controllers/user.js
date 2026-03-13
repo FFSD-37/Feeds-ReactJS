@@ -17,6 +17,7 @@ import Channel from "../models/channelSchema.js";
 import channelPost from "../models/channelPost.js";
 import Story from "../models/storiesSchema.js";
 import Comment from "../models/comment_schema.js";
+import { rewardUserByUsername } from "../services/coinRewards.js";
 // import Adpost from "../models/ad_schema.js";
 
 async function storeOtp(email, otp) {
@@ -2012,6 +2013,12 @@ const uploadFinalPost = async (req, res) => {
       message: `You uploaded a new ${post.type === "Reel" ? "reel" : "post"}!`,
     });
 
+    if (user.type !== "Kids") {
+      await rewardUserByUsername(username, {
+        activity: "post_create",
+      });
+    }
+
     return res.status(201).json({
       success: true,
       message: `${post.type === "Reel" ? "Reel" : "Post"
@@ -2472,6 +2479,12 @@ const handlelikereel = async (req, res) => {
         { $addToSet: { likedPostsIds: reel_id } } // avoids duplicates
       );
 
+      if (data[3] !== "Kids") {
+        await rewardUserByUsername(username, {
+          activity: "engagement",
+        });
+      }
+
       await ActivityLog.create({
         username,
         id: `#${Date.now()}`,
@@ -2646,13 +2659,18 @@ const handlelikecomment = async (req, res) => {
       message: `You unliked the comment on post ${post_id}`,
     });
     return res.json({ data: true });
-  } else {
-    // Like - add to array
-    comment.likes.push(data[0]);
-    await comment.save();
-    if (commUser != data[0]) {
-      await Notification.create({
-        mainUser: commUser,
+    } else {
+      // Like - add to array
+      comment.likes.push(data[0]);
+      await comment.save();
+      if (data[3] !== "Kids") {
+        await rewardUserByUsername(data[0], {
+          activity: "engagement",
+        });
+      }
+      if (commUser != data[0]) {
+        await Notification.create({
+          mainUser: commUser,
         mainUserType: "Normal",
         msgSerial: 2, // Normal user likes a normal post-comment
         userInvolved: data[0],
@@ -2807,24 +2825,17 @@ const handlepostcomment = async (req, res) => {
     // Create notification for post author
     // console.log(post.author);
     if (data[0] !== post.author) {
-      const noti8 = await Notification.create({
+      await Notification.create({
         mainUser: post.author,
         mainUserType: "Normal",
         msgSerial: 8, // Normal user comments on normal posts
         userInvolved: data[0],
       });
+    }
 
-      await User.findOneAndUpdate(
-        { username: data[0] },
-        { $inc: { coins: 1 } }
-      );
-
-      // Notification for getting coins
-      await Notification.create({
-        mainUser: post.author,
-        mainUserType: "Normal",
-        msgSerial: 6, // Normal user get some coins
-        userInvolved: data[0],
+    if (data[3] !== "Kids") {
+      await rewardUserByUsername(data[0], {
+        activity: "engagement",
       });
     }
 

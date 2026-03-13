@@ -5,6 +5,7 @@ import Channel from "../../models/channelSchema.js";
 import ChannelComment from "../../models/channelPost_comment.js";
 import Comment from "../../models/comment_schema.js";
 import Notification from "../../models/notification_schema.js";
+import { rewardUserByUsername } from "../../services/coinRewards.js";
 
 // NORMAL POST → use post.id
 // CHANNEL POST → use post._id
@@ -201,6 +202,12 @@ const likeReel = async (req, res) => {
                 { $addToSet: { likedPostsIds: storeId } }
             );
 
+            if (userType !== "Kids") {
+                await rewardUserByUsername(username, {
+                    activity: "engagement"
+                });
+            }
+
             // Notification for post like
             if (postType === "channel") {
                 // Normal/kids user likes a channel-post
@@ -303,6 +310,12 @@ const saveReel = async (req, res) => {
                 { username },
                 { $addToSet: { savedPostsIds: storeId } }
             );
+
+            if (userType !== "Kids") {
+                await rewardUserByUsername(username, {
+                    activity: "engagement"
+                });
+            }
         }
 
         res.json({ success: true, saved: true });
@@ -388,6 +401,12 @@ const commentReel = async (req, res) => {
                 }
             }
 
+            if (type !== "Channel" && type !== "Kids") {
+                await rewardUserByUsername(username, {
+                    activity: "engagement"
+                });
+            }
+
             return res.json({ success: true, comment });
         }
 
@@ -408,6 +427,12 @@ const commentReel = async (req, res) => {
                 mainUserType: "Normal",
                 msgSerial: 8, // Normal user comments on normal posts
                 userInvolved: username,
+            });
+        }
+
+        if (type !== "Channel" && type !== "Kids") {
+            await rewardUserByUsername(username, {
+                activity: "engagement"
             });
         }
 
@@ -442,6 +467,12 @@ const replyReel = async (req, res) => {
                 text,
             });
 
+            if (type !== "Channel" && type !== "Kids") {
+                await rewardUserByUsername(username, {
+                    activity: "engagement"
+                });
+            }
+
             await parent.updateOne({ $push: { replies: reply._id } });
 
             return res.json({ success: true, reply });
@@ -457,6 +488,12 @@ const replyReel = async (req, res) => {
             avatarUrl,
             text,
         });
+
+        if (type !== "Channel" && type !== "Kids") {
+            await rewardUserByUsername(username, {
+                activity: "engagement"
+            });
+        }
 
         await parent.updateOne({ $push: { reply_array: reply._id } });
 

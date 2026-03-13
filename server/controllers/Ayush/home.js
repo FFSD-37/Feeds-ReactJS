@@ -3,6 +3,7 @@ import User from "../../models/users_schema.js";
 import channelPost from "../../models/channelPost.js";
 import ChannelComment from "../../models/channelPost_comment.js";
 import Notification from "../../models/notification_schema.js";
+import { rewardUserByUsername } from "../../services/coinRewards.js";
 
 // GET ALL PUBLIC CHANNEL POSTS
 const getAllChannelPosts = async (req, res) => {
@@ -126,6 +127,12 @@ const likeChannelPost = async (req, res) => {
 
       await likerDoc.updateOne({ $addToSet: { likedPostsIds: postId } });
 
+      if (userType !== "Kids") {
+        await rewardUserByUsername(identifier, {
+          activity: "engagement",
+        });
+      }
+
       // Send notification for like (only if not self-like)
       if (postChannel && postChannel !== identifier) {
         if (userType === "Channel") {
@@ -189,6 +196,11 @@ const saveChannelPost = async (req, res) => {
       await saverDoc.updateOne({ $pull: { savedPostsIds: postId } });
     } else {
       await saverDoc.updateOne({ $addToSet: { savedPostsIds: postId } });
+      if (userType !== "Kids") {
+        await rewardUserByUsername(identifier, {
+          activity: "engagement",
+        });
+      }
     }
 
     // Response
@@ -253,6 +265,12 @@ const commentOnChannelPost = async (req, res) => {
           userInvolved: commenterName,
         });
       }
+    }
+
+    if (commenterType !== "Channel" && commenterType !== "Kids") {
+      await rewardUserByUsername(commenterName, {
+        activity: "engagement",
+      });
     }
 
     return res.json({ success: true, comment });

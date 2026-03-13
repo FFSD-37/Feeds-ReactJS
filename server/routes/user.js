@@ -109,6 +109,7 @@ import { checkOut, verify_payment } from "../controllers/payment.js";
 import { getChat, getFriendList, deleteChat, markChatSeen } from "../controllers/chat.js";
 import { getDailyusage } from "../controllers/timout.js";
 import { handlegetstories } from "../controllers/userStory.js";
+import { claimGamePlayReward } from "../controllers/rewards.js";
 import Channel from "../models/channelSchema.js";
 import homeRouter from "./home.js";
 
@@ -326,6 +327,7 @@ router.post("/checkParentPassword", handleCheckParentalPass);
 router.get("/kidshome", getKidsHomePosts);
 
 router.get("/getCoins", getCoins);
+router.post("/games/reward", claimGamePlayReward);
 
 router.post("/kids/change-password", handlechangepassKids);
 

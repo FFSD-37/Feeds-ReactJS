@@ -1,6 +1,7 @@
 import ActivityLog from "../models/activityLogSchema.js";
 import channelPost from "../models/channelPost.js";
 import Channel from "../models/channelSchema.js";
+import { rewardUserByUsername } from "../services/coinRewards.js";
 
 const categories = [
   "Entertainment",
@@ -89,6 +90,20 @@ const handlechannelPostupload = async (req, res) => {
         post.type === "Reel" ? "reel" : "post"
       }!`,
     });
+
+    if (channelDetails?.channelAdmin) {
+      const adminChannel = await Channel.findOne({ channelName: data[0] })
+        .populate("channelAdmin", "username")
+        .lean();
+      const adminUsername = adminChannel?.channelAdmin?.username;
+
+      if (adminUsername) {
+        await rewardUserByUsername(adminUsername, {
+          activity: "post_create",
+          forcePremiumPostLimit: true,
+        });
+      }
+    }
 
     return res.status(200).json({
       success: true,
