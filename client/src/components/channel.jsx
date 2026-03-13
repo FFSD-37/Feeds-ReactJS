@@ -60,6 +60,7 @@ function ChannelPage() {
   const [activePost, setActivePost] = useState(null);
 
   const isViewerUser = userData?.type === 'Normal' || userData?.type === 'Kids';
+  const isViewerNormal = userData?.type === 'Normal';
   const isMyChannel =
     userData?.type === 'Channel' &&
     userData?.channelName === channelData?.channel_name;
@@ -212,11 +213,27 @@ function ChannelPage() {
   };
 
   const handleReport = async () => {
-    await fetch(
-      `${import.meta.env.VITE_SERVER_URL}/report_channel/${channelData.channel_name}`,
-      { method: 'POST', credentials: 'include' },
-    );
-    alert('Reported this channel');
+    try {
+      const reason = window.prompt('Why are you reporting this channel?', 'Inappropriate channel') || 'Inappropriate channel';
+      const res = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/report_channel/${channelData.channel_name}`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason }),
+        },
+      );
+      const data = await res.json();
+      if (data.success) {
+        alert(`Channel reported - id: ${data.reportId}`);
+      } else {
+        alert(data.message || 'Failed to report channel');
+      }
+    } catch (err) {
+      console.error('Error reporting channel:', err);
+      alert('Failed to report channel');
+    }
   };
 
   const handleCopyLink = () => {
@@ -353,13 +370,44 @@ function ChannelPage() {
                 ...
               </button>
             ) : !isFollowing ? (
-              <button className="channel-follow-btn" onClick={handleFollow}>
-                Follow
-              </button>
+              <>
+                <button className="channel-follow-btn" onClick={handleFollow}>
+                  Follow
+                </button>
+                {isViewerNormal && (
+                  <button
+                    className="channel-follow-btn"
+                    onClick={() =>
+                      navigate(
+                        `/chat?target=${encodeURIComponent(channelData.channel_name)}&targetType=Channel`,
+                      )
+                    }
+                  >
+                    Chat
+                  </button>
+                )}
+              </>
             ) : (
-              <button className="channel-unfollow-btn" onClick={handleUnfollow}>
-                Unfollow
-              </button>
+              <>
+                <button
+                  className="channel-unfollow-btn"
+                  onClick={handleUnfollow}
+                >
+                  Unfollow
+                </button>
+                {isViewerNormal && (
+                  <button
+                    className="channel-follow-btn"
+                    onClick={() =>
+                      navigate(
+                        `/chat?target=${encodeURIComponent(channelData.channel_name)}&targetType=Channel`,
+                      )
+                    }
+                  >
+                    Chat
+                  </button>
+                )}
+              </>
             ))}
 
           <button

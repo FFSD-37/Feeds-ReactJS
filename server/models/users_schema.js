@@ -141,6 +141,28 @@ const userSchema = new mongoose.Schema({
         default: 0
     },
 
+    coinRewardStats: {
+        date: {
+            type: String,
+            default: ""
+        },
+        postsCreated: {
+            type: Number,
+            default: 0
+        },
+        engagements: {
+            type: Number,
+            default: 0
+        },
+        gamesPlayed: {
+            type: Number,
+            default: 0
+        },
+        chatPeers: [{
+            type: String
+        }]
+    },
+
     type: {
         type: String,
         enum: ["Kids", "Normal", "Admin"],

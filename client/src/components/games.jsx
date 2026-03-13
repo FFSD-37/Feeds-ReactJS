@@ -13,6 +13,20 @@ ISSUES/Improvements:
 export default function Games() {
   const [searchTerm, setSearchTerm] = useState("");
 
+  const handleGameClick = async (link) => {
+    try {
+      await fetch(`${import.meta.env.VITE_SERVER_URL}/games/reward`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Failed to register game reward:", error);
+    } finally {
+      window.open(link, "_blank", "noopener,noreferrer");
+    }
+  };
+
   const games = [
     {
       title: "Happy Glass",
@@ -96,7 +110,7 @@ export default function Games() {
           <div
             key={index}
             className={`games_game-card ${game.featured ? "games_featured" : ""}`}
-            onClick={() => window.open(game.link, "_blank")}
+            onClick={() => handleGameClick(game.link)}
             onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.95)")}
             onMouseUp={(e) =>
               setTimeout(() => {
