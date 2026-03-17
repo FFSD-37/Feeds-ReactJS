@@ -264,5 +264,5 @@ git push origin branchname
 
 - Please keep all commits meaningful and well-labeled.
 - Follow consistent component naming and folder structure.
-- webhook for pipelinehub added
+- webhook for pipelinehub added for tracking
 - Always work on your **own branch** for each feature before working on it.
