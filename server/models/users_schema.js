@@ -217,16 +217,29 @@ const userSchema = new mongoose.Schema({
         default: 180
     },
 
+    timeUsed: {
+        type: Number,
+        required: function () {
+            return this.type === "Kids";
+        },
+        default: 0
+    },
+
+    lastActiveDate: {
+        type: String
+    },
+
     kidPreferredCategories: {
         type: [String],
+        default: [],
         validate: {
             validator: function (categories) {
                 if (this.type !== "Kids") return true;
+                if (!Array.isArray(categories)) return false;
                 return categories.every(cat => validChannelCategories.includes(cat));
             },
             message: "Invalid category found in kidPreferredCategories"
-        },
-        default: []
+        }
     },
 }, { timestamps: true });
 

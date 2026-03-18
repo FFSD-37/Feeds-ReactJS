@@ -117,7 +117,7 @@ const KidsSettings = () => {
 
   // Fetch current time limit on open
   useEffect(() => {
-    if (!showTime) return;
+    // if (!showTime) return;
 
     const fetchLimit = async () => {
       try {
@@ -150,7 +150,7 @@ const KidsSettings = () => {
     };
 
     fetchLimit();
-  }, [showTime]);
+  }, []);
 
   if (userData?.type !== "Kids") {
     return <Navigate to="/home" />;

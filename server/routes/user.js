@@ -67,6 +67,9 @@ import {
   handlegetBlcokedUsers,
 } from "../controllers/Gourav/profile.js";
 import {
+  updateTime
+} from "../controllers/Gourav/games.js";
+import {
   handlegetchannel,
   getChannelPosts,
   followChannel,
@@ -146,7 +149,7 @@ router.get("/home", handlegetHome);
 
 router.get("/payment", handlegetpayment);
 
-// router.get("/profile/:username", handlegetprofile);
+router.post("/games/updateTime", updateTime);
 
 router.get("/connect", handleGetConnect);
 

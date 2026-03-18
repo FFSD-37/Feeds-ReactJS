@@ -387,7 +387,7 @@ const handlechangeparentalpass = async (req, res) => {
 const handlegetkidsTime = async (req, res) => {
   const {data} = req.userDetails;
   const user = await User.findOne({username: data[0]});
-  return res.json({dailyLimitMinutes: user.timeLimit});
+  return res.status(200).json({dailyLimitMinutes: user.timeLimit});
 }
 
 const handlesetkidsTime = async (req, res) => {
