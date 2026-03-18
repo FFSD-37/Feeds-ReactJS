@@ -1,240 +1,269 @@
-import React, { useEffect, useState } from 'react';
-import { Settings, Tv, Heart, Bookmark } from 'lucide-react'; // 'Tv' represents Channels
+import React, { useEffect, useMemo, useState } from 'react';
+import { Bookmark, Heart, Share2, Sparkles, Star } from 'lucide-react';
 import { useUserData } from '../providers/userData.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import '../styles/KidsProfile.css';
 
-/*
-ISSUES/Improvements:
-1. Not yet implemented
-*/
-
 const KidsProfile = () => {
-  const [activeTab, setActiveTab] = useState('channels'); // Default to Channels (Posts)
   const { userData } = useUserData();
-  const ProfileUsername = useParams();
+  const { username: targetUsername } = useParams();
   const navigate = useNavigate();
-  const { username: loggedInUsername } = userData;
+  const loggedInUsername = userData?.username;
+  const ownProfile = loggedInUsername === targetUsername;
 
-  // State Variables
   const [details, setDetails] = useState({
-    full_name: "",
-    bio: "",
-    pfp: "",
-    display_name: "",
+    full_name: '',
+    bio: '',
+    pfp: '',
+    display_name: '',
     links: [],
-    followers: [],
-    followings: [],
-    posts: [],      // Maps to "Channels"
-    liked: [],      // Maps to "Liked"
-    saved: []       // Maps to "Saved"
+    liked: [],
+    saved: [],
+    visibility: '',
   });
-
+  const [relationship, setRelationship] = useState('');
   const [loading, setLoading] = useState(true);
-  const [relationship, setRelationship] = useState("");
-  
-  // Fetch Basic Info
-  const fetchBasic = async (username) => {
+
+  const profileName =
+    details.display_name || details.full_name || targetUsername || 'Kid Explorer';
+
+  const favoriteCount = details.liked?.length || 0;
+  const savedCount = details.saved?.length || 0;
+
+  const previewCards = useMemo(
+    () => [
+      {
+        key: 'favorites',
+        title: 'Favorite Picks',
+        icon: <Heart size={18} />,
+        accent: 'pink',
+        count: favoriteCount,
+        subtitle:
+          favoriteCount > 0
+            ? 'Things you loved are waiting here.'
+            : 'Start liking fun things to fill this shelf.',
+      },
+      {
+        key: 'saved',
+        title: 'Treasure Box',
+        icon: <Bookmark size={18} />,
+        accent: 'blue',
+        count: savedCount,
+        subtitle:
+          savedCount > 0
+            ? 'Saved adventures for another day.'
+            : 'Save cool finds and they will show up here.',
+      },
+    ],
+    [favoriteCount, savedCount],
+  );
+
+  const fetchBasic = async username => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/profile/getbasic/${username}`, { credentials: "include" });
+      const res = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/profile/getbasic/${username}`,
+        { credentials: 'include' },
+      );
       const data = await res.json();
       if (data.success) {
         setDetails(prev => ({ ...prev, ...data.details }));
       }
     } catch (err) {
-      console.error("Basic fetch error", err);
+      console.error('Basic fetch error', err);
     }
   };
 
-  // Fetch Sensitive Info (Posts, Saved, Liked)
-  const fetchSensitive = async (username) => {
+  const fetchSensitive = async username => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/profile/sensitive/${username}`, { credentials: "include" });
+      const res = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/profile/sensitive/${username}`,
+        { credentials: 'include' },
+      );
       const data = await res.json();
       if (data.success) {
         setDetails(prev => ({ ...prev, ...data.details }));
       }
     } catch (err) {
-      console.error("Sensitive fetch error", err);
+      console.error('Sensitive fetch error', err);
     }
   };
 
-  // Check Friendship Status
-  const isFriend = async (username) => {
+  const isFriend = async username => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/isfriend/${username}`, { credentials: "include" });
+      const res = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/isfriend/${username}`,
+        { credentials: 'include' },
+      );
       const data = await res.json();
-      setRelationship(data.relationship);
+      setRelationship(data.relationship || '');
     } catch (err) {
-      console.error("Friend check error", err);
+      console.error('Friend check error', err);
     }
   };
 
   useEffect(() => {
-    const targetUser = ProfileUsername.username;
-    if (targetUser) {
-      setLoading(true);
-      Promise.all([
-        fetchBasic(targetUser),
-        fetchSensitive(targetUser)
-      ]).then(() => setLoading(false));
+    if (!targetUsername) return;
 
-      if (targetUser !== loggedInUsername) {
-        isFriend(targetUser);
-      }
-    }
-  }, [ProfileUsername.username, loggedInUsername]);
+    setLoading(true);
+    Promise.all([fetchBasic(targetUsername), fetchSensitive(targetUsername)])
+      .then(() => {
+        if (!ownProfile) {
+          return isFriend(targetUsername);
+        }
+        return null;
+      })
+      .finally(() => setLoading(false));
+  }, [targetUsername, ownProfile]);
 
   const handleShare = async () => {
     const url = window.location.href;
     if (navigator.share) {
-      await navigator.share({ title: 'Check out this profile!', url });
+      try {
+        await navigator.share({ title: 'Check out this profile!', url });
+      } catch (err) {
+        console.log('Share cancelled', err);
+      }
     } else {
       await navigator.clipboard.writeText(url);
       alert('Link copied!');
     }
   };
 
-  // Logic to determine what content to show based on tabs
-  const getContent = () => {
-    switch (activeTab) {
-      case 'channels': return details.posts || [];
-      case 'liked': return details.liked || [];
-      case 'saved': return details.saved || [];
-      default: return [];
+  const renderMediaGrid = (items, emptyText) => {
+    if (!items?.length) {
+      return <div className="kids-profile-empty">{emptyText}</div>;
     }
+
+    return items.map(item => (
+      <div key={item._id || item.id || item.url} className="kids-profile-preview-item">
+        {item.type === 'Img' ? (
+          <img src={item.url} alt="Preview" className="kids-profile-preview-media" />
+        ) : (
+          <video src={item.url} className="kids-profile-preview-media" muted />
+        )}
+      </div>
+    ));
   };
 
-  // Decide if we should show content (Privacy logic)
-  const canSeeContent = () => {
-    if (ProfileUsername.username === loggedInUsername) return true;
-    if (details.visibility === "Public") return true;
-    if (relationship === "Unfollow") return true; // Means we are following them
-    return false;
-  };
-
-  if (loading) return <div className="kids-profile-container">Loading...</div>;
+  if (loading) {
+    return <div className="kids-profile-loading">Building your colorful profile...</div>;
+  }
 
   return (
-    <div className="kids-profile-container">
-      <div className="kids-profile-card">
-        
-        {/* --- HEADER --- */}
-        <div className="kids-header">
-          <div className="kids-username">{ProfileUsername.username}</div>
-          {ProfileUsername.username === loggedInUsername && (
-            <button className="kids-settings-btn" onClick={() => navigate("/settings")}>
-              <Settings size={24} />
-            </button>
-          )}
-        </div>
+    <div className="kids-profile-page">
+      <div className="kids-profile-decor kids-profile-decor-one" />
+      <div className="kids-profile-decor kids-profile-decor-two" />
 
-        {/* --- INFO (PFP + Stats) --- */}
-        <div className="kids-info-section">
-          <div className="kids-avatar-wrapper">
-            <img 
-              src={details.pfp || "https://via.placeholder.com/150"} 
-              alt="Profile" 
-              className="kids-avatar" 
-            />
+      <div className="kids-profile-shell">
+        <section className="kids-profile-hero">
+          <div className="kids-profile-badge">
+            <Sparkles size={16} />
+            <span>Kids Space</span>
           </div>
-          
-          <div className="kids-stats">
-            <div className="kids-stat-item">
-              <div className="kids-stat-number">{details.posts?.length || 0}</div>
-              <div className="kids-stat-label">Videos</div>
+
+          <div className="kids-profile-hero-main">
+            <div className="kids-profile-avatar-ring">
+              <img
+                src={details.pfp || '/Images/default_user.jpeg'}
+                alt={`${profileName} avatar`}
+                className="kids-profile-avatar"
+              />
             </div>
-            <div className="kids-stat-item">
-              <div className="kids-stat-number">{details.followers?.length || 0}</div>
-              <div className="kids-stat-label">Fans</div>
-            </div>
-            <div className="kids-stat-item">
-              <div className="kids-stat-number">{details.followings?.length || 0}</div>
-              <div className="kids-stat-label">Following</div>
+
+            <div className="kids-profile-copy">
+              <p className="kids-profile-kicker">
+                {ownProfile ? 'Welcome back!' : 'Say hello to'}
+              </p>
+              <h1 className="kids-profile-title">{profileName}</h1>
+              <p className="kids-profile-username">@{targetUsername}</p>
+              <p className="kids-profile-bio">
+                {details.bio || 'This profile is all set for fun, safe exploring.'}
+              </p>
             </div>
           </div>
-        </div>
 
-        {/* --- BIO --- */}
-        <div className="kids-bio-section">
-          <div className="kids-display-name">{details.display_name || details.full_name}</div>
-          <div className="kids-bio-text">{details.bio}</div>
-          <div className="kids-links">
-            {details.links?.map((link, i) => (
-              <div key={i}><a href={link} target="_blank" rel="noreferrer">{link}</a></div>
-            ))}
-          </div>
-        </div>
-
-        {/* --- BUTTONS --- */}
-        <div className="kids-actions">
-          {ProfileUsername.username === loggedInUsername ? (
-            <>
-              <button className="kids-btn kids-btn-primary" onClick={() => navigate("/edit_profile")}>
-                Edit Profile
+          <div className="kids-profile-actions">
+            {ownProfile ? (
+              <button
+                className="kids-profile-btn kids-profile-btn-secondary"
+                onClick={handleShare}
+              >
+                <Share2 size={18} />
+                <span>Share</span>
               </button>
-              <button className="kids-btn kids-btn-secondary" onClick={handleShare}>
-                Share
-              </button>
-            </>
-          ) : (
-            <>
-              <button className="kids-btn kids-btn-primary">{relationship || "Follow"}</button>
-              <button className="kids-btn kids-btn-secondary" onClick={handleShare}>Share</button>
-            </>
-          )}
-        </div>
+            ) : (
+              <>
+                <button className="kids-profile-btn kids-profile-btn-primary">
+                  <Star size={18} />
+                  <span>{relationship || 'Follow'}</span>
+                </button>
+                <button
+                  className="kids-profile-btn kids-profile-btn-secondary"
+                  onClick={handleShare}
+                >
+                  <Share2 size={18} />
+                  <span>Share</span>
+                </button>
+              </>
+            )}
+          </div>
+        </section>
 
-        {/* --- TABS --- */}
-        {canSeeContent() ? (
+        {ownProfile && (
           <>
-            <div className="kids-tabs">
-              <button 
-                className={`kids-tab ${activeTab === 'channels' ? 'active' : ''}`} 
-                onClick={() => setActiveTab('channels')}
-              >
-                <Tv size={20} />
-                <span>Channels</span>
-              </button>
-              
-              <button 
-                className={`kids-tab ${activeTab === 'liked' ? 'active' : ''}`} 
-                onClick={() => setActiveTab('liked')}
-              >
-                <Heart size={20} />
-                <span>Liked</span>
-              </button>
+            <section className="kids-profile-glance">
+              {previewCards.map(card => (
+                <article
+                  key={card.key}
+                  className={`kids-profile-glance-card kids-profile-glance-${card.accent}`}
+                >
+                  <div className="kids-profile-glance-icon">{card.icon}</div>
+                  <div className="kids-profile-glance-count">{card.count}</div>
+                  <h2>{card.title}</h2>
+                  <p>{card.subtitle}</p>
+                </article>
+              ))}
+            </section>
 
-              <button 
-                className={`kids-tab ${activeTab === 'saved' ? 'active' : ''}`} 
-                onClick={() => setActiveTab('saved')}
-              >
-                <Bookmark size={20} />
-                <span>Saved</span>
-              </button>
-            </div>
-
-            {/* --- GRID CONTENT --- */}
-            <div className="kids-grid">
-              {getContent().length === 0 ? (
-                <div className="kids-empty-msg">No {activeTab} yet! 🌟</div>
-              ) : (
-                getContent().map((item) => (
-                  <div key={item._id || item.id} className="kids-grid-item">
-                     {item.type === "Img" ? (
-                      <img src={item.url} alt="Post" className="kids-grid-img" />
-                    ) : (
-                      <video src={item.url} className="kids-grid-img" />
-                    )}
+            <section className="kids-profile-shelves">
+              <article className="kids-profile-shelf">
+                <div className="kids-profile-shelf-head">
+                  <div>
+                    <h3>Favorite Picks</h3>
+                    <p>All your liked posts show up here.</p>
                   </div>
-                ))
-              )}
-            </div>
+                </div>
+                <div className="kids-profile-preview-grid">
+                  {renderMediaGrid(
+                    details.liked,
+                    'Your favorites shelf is waiting for its first star.',
+                  )}
+                </div>
+              </article>
+
+              <article className="kids-profile-shelf">
+                <div className="kids-profile-shelf-head">
+                  <div>
+                    <h3>Treasure Box</h3>
+                    <p>All your saved posts stay here for later.</p>
+                  </div>
+                </div>
+                <div className="kids-profile-preview-grid">
+                  {renderMediaGrid(
+                    details.saved,
+                    'Save fun discoveries and they will appear here.',
+                  )}
+                </div>
+              </article>
+            </section>
           </>
-        ) : (
-          <div className="kids-empty-msg">🔒 This account is private.</div>
         )}
 
+        {!ownProfile && details.visibility === 'Private' && (
+          <section className="kids-profile-note">
+            This account is private.
+          </section>
+        )}
       </div>
     </div>
   );

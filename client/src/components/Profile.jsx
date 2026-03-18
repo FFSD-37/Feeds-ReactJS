@@ -112,6 +112,11 @@ const ProfilePage = () => {
   };
 
   useEffect(() => {
+    if (viewerType === 'Kids' && ownProfile) {
+      navigate(`/kids-profile/${targetUsername}`, { replace: true });
+      return;
+    }
+
     if (!targetUsername) return;
     setLoading(true);
     Promise.all([fetchBasic(targetUsername), fetchSensitive(targetUsername)])
@@ -119,7 +124,7 @@ const ProfilePage = () => {
         if (!ownProfile) await isFriend(targetUsername);
       })
       .finally(() => setLoading(false));
-  }, [targetUsername, ownProfile]);
+  }, [targetUsername, ownProfile, viewerType, navigate]);
 
   useEffect(() => {
     if (!ownProfile) setActiveTab('posts');

@@ -1,7 +1,9 @@
 import Post from "../../models/postSchema.js";
 import User from "../../models/users_schema.js";
 import Channel from "../../models/channelSchema.js";
+import channelPost from "../../models/channelPost.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
+import mongoose from "mongoose";
 
 const handlegetUserPost = async (req, res) => {
     const { data } = req.userDetails;
@@ -149,14 +151,29 @@ const handlegetsensitive = async (req, res) => {
     }
 
     if (isOwnProfile) {
-      const savedIds = user.savedPostsIds || [];
-      const likedIds = user.likedPostsIds || [];
+      const savedIds = (user.savedPostsIds || []).map(String);
+      const likedIds = (user.likedPostsIds || []).map(String);
       const archiveIds = user.archivedPostsIds || [];
-      [saved, liked, archived] = await Promise.all([
+      const savedChannelIds = savedIds.filter((id) => mongoose.Types.ObjectId.isValid(id));
+      const likedChannelIds = likedIds.filter((id) => mongoose.Types.ObjectId.isValid(id));
+
+      const [
+        savedNormal,
+        savedChannel,
+        likedNormal,
+        likedChannel,
+        archivedPosts,
+      ] = await Promise.all([
         Post.find({ id: { $in: savedIds } }).lean(),
+        channelPost.find({ _id: { $in: savedChannelIds } }).lean(),
         Post.find({ id: { $in: likedIds } }).lean(),
+        channelPost.find({ _id: { $in: likedChannelIds } }).lean(),
         Post.find({ id: { $in: archiveIds } }).lean(),
       ]);
+
+      saved = [...savedNormal, ...savedChannel];
+      liked = [...likedNormal, ...likedChannel];
+      archived = archivedPosts;
     }
 
     const result = {
