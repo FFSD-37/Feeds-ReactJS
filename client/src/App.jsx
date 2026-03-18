@@ -31,6 +31,7 @@ import Contact from './components/contact.jsx';
 import Reels from './components/reels.jsx';
 import ChannelRegistration from './components/channelregistration.jsx';
 import Settings from './components/settings.jsx';
+import ChannelSettings from './components/channelSettings.jsx';
 // import { Home } from 'lucide-react';
 import Sidebar from './components/Sidebar.jsx';
 import ChatPage from './components/chat.jsx';
@@ -41,6 +42,7 @@ import DailyUsagePage from './components/dailyUsage.jsx';
 import NotFoundRoute from './components/notfound.jsx';
 import KidsSettings from './components/KidsSettings.jsx';
 import DeleteAccount from './components/DeleteAccount.jsx';
+import ChannelDeletePage from './components/channelDelete.jsx';
 import KidsHome from './components/kidsHome.jsx';
 import { setTheme } from './redux/slices/themeSlice.js';
 
@@ -103,11 +105,27 @@ const AppContent = () => {
         <Route path="/contact" element={<Contact />} />
         <Route path="/reels" element={<Reels />} />
         <Route path="/channelregistration" element={<ChannelRegistration />} />
-        <Route path="/settings" element={<Settings />} />
+        <Route
+          path="/settings"
+          element={
+            userData?.type === 'Channel' ? (
+              <ChannelSettings />
+            ) : userData?.type === 'Kids' ? (
+              <KidsSettings />
+            ) : (
+              <Settings />
+            )
+          }
+        />
         <Route path="/kids_settings" element={<KidsSettings />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/dailyUsage" element={<DailyUsagePage />} />
-        <Route path="/DeleteAccount" element={<DeleteAccount />} />
+        <Route
+          path="/DeleteAccount"
+          element={
+            userData?.type === 'Channel' ? <ChannelDeletePage /> : <DeleteAccount />
+          }
+        />
         <Route path="*" element={<NotFoundRoute />} />
         <Route path="/kids-profile/:username" element={<KidsProfile />} />
       </Routes>

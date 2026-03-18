@@ -4,8 +4,7 @@ import '../styles/channelPostOverlay.css';
 
 /*
 ISSUES/Improvements:
-1. The like number should appear adjacent to the like button, not below it.
-2. Enter Key to send the comment/reply.
+
 */
 
 const timeAgo = dateString => {
@@ -166,6 +165,13 @@ export default function ChannelPostOverlay({ id: propId, onClose }) {
     }
   };
 
+  const handleKeyDown = e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddComment();
+    }
+  };
+
   const loadReplies = async commentId => {
     setLoadingReplies(prev => ({ ...prev, [commentId]: true }));
 
@@ -218,9 +224,26 @@ export default function ChannelPostOverlay({ id: propId, onClose }) {
 
   const handleCloseReport = () => setShowReportModal(false);
 
-  const handleReasonSelect = reason => {
-    alert(`Reported post for: ${reason}`);
-    setShowReportModal(false);
+  const handleReasonSelect = async reason => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/report_post`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ reason, post_id: post?.id || id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Post reported - id: ${data.reportId}`);
+      } else {
+        alert(data.message || 'Failed to report post');
+      }
+    } catch (err) {
+      console.error('Error reporting post:', err);
+      alert('Failed to report post');
+    } finally {
+      setShowReportModal(false);
+    }
   };
 
   if (loading)
@@ -437,6 +460,7 @@ export default function ChannelPostOverlay({ id: propId, onClose }) {
                 type="text"
                 value={newComment}
                 onChange={e => setNewComment(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder="Add a comment..."
                 className="channel-post-overlay-comment-input"
               />

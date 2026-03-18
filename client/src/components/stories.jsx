@@ -26,26 +26,27 @@ export default function Stories({
   initialStories = null,
   currentUser = null,
   fetchUrl = "http://localhost:3000/stories",
+  // If provided, Stories will automatically open that user's stories
+  openUser = null,
+  // When `hideGrid` is true the component will only render the viewer (useful when embedding)
+  hideGrid = false,
+  // optional onClose callback
+  onClose = null,
 }) {
   const [stories, setStories] = useState(initialStories || []);
   const [loading, setLoading] = useState(!initialStories);
   const [error, setError] = useState(null);
-
-  // viewer state
   const [viewerOpen, setViewerOpen] = useState(false);
   const [activeUsername, setActiveUsername] = useState(null);
-  const [activeStories, setActiveStories] = useState([]); // stories of active user
+  const [activeStories, setActiveStories] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [progressPercents, setProgressPercents] = useState([]); // per-story percent 0..100
+  const [progressPercents, setProgressPercents] = useState([]);
   const [isPaused, setIsPaused] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
-
   const progressIntervalRef = useRef(null);
-  const storyMediaRefs = useRef({}); // store refs by index for media elements
-  const defaultDuration = 5000; // ms for images or fallback
+  const storyMediaRefs = useRef({});
+  const defaultDuration = 5000;
   const [progressDuration, setProgressDuration] = useState(defaultDuration);
-
-  // Build a map of username -> list of stories
   const usersMap = useMemo(() => {
     const m = {};
     (stories || []).forEach((s) => {
@@ -58,9 +59,7 @@ export default function Stories({
     );
     return m;
   }, [stories]);
-
   const usernamesOrdered = useMemo(() => Object.keys(usersMap), [usersMap]);
-
   useEffect(() => {
     if (!initialStories) {
       setLoading(true);
@@ -86,8 +85,6 @@ export default function Stories({
         .finally(() => setLoading(false));
     }
   }, [initialStories, fetchUrl]);
-
-  // Open viewer for a username
   function openStory(username) {
     const arr = usersMap[username]?.stories || [];
     if (!arr.length) return;
@@ -109,7 +106,16 @@ export default function Stories({
     setActiveStories([]);
     setActiveIndex(0);
     storyMediaRefs.current = {};
+    if (typeof onClose === "function") onClose();
   }
+
+  // open story when parent provides `openUser` (wait for usersMap to be ready)
+  useEffect(() => {
+    if (!openUser) return;
+    if (usersMap[openUser] && usersMap[openUser].stories && usersMap[openUser].stories.length) {
+      openStory(openUser);
+    }
+  }, [openUser, usersMap]);
 
   function startProgress(index) {
     stopProgress();
@@ -337,199 +343,201 @@ export default function Stories({
 
   return (
     <div className="stories-app">
-      <div className="stories-header">
-        <h1 className="stories-title">Stories</h1>
-        <div className="stories-subtitle">See what's happening with people you follow</div>
-      </div>
-
-      {loading ? (
-        <div className="loading-container">
-          <Spinner />
-        </div>
-      ) : error ? (
-        <div className="error-container">
-          <div className="error-icon">⚠️</div>
-          <div className="error-message">{error}</div>
-          <button className="error-retry" onClick={() => window.location.reload()}>Try Again</button>
-        </div>
-      ) : uniqueUsers.length === 0 ? (
-        <NoStories />
-      ) : (
+      {!hideGrid && (
         <>
-          <div className="stories-grid">
-            {uniqueUsers.map((user) => (
-              <div
-                key={user.username}
-                className="story-user-card"
-                onClick={() => openStory(user.username)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") openStory(user.username);
-                }}
-              >
-                <div className="story-avatar-wrapper">
-                  <div className="story-avatar-glow"></div>
-                  <img 
-                    src={user.avatar || "/api/placeholder/96/96"} 
-                    alt={user.username} 
-                    className="story-avatar" 
-                    loading="lazy"
-                  />
-                  <div className="story-indicator"></div>
-                </div>
-                <div className="story-user-info">
-                  <div className="story-username">{user.username}</div>
-                  <div className="story-count">
-                    {usersMap[user.username]?.stories.length || 0} story
-                    {usersMap[user.username]?.stories.length !== 1 ? 's' : ''}
+          <div className="stories-header">
+            <h1 className="stories-title">Stories</h1>
+            <div className="stories-subtitle">See what's happening with people you follow</div>
+          </div>
+
+          {loading ? (
+            <div className="loading-container">
+              <Spinner />
+            </div>
+          ) : error ? (
+            <div className="error-container">
+              <div className="error-icon">⚠️</div>
+              <div className="error-message">{error}</div>
+              <button className="error-retry" onClick={() => window.location.reload()}>Try Again</button>
+            </div>
+          ) : uniqueUsers.length === 0 ? (
+            <NoStories />
+          ) : (
+            <div className="stories-grid">
+              {uniqueUsers.map((user) => (
+                <div
+                  key={user.username}
+                  className="story-user-card"
+                  onClick={() => openStory(user.username)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") openStory(user.username);
+                  }}
+                >
+                  <div className="story-avatar-wrapper">
+                    <div className="story-avatar-glow"></div>
+                    <img 
+                      src={user.avatar || "/api/placeholder/96/96"} 
+                      alt={user.username} 
+                      className="story-avatar" 
+                      loading="lazy"
+                    />
+                    <div className="story-indicator"></div>
+                  </div>
+                  <div className="story-user-info">
+                    <div className="story-username">{user.username}</div>
+                    <div className="story-count">
+                      {usersMap[user.username]?.stories.length || 0} story
+                      {usersMap[user.username]?.stories.length !== 1 ? 's' : ''}
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Viewer Modal (always rendered so parent can hide grid and still show viewer) */}
+      <div className={`story-viewer ${viewerOpen ? 'open' : ''}`} id="story-viewer" aria-hidden={!viewerOpen}>
+        <div className="viewer-backdrop" onClick={closeStory}></div>
+
+        <div className="viewer-content">
+          {/* Progress Bars */}
+          <div className="story-progress" id="story-progress-container">
+            {(activeStories || []).map((s, i) => (
+              <div className="progress-track" key={s._id || i}>
+                <div 
+                  className="progress-fill" 
+                  id={`progress-${i}`} 
+                  style={{ width: `${progressPercents[i] || 0}%` }}
+                />
               </div>
             ))}
           </div>
 
-          {/* Viewer Modal */}
-          <div className={`story-viewer ${viewerOpen ? 'open' : ''}`} id="story-viewer" aria-hidden={!viewerOpen}>
-            <div className="viewer-backdrop" onClick={closeStory}></div>
-            
-            <div className="viewer-content">
-              {/* Progress Bars */}
-              <div className="story-progress" id="story-progress-container">
-                {(activeStories || []).map((s, i) => (
-                  <div className="progress-track" key={s._id || i}>
-                    <div 
-                      className="progress-fill" 
-                      id={`progress-${i}`} 
-                      style={{ width: `${progressPercents[i] || 0}%` }}
-                    />
-                  </div>
-                ))}
+          {/* Header */}
+          <div className="story-header">
+            <div className="user-info" id="story-user-info">
+              <div className="user-avatar-container">
+                <img 
+                  src={activeStories[0]?.avatarUrl || "/api/placeholder/40/40"} 
+                  alt={activeUsername} 
+                  className="user-avatar" 
+                />
               </div>
-
-              {/* Header */}
-              <div className="story-header">
-                <div className="user-info" id="story-user-info">
-                  <div className="user-avatar-container">
-                    <img 
-                      src={activeStories[0]?.avatarUrl || "/api/placeholder/40/40"} 
-                      alt={activeUsername} 
-                      className="user-avatar" 
-                    />
-                  </div>
-                  <div className="user-details">
-                    <div className="username" id="story-username">{activeUsername}</div>
-                    <div className="post-time" id="story-time">
-                      {activeStories[activeIndex] ? formatTime(activeStories[activeIndex].createdAt) : ''}
-                    </div>
-                  </div>
+              <div className="user-details">
+                <div className="username" id="story-username">{activeUsername}</div>
+                <div className="post-time" id="story-time">
+                  {activeStories[activeIndex] ? formatTime(activeStories[activeIndex].createdAt) : ''}
                 </div>
-                <div className="header-actions">
-                  <button 
-                    className="action-button pause-resume" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (isPaused) resumeProgress(); else pauseProgress();
-                    }}
-                    aria-label={isPaused ? "Resume story" : "Pause story"}
-                  >
-                    {isPaused ? '▶️' : '⏸️'}
-                  </button>
-                  <button 
-                    className="action-button close" 
-                    onClick={closeStory}
-                    aria-label="Close story"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
-
-              {/* Story Content */}
-              <div className="story-content" id="story-view-container" onClick={handleMediaClick}>
-                {(activeStories || []).map((story, i) => {
-                  const isActive = i === activeIndex;
-                  const type = story.url && story.url.toLowerCase().includes(".mp4") ? "video" : "image";
-                  return (
-                    <div 
-                      key={story._id || i} 
-                      id={`story-image-${i}`} 
-                      className={`story-media-wrapper ${isActive ? 'active' : ''}`}
-                    >
-                      {type === "image" ? (
-                        <img
-                          src={story.url}
-                          alt={`Story by ${activeUsername}`}
-                          className="story-media"
-                          ref={(el) => {
-                            if (isActive) attachMediaRef(i, el);
-                            else {
-                              storyMediaRefs.current[i] = storyMediaRefs.current[i] || null;
-                            }
-                          }}
-                          loading="eager"
-                        />
-                      ) : (
-                        <video 
-                          src={story.url} 
-                          className="story-media" 
-                          ref={(el) => attachMediaRef(i, el)} 
-                          playsInline 
-                          muted 
-                          autoPlay={isActive}
-                        />
-                      )}
-                      
-                      {isActive && isBuffering && (
-                        <div className="buffering-overlay">
-                          <div className="buffering-spinner"></div>
-                          <span>Buffering...</span>
-                        </div>
-                      )}
-                      
-                      {isActive && isPaused && !isBuffering && (
-                        <div className="paused-overlay">
-                          <div className="pause-icon">⏸️</div>
-                          <span>Story Paused</span>
-                        </div>
-                      )}
-
-                      <StoryLikeButton story={story} onToggle={(setLocal) => toggleLike(story._id || story.id, !!story.liked, setLocal)} />
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Navigation */}
-              <div className="navigation-controls">
-                <button 
-                  className="nav-button prev" 
-                  onClick={(e) => { e.stopPropagation(); previousStory(); }}
-                  aria-label="Previous story"
-                >
-                  <svg viewBox="0 0 24 24" width="24" height="24">
-                    <path fill="currentColor" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
-                  </svg>
-                </button>
-                <button 
-                  className="nav-button next" 
-                  onClick={(e) => { e.stopPropagation(); nextStory(); }}
-                  aria-label="Next story"
-                >
-                  <svg viewBox="0 0 24 24" width="24" height="24">
-                    <path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-                  </svg>
-                </button>
-              </div>
-
-              {/* Story Counter */}
-              <div className="story-counter">
-                {activeIndex + 1} / {activeStories.length}
               </div>
             </div>
+            <div className="header-actions">
+              <button 
+                className="action-button pause-resume" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isPaused) resumeProgress(); else pauseProgress();
+                }}
+                aria-label={isPaused ? "Resume story" : "Pause story"}
+              >
+                {isPaused ? '▶️' : '⏸️'}
+              </button>
+              <button 
+                className="action-button close" 
+                onClick={closeStory}
+                aria-label="Close story"
+              >
+                ×
+              </button>
+            </div>
           </div>
-        </>
-      )}
+
+          {/* Story Content */}
+          <div className="story-content" id="story-view-container" onClick={handleMediaClick}>
+            {(activeStories || []).map((story, i) => {
+              const isActive = i === activeIndex;
+              const type = story.url && story.url.toLowerCase().includes(".mp4") ? "video" : "image";
+              return (
+                <div 
+                  key={story._id || i} 
+                  id={`story-image-${i}`} 
+                  className={`story-media-wrapper ${isActive ? 'active' : ''}`}
+                >
+                  {type === "image" ? (
+                    <img
+                      src={story.url}
+                      alt={`Story by ${activeUsername}`}
+                      className="story-media"
+                      ref={(el) => {
+                        if (isActive) attachMediaRef(i, el);
+                        else {
+                          storyMediaRefs.current[i] = storyMediaRefs.current[i] || null;
+                        }
+                      }}
+                      loading="eager"
+                    />
+                  ) : (
+                    <video 
+                      src={story.url} 
+                      className="story-media" 
+                      ref={(el) => attachMediaRef(i, el)} 
+                      playsInline 
+                      muted 
+                      autoPlay={isActive}
+                    />
+                  )}
+                  
+                  {isActive && isBuffering && (
+                    <div className="buffering-overlay">
+                      <div className="buffering-spinner"></div>
+                      <span>Buffering...</span>
+                    </div>
+                  )}
+                  
+                  {isActive && isPaused && !isBuffering && (
+                    <div className="paused-overlay">
+                      <div className="pause-icon">⏸️</div>
+                      <span>Story Paused</span>
+                    </div>
+                  )}
+
+                  <StoryLikeButton story={story} onToggle={(setLocal) => toggleLike(story._id || story.id, !!story.liked, setLocal)} />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Navigation */}
+          <div className="navigation-controls">
+            <button 
+              className="nav-button prev" 
+              onClick={(e) => { e.stopPropagation(); previousStory(); }}
+              aria-label="Previous story"
+            >
+              <svg viewBox="0 0 24 24" width="24" height="24">
+                <path fill="currentColor" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+              </svg>
+            </button>
+            <button 
+              className="nav-button next" 
+              onClick={(e) => { e.stopPropagation(); nextStory(); }}
+              aria-label="Next story"
+            >
+              <svg viewBox="0 0 24 24" width="24" height="24">
+                <path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+              </svg>
+            </button>
+          </div>
+
+          {/* Story Counter */}
+          <div className="story-counter">
+            {activeIndex + 1} / {activeStories.length}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

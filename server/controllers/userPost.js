@@ -3,6 +3,7 @@ import Post from "../models/postSchema.js";
 import User from "../models/users_schema.js";
 import channelPost from "../models/channelPost.js";
 import Notification from "../models/notification_schema.js";
+import { rewardUserByUsername } from "../services/coinRewards.js";
 
 const handlePostupload=async(req,res)=>{
     try {
@@ -102,8 +103,7 @@ const suggestedPost=async(req,res)=>{
         
             if(user.likedPostsIds?.includes(post.id)){
                 post={...post,liked:true};
-                console.log('post',post);
-                
+                // console.log('post',post);                
             }
             if(user.savedPostsIds?.includes(post.id)){
                 post={...post,saved:true};
@@ -144,12 +144,13 @@ const suggestedReels=async(req,res)=>{
 const handleLikePost=async(req,res)=>{
     try{
         const {id}=req.params;
-        console.log(id);
+        // console.log(id);
         if(!id) return res.status(400).json({ err: "Post ID is required" });
         const userDetails=verify_JWTtoken(req.cookies.uuid, process.env.USER_SECRET);
         if(!userDetails) return res.status(401).json({ err: "Unauthorized" });
         const userType=userDetails.data[3];
         const username = userDetails.data[0];
+        let shouldRewardEngagement = false;
 
         let user=await User.findOne({username});
         let isUserliked=user.likedPostsIds.find((postId)=>postId===id);
@@ -166,6 +167,7 @@ const handleLikePost=async(req,res)=>{
             await Post.findOneAndUpdate({id},{
                 $inc:{likes:1}
             })
+            shouldRewardEngagement = userType !== "Kids";
             
             // Get post author to send notification
             const post = await Post.findOne({id});
@@ -184,6 +186,11 @@ const handleLikePost=async(req,res)=>{
         }
 
         await user.save();
+        if (shouldRewardEngagement) {
+            await rewardUserByUsername(username, {
+                activity: "engagement"
+            });
+        }
         return res.json({success:true})
     }
     catch(error){
@@ -209,9 +216,13 @@ const handleSavePost=async(req,res)=>{
         user.savedPostsIds = isUserSaved
           ? user.savedPostsIds.filter(postId => postId !== id)
           : [...(user.savedPostsIds || []), id];
-        
-        
+
         await user.save();
+        if (!isUserSaved && userType !== "Kids") {
+          await rewardUserByUsername(userDetails.data[0], {
+            activity: "engagement"
+          });
+        }
         return res.json({success:true})
     }
     catch(error){

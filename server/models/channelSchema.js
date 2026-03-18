@@ -80,6 +80,16 @@ const channelSchema = new mongoose.Schema({
         ref: "User"
     }],
 
+    isDeactivated: {
+        type: Boolean,
+        default: false
+    },
+
+    socketId: {
+        type: String,
+        default: null
+    },
+
     archivedPostsIds: [{
         type: String
     }],
@@ -94,7 +104,26 @@ const channelSchema = new mongoose.Schema({
 
     postIds: [{
         type: String
-    }]
+    }],
+
+    channelSettings: {
+        allowProfileSharing: {
+            type: Boolean,
+            default: true
+        },
+        supportEmail: {
+            type: String,
+            default: ""
+        },
+        supportPhone: {
+            type: String,
+            default: ""
+        },
+        supportUrl: {
+            type: String,
+            default: ""
+        }
+    }
 }, { timestamps: true });
 
 const Channel = mongoose.model("Channel", channelSchema);

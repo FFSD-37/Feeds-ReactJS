@@ -4,6 +4,7 @@ import Post from "../../models/postSchema.js";
 import Comment from "../../models/comment_schema.js";
 import Report from "../../models/reports.js";
 import ActivityLog from "../../models/activityLogSchema.js";
+import Channel from "../../models/channelSchema.js";
 
 const getFriends = async (req, res) => {
   const { data } = req.userDetails;
@@ -12,7 +13,6 @@ const getFriends = async (req, res) => {
   let friends = user.followings.filter((f) =>
     user.followers.some((fr) => fr.username === f.username)
   );
-  console.log(friends, user);
 
   friends = await User.find({
     username: { $in: friends.map((f) => f.username) },
@@ -98,9 +98,8 @@ const handlepostreply = async (req, res) => {
 const handlecommentreport = async (req, res) => {
   try {
     const { data } = req.userDetails;
-    const reporter = data[0];
+    const reporterUsername = data[0];
     const { commentId } = req.body;
-    console.log(commentId);
 
     if (!commentId) {
       return res.status(400).json({
@@ -118,31 +117,26 @@ const handlecommentreport = async (req, res) => {
       });
     }
 
-    // Prevent duplicate reports by the same user
-    const existingReport = await Report.findOne({
-      post_id: commentId,
-      user_reported: reporter,
-    });
-
-    if (existingReport) {
-      return res.status(400).json({
-        success: false,
-        message: "You have already reported this comment.",
-      });
-    }
+    // Classify chat/comment report:
+    // normal user chat => 5, channel chat => 6
+    const isChannelComment = Boolean(
+      await Channel.findOne({ channelName: comment.username }).select("channelName")
+    );
+    const reportId = isChannelComment ? 6 : 5;
 
     // Create new report entry
     const report = await Report.create({
+      report_id: reportId,
       post_id: commentId,
       report_number: Date.now(),
-      user_reported: reporter,
+      user_reported: comment.username,
       reason: "REPORT",
       status: "Pending",
     });
 
     // Add to activity log
     await ActivityLog.create({
-      username: reporter,
+      username: reporterUsername,
       id: `#${Date.now()}`,
       message: `You reported a comment.`,
     });
