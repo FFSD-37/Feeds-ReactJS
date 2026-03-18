@@ -17,6 +17,7 @@ body {
   padding: 2rem 1rem;
   overflow-y: auto;
   scroll-behavior: smooth;
+  width: 80vw;
 }
 
 .connect-container {

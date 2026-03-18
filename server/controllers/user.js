@@ -18,6 +18,7 @@ import channelPost from "../models/channelPost.js";
 import Story from "../models/storiesSchema.js";
 import Comment from "../models/comment_schema.js";
 import { rewardUserByUsername } from "../services/coinRewards.js";
+import resetTimeIfNewDay from "../services/resetTime.js";
 // import Adpost from "../models/ad_schema.js";
 
 async function storeOtp(email, otp) {
@@ -2372,6 +2373,7 @@ const handleloginsecond = async (req, res) => {
           success: false,
           reason: "Incorrect parent password",
         });
+      await resetTimeIfNewDay(user);
       const token = create_JWTtoken(
         [
           user.username,
