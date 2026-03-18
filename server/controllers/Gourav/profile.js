@@ -1,7 +1,9 @@
 import Post from "../../models/postSchema.js";
 import User from "../../models/users_schema.js";
 import Channel from "../../models/channelSchema.js";
+import channelPost from "../../models/channelPost.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
+import mongoose from "mongoose";
 
 const handlegetUserPost = async (req, res) => {
     const { data } = req.userDetails;
@@ -81,6 +83,181 @@ const handlegetBasicDetails = async (req, res) => {
         isPremium: user.isPremium,
         type: user.type,
         visibility: user.visibility,
+<<<<<<< HEAD
+        links: user.links,
+        display_name: user.display_name,
+        coins: user.coins,
+        createdAt: user.createdAt,
+        access: {
+          viewerType,
+          isOwnProfile,
+          blockedByTarget,
+          viewerBlockedTarget,
+          kidsBoundary,
+          mainFollowsSide,
+          canViewPosts,
+          canViewSocial
+        }
+    }
+    return res.json({ success: true, details: result });
+}
+
+const handlegetsensitive = async (req, res) => {
+    const { data } = req.userDetails;
+    const viewerName = data[0];
+    const viewerType = data[3];
+    const userAsking = req.params.username;
+    const user = await User.findOne({ username: userAsking });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const viewerIsChannel = viewerType === "Channel";
+    const isOwnProfile = !viewerIsChannel && viewerName === userAsking;
+    const blockedByTarget = user.blockedUsers.includes(viewerName);
+    const kidsBoundary =
+      (viewerType === "Kids" && user.type !== "Kids") ||
+      (viewerType !== "Kids" && user.type === "Kids");
+
+    let mainFollowsSide = false;
+    let viewerBlockedTarget = false;
+    if (!viewerIsChannel) {
+      const viewer = await User.findOne({ username: viewerName }).select("followings blockedUsers").lean();
+      mainFollowsSide = viewer?.followings?.some((f) => f.username === userAsking) || false;
+      viewerBlockedTarget = viewer?.blockedUsers?.includes(userAsking) || false;
+    }
+
+    const canViewPosts =
+      !blockedByTarget &&
+      !viewerBlockedTarget &&
+      !kidsBoundary &&
+      (isOwnProfile || user.visibility === "Public" || (!viewerIsChannel && mainFollowsSide));
+
+    const canViewSocial =
+      !viewerIsChannel &&
+      !blockedByTarget &&
+      !viewerBlockedTarget &&
+      !kidsBoundary &&
+      (isOwnProfile || user.visibility === "Public" || mainFollowsSide);
+
+    let posts = [];
+    let saved = [];
+    let liked = [];
+    let archived = [];
+
+    if (canViewPosts) {
+      const postIds = user.postIds || [];
+      posts = await Post.find({ _id: { $in: postIds }, isArchived: false }).lean();
+    }
+
+    if (isOwnProfile) {
+      const savedIds = (user.savedPostsIds || []).map(String);
+      const likedIds = (user.likedPostsIds || []).map(String);
+      const archiveIds = user.archivedPostsIds || [];
+      const savedChannelIds = savedIds.filter((id) => mongoose.Types.ObjectId.isValid(id));
+      const likedChannelIds = likedIds.filter((id) => mongoose.Types.ObjectId.isValid(id));
+
+      const [
+        savedNormal,
+        savedChannel,
+        likedNormal,
+        likedChannel,
+        archivedPosts,
+      ] = await Promise.all([
+        Post.find({ id: { $in: savedIds } }).lean(),
+        channelPost.find({ _id: { $in: savedChannelIds } }).lean(),
+        Post.find({ id: { $in: likedIds } }).lean(),
+        channelPost.find({ _id: { $in: likedChannelIds } }).lean(),
+        Post.find({ id: { $in: archiveIds } }).lean(),
+      ]);
+
+      saved = [...savedNormal, ...savedChannel];
+      liked = [...likedNormal, ...likedChannel];
+      archived = archivedPosts;
+    }
+
+    const result = {
+        followers: canViewSocial ? user.followers : [],
+        followings: canViewSocial ? user.followings : [],
+        posts,
+        saved,
+        liked,
+        archived,
+        access: {
+          viewerType,
+          isOwnProfile,
+          blockedByTarget,
+          viewerBlockedTarget,
+          kidsBoundary,
+          mainFollowsSide,
+          canViewPosts,
+          canViewSocial
+        }
+    }
+    return res.json({ success: true, details: result });
+}
+
+const handleisfriend = async (req, res) => {
+  try {
+    const { data } = req.userDetails;
+    const viewerType = data[3];
+    const userAsking = req.params.username;
+
+    if (viewerType === "Channel") {
+      return res.status(200).json({
+        relationship: "",
+        href: "",
+        canFollow: false,
+        reason: "Channel accounts cannot follow users."
+      });
+    }
+
+    const mainUser = await User.findOne({ username: data[0] });
+    const sideUser = await User.findOne({ username: userAsking });
+
+    if (!mainUser || !sideUser) {
+      return res.status(404).json({
+        relationship: "",
+        href: "",
+        canFollow: false,
+        reason: "User not found"
+      });
+    }
+
+    if (sideUser.blockedUsers.includes(mainUser.username)) {
+      return res.status(200).json({
+        relationship: "Blocked",
+        href: "",
+        canFollow: false,
+        reason: "You are blocked by this user."
+      });
+    }
+
+    if (mainUser.blockedUsers.includes(sideUser.username)) {
+      return res.status(200).json({
+        relationship: "Blocked",
+        href: "",
+        canFollow: false,
+        reason: "You have blocked this user."
+      });
+    }
+
+    const kidsBoundary =
+      (mainUser.type === "Kids" && sideUser.type !== "Kids") ||
+      (mainUser.type !== "Kids" && sideUser.type === "Kids");
+
+    if (kidsBoundary) {
+      return res.status(200).json({
+        relationship: "",
+        href: "",
+        canFollow: false,
+        reason: "Kids accounts cannot follow non-kids users and vice-versa."
+      });
+    }
+
+    // Is main following side?
+=======
         links: user.links,
         display_name: user.display_name,
         coins: user.coins,
@@ -239,6 +416,7 @@ const handleisfriend = async (req, res) => {
     }
 
     // Is main following side?
+>>>>>>> bdf17ad1ec041ef21a21549e97c95a45b5f9a864
     const mainFollowsSide = mainUser.followings.some(
       (u) => u.username === sideUser.username
     );

@@ -178,7 +178,11 @@ function Sidebar() {
 
   // Determine profile link
   const profileLink =
-    type === 'Channel' ? `/channel/${channelName}` : `/profile/${username}`;
+    type === 'Channel'
+      ? `/channel/${channelName}`
+      : type === 'Kids'
+        ? `/kids-profile/${username}`
+        : `/profile/${username}`;
 
   return (
     <>
