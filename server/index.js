@@ -13,6 +13,10 @@ import User from "./models/users_schema.js";
 import Chat from "./models/chatSchema.js";
 import Channel from "./models/channelSchema.js";
 import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+import YAML from "yamljs";
+import path from "path";
+import { fileURLToPath } from "url";
 import { clearSession, setSession } from "./controllers/timout.js";
 import { errorhandler } from "./middleware/handlerError.js";
 import { Logger } from "./middleware/applicationMiddleware.js"
@@ -23,6 +27,22 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
+
+// --- Swagger UI setup ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+let swaggerDocument;
+try {
+  swaggerDocument = YAML.load(path.join(__dirname, "swagger.openapi.yaml"));
+} catch (e) {
+  console.log("⚠️ Failed to load swagger.openapi.yaml:", e.message);
+  swaggerDocument = null;
+}
+
+if (swaggerDocument) {
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+  console.log("� documentation available at /api-docs");
+}
 
 // ✅ Connect MongoDB
 connectToMongo();

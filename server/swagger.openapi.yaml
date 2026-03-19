@@ -33,6 +33,164 @@ components:
     GenericPayload:
       type: object
       additionalProperties: true
+    SignupPayload:
+      type: object
+      properties:
+        fullName: { type: string }
+        username: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        password: { type: string }
+        dob: { type: string }
+        profileImageUrl: { type: string }
+        bio: { type: string }
+        gender: { type: string }
+        acctype: { type: string }
+        parentalPassword: { type: string }
+        confirmParentalPassword: { type: string }
+        terms: { type: boolean }
+    SendOtpPayload:
+      type: object
+      properties:
+        email: { type: string }
+    VerifyOtpPayload:
+      type: object
+      properties:
+        email: { type: string }
+        otp: { type: string }
+        action: { type: string }
+    UpdatePassPayload:
+      type: object
+      properties:
+        email: { type: string }
+        new_password: { type: string }
+        confirm_password: { type: string }
+    AdminPassUpdatePayload:
+      type: object
+      properties:
+        otp: { type: string }
+        newPassword: { type: string }
+        confirmPassword: { type: string }
+    FetchUserOverlayPayload:
+      type: object
+      properties:
+        user_id: { type: string }
+        username: { type: string }
+        email: { type: string }
+    AtinJobPayload:
+      type: object
+      additionalProperties: true
+    ContactPayload:
+      type: object
+      properties:
+        name: { type: string }
+        email: { type: string }
+        subject: { type: string }
+        message: { type: string }
+    DelAccPayload:
+      type: object
+      properties:
+        password: { type: string }
+    CreatePostPayload:
+      type: object
+      properties:
+        postType: { type: string }
+        mediaUrl: { type: string }
+        caption: { type: string }
+    FinalizePostPayload:
+      type: object
+      properties:
+        profileImageUrl: { type: string }
+        type: { type: string }
+        caption: { type: string }
+    CheckoutPayload:
+      type: object
+      properties:
+        plan_name: { type: string }
+    VerifyPaymentPayload:
+      type: object
+      properties:
+        razorpay_payment_id: { type: string }
+        razorpay_order_id: { type: string }
+        razorpay_signature: { type: string }
+    UpdateUserDetailsPayload:
+      type: object
+      additionalProperties: true
+    FollowEntityPayload:
+      type: object
+      additionalProperties: true
+    ShareFinalPostPayload:
+      type: object
+      additionalProperties: true
+    ReportPayload:
+      type: object
+      additionalProperties: true
+    PostLikePayload:
+      type: object
+      additionalProperties: true
+    CommentPayload:
+      type: object
+      properties:
+        postId: { type: string }
+        text: { type: string }
+        parentId: { type: string }
+    ReportPostPayload:
+      type: object
+      additionalProperties: true
+    ReportChatPayload:
+      type: object
+      additionalProperties: true
+    CommentLikePayload:
+      type: object
+      additionalProperties: true
+    BlockPayload:
+      type: object
+      additionalProperties: true
+    PostActionPayload:
+      type: object
+      properties:
+        id: { type: string }
+    UpdateChannelDetailsPayload:
+      type: object
+      additionalProperties: true
+    ChannelPostPayload:
+      type: object
+      additionalProperties: true
+    ChannelLikePayload:
+      type: object
+      additionalProperties: true
+    ChannelSavePayload:
+      type: object
+      additionalProperties: true
+    ChannelCommentPayload:
+      type: object
+      additionalProperties: true
+    FollowChannelPayload:
+      type: object
+      additionalProperties: true
+    KidsChangePasswordPayload:
+      type: object
+      properties:
+        currentPassword: { type: string }
+        newPassword: { type: string }
+    KidsParentalPasswordPayload:
+      type: object
+      properties:
+        currentParentalPassword: { type: string }
+        newParentalPassword: { type: string }
+    KidsTimeControlPayload:
+      type: object
+      additionalProperties: true
+    GameRewardPayload:
+      type: object
+      additionalProperties: true
+    PostUploadPayload:
+      type: object
+      properties:
+        title: { type: string }
+        url: { type: string }
+        content: { type: string }
+        type: { type: string }
 paths:
   /fake:
     get:
@@ -48,7 +206,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/SignupPayload' }
       responses:
         '201': { description: Account created }
   /sendotp:
@@ -59,10 +217,7 @@ paths:
         required: true
         content:
           application/json:
-            schema:
-              type: object
-              properties:
-                email: { type: string }
+            schema: { $ref: '#/components/schemas/SendOtpPayload' }
       responses:
         '200': { description: OTP sent }
   /verifyotp:
@@ -73,11 +228,7 @@ paths:
         required: true
         content:
           application/json:
-            schema:
-              type: object
-              properties:
-                email: { type: string }
-                otp: { type: string }
+            schema: { $ref: '#/components/schemas/VerifyOtpPayload' }
       responses:
         '200': { description: OTP verified }
   /updatepass:
@@ -88,7 +239,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/UpdatePassPayload' }
       responses:
         '200': { description: Password updated }
   /imagKitauth:
@@ -111,7 +262,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/AdminPassUpdatePayload' }
       responses:
         '200': { description: Admin password updated }
   /fetchUserOverlay:
@@ -122,7 +273,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/FetchUserOverlayPayload' }
       responses:
         '200': { description: Overlay payload }
   /atin_job:
@@ -133,7 +284,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/AtinJobPayload' }
       responses:
         '200': { description: Login result }
   /adminLogin:
@@ -204,7 +355,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/ContactPayload' }
       responses:
         '200': { description: Contact request saved }
   /payment:
@@ -226,7 +377,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/CheckoutPayload' }
       responses:
         '200': { description: Checkout order created }
   /checkout_razorpay:
@@ -239,7 +390,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/CheckoutPayload' }
       responses:
         '200': { description: Checkout created }
   /verify_payment:
@@ -252,7 +403,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/VerifyPaymentPayload' }
       responses:
         '200': { description: Payment verified }
   /delacc:
@@ -322,7 +473,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/FollowEntityPayload' }
       responses:
         '200': { description: Entity followed }
   /connect/unfollow:
@@ -335,7 +486,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/FollowEntityPayload' }
       responses:
         '200': { description: Entity unfollowed }
   /follow/{username}:
@@ -508,7 +659,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/UpdateUserDetailsPayload' }
       responses:
         '200': { description: Profile updated }
   /togglePublicPrivate:
@@ -592,7 +743,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/ReportChatPayload' }
       responses:
         '200': { description: Chat report submitted }
   /notifications:
@@ -642,7 +793,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/ReportPayload' }
       responses:
         '200': { description: Notification created }
   /create_post:
@@ -673,7 +824,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/CreatePostPayload' }
       responses:
         '200': { description: Post created }
   /finalSubmit:
@@ -687,7 +838,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/FinalizePostPayload' }
       responses:
         '200': { description: Finalization result }
   /shareFinalPost:
@@ -701,7 +852,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/ShareFinalPostPayload' }
       responses:
         '200': { description: Post published }
   /posts/like:
@@ -714,7 +865,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/PostLikePayload' }
       responses:
         '200': { description: Like state updated }
   /comment:
@@ -728,7 +879,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/CommentPayload' }
       responses:
         '200': { description: Comment added }
   /comment/like/{id}:
@@ -756,7 +907,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/ReportPostPayload' }
       responses:
         '200': { description: Post report submitted }
   /delete/{id}:
@@ -831,7 +982,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/PostLikePayload' }
       responses:
         '200': { description: Reel liked }
   /unlikereel:
@@ -845,7 +996,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/PostLikePayload' }
       responses:
         '200': { description: Reel unliked }
   /savereel:
@@ -859,7 +1010,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/PostLikePayload' }
       responses:
         '200': { description: Reel saved }
   /unsavereel:
@@ -873,7 +1024,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/PostLikePayload' }
       responses:
         '200': { description: Reel unsaved }
   /commentreel:
@@ -887,7 +1038,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/CommentPayload' }
       responses:
         '200': { description: Reel comment added }
   /replyreel:
@@ -901,7 +1052,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/CommentPayload' }
       responses:
         '200': { description: Reel reply added }
   /reelcomments/{id}:
@@ -936,7 +1087,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/SignupPayload' }
       responses:
         '200': { description: Channel created }
   /postloginchannel:
@@ -949,7 +1100,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/AtinJobPayload' }
       responses:
         '200': { description: Channel login result }
   /getchannel/{channelName}:
@@ -993,7 +1144,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/UpdateChannelDetailsPayload' }
       responses:
         '200': { description: Channel updated }
   /getAllChannelPosts:
@@ -1030,7 +1181,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/ChannelLikePayload' }
       responses:
         '200': { description: Like state updated }
   /channel/save:
@@ -1044,7 +1195,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/ChannelSavePayload' }
       responses:
         '200': { description: Save state updated }
   /channel/comment:
@@ -1058,7 +1209,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/ChannelCommentPayload' }
       responses:
         '200': { description: Comment added }
   /channel/comment/replies/{commentId}:
@@ -1158,7 +1309,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/PostActionPayload' }
       responses:
         '200': { description: Channel deactivated }
   /channel/delete-account:
@@ -1179,7 +1330,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/ChannelPostPayload' }
       responses:
         '200': { description: Channel post uploaded }
   /channel/categories:
@@ -1224,7 +1375,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/KidsChangePasswordPayload' }
       responses:
         '200': { description: Password changed }
   /kids/change-parental-password:
@@ -1237,7 +1388,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/KidsParentalPasswordPayload' }
       responses:
         '200': { description: Parental password changed }
   /kids/time-control:
@@ -1257,7 +1408,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/KidsTimeControlPayload' }
       responses:
         '200': { description: Time-control updated }
   /kids/deactivate:
@@ -1270,7 +1421,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/PostActionPayload' }
       responses:
         '200': { description: Kids account deactivated }
   /getCoins:
@@ -1338,7 +1489,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/PostUploadPayload' }
       responses:
         '200': { description: Post uploaded }
   /post/suggestedPost/get:
@@ -1413,7 +1564,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/CommentPayload' }
       responses:
         '200': { description: Comments payload }
   /home/userpost_reply:
@@ -1426,7 +1577,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/CommentPayload' }
       responses:
         '200': { description: Reply created }
   /home/comment_report:
@@ -1439,7 +1590,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenericPayload' }
+            schema: { $ref: '#/components/schemas/ReportPostPayload' }
       responses:
         '200': { description: Comment reported }
   /home/getChannels:
