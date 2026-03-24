@@ -57,113 +57,157 @@ const HomePage = () => {
   const navigate = useNavigate();
 
   const getAllPosts = async () => {
-    const res = await fetch(
-      `${import.meta.env.VITE_SERVER_URL}/home/getAllPosts`,
-      {
-        method: 'GET',
-        credentials: 'include',
-      },
-    );
-    const data = await res.json();
+    setLoadingPosts(true);
+    setLoadingFriends(true);
 
-    if (data.success) {
-      setAllPosts(data.posts);
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/graphql`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        query: `
+          query HomeFeed {
+            homeFeed {
+              posts {
+                _id
+                id
+                type
+                url
+                content
+                author
+                authorAvatar
+                likes
+                commentCount
+                liked
+                saved
+                createdAt
+              }
+              friends {
+                username
+                avatarUrl
+              }
+              ads {
+                _id
+                url
+                ad_url
+              }
+              channels {
+                _id
+                channelName
+                channelLogo
+              }
+              stories {
+                _id
+                username
+                url
+                likes
+                avatarUrl
+                createdAt
+              }
+            }
+          }
+        `,
+      }),
+    });
+    const data = await res.json();
+    const feed = data?.data?.homeFeed;
+
+    if (feed) {
+      setAllPosts(feed.posts ?? []);
+      setFriends(feed.friends ?? []);
+      setAds(feed.ads ?? []);
+      setChannels(feed.channels ?? []);
+      setStories(feed.stories ?? []);
     }
+
     setLoadingPosts(false);
+    setLoadingFriends(false);
   };
 
   useEffect(() => {
     getAllPosts();
   }, []);
 
-  // console.log(allPosts);
-
-  const getFriends = async () => {
-    const res = await fetch(
-      `${import.meta.env.VITE_SERVER_URL}/home/getFriends`,
-      {
-        method: 'GET',
-        credentials: 'include',
-      },
-    );
-    const data = await res.json();
-
-    if (data.success) {
-      setFriends(data.friends);
-    }
-    setLoadingFriends(false);
-  };
-
-  useEffect(() => {
-    getFriends();
-  }, []);
-
-  const getAds = async () => {
-    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/home/ads`, {
-      method: 'GET',
-      credentials: 'include',
-    });
-    const data = await res.json();
-    // console.log(data)
-    if (data.success) {
-      setAds(data.allAds);
-    }
-  };
-
-  useEffect(() => {
-    getAds();
-  }, []);
-
-  // console.log(allAds);
-
   const toggleSave = async postId => {
-    // Instant UI update
     setAllPosts(prev =>
       prev.map(p => (p.id === postId ? { ...p, saved: !p.saved } : p)),
     );
 
-    const res = await fetch(
-      `${import.meta.env.VITE_SERVER_URL}/post/saved/${postId}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-      },
-    );
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/graphql`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        query: `
+          mutation ToggleSavePost($postId: String!) {
+            toggleSavePost(postId: $postId) {
+              success
+              id
+              saved
+              liked
+              likes
+            }
+          }
+        `,
+        variables: { postId },
+      }),
+    });
     const data = await res.json();
-    if (data.success) {
-      console.log('saved');
-    } else {
-      console.log('error');
+    const result = data?.data?.toggleSavePost;
+
+    if (result?.success) {
+      setAllPosts(prev =>
+        prev.map(p =>
+          p.id === postId
+            ? {
+                ...p,
+                saved: result.saved,
+                liked: result.liked ?? p.liked,
+                likes: result.likes ?? p.likes,
+              }
+            : p,
+        ),
+      );
     }
-    // 🔥 YOUR API CALL HERE
-    // await fetch(`${import.meta.env.VITE_SERVER_URL}/post/save/${postId}`, { method: "POST", credentials: "include" });
   };
 
   const selectReason = async reason => {
     setShowReportModal(false);
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SERVER_URL}/report_post`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            reason,
-            post_id: selectedPostId,
-          }),
+      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      );
+        credentials: 'include',
+        body: JSON.stringify({
+          query: `
+            mutation ReportPost($postId: String!, $reason: String!) {
+              reportPost(postId: $postId, reason: $reason) {
+                success
+                message
+                reportId
+              }
+            }
+          `,
+          variables: {
+            postId: selectedPostId,
+            reason,
+          },
+        }),
+      });
 
       const data = await res.json();
+      const result = data?.data?.reportPost;
 
-      if (data.success) {
-        alert(`Post reported - id: ${data.reportId}`);
+      if (result?.success) {
+        alert(`Post reported - id: ${result.reportId}`);
       } else {
-        alert(data.message || 'Something went wrong');
+        alert(
+          data?.errors?.[0]?.message ||
+            result?.message ||
+            'Something went wrong',
+        );
       }
     } catch (err) {
       console.log('Error reporting post:', err);
@@ -184,16 +228,42 @@ const HomePage = () => {
       }),
     );
 
-    // 🔥 YOUR API CALL HERE
-    // fetch(`/like/toggle/${postId}`, { method: "POST" })
-    const res = await fetch(
-      `${import.meta.env.VITE_SERVER_URL}/post/liked/${postId}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-      },
-    );
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/graphql`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        query: `
+          mutation ToggleLikePost($postId: String!) {
+            toggleLikePost(postId: $postId) {
+              success
+              id
+              liked
+              saved
+              likes
+            }
+          }
+        `,
+        variables: { postId },
+      }),
+    });
+    const data = await res.json();
+    const result = data?.data?.toggleLikePost;
+
+    if (result?.success) {
+      setAllPosts(prev =>
+        prev.map(p =>
+          p.id === postId
+            ? {
+                ...p,
+                liked: result.liked,
+                saved: result.saved ?? p.saved,
+                likes: result.likes ?? p.likes,
+              }
+            : p,
+        ),
+      );
+    }
   };
 
   const handleShare = async postId => {
@@ -235,19 +305,38 @@ const HomePage = () => {
 
   const openComments = async postId => {
     setActivePostId(postId);
-    const res = await fetch(
-      `${import.meta.env.VITE_SERVER_URL}/home/userpost_comments`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ postID: postId }),
-      },
-    );
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/graphql`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        query: `
+          query PostComments($postId: String!) {
+            postComments(postId: $postId) {
+              main {
+                _id
+                text
+                username
+                avatarUrl
+              }
+              replies {
+                _id
+                text
+                username
+                avatarUrl
+              }
+            }
+          }
+        `,
+        variables: { postId },
+      }),
+    });
 
-    let data = await res.json();
-    if (data.success) {
-      setComments(data.comment_array);
+    const data = await res.json();
+    if (data?.data?.postComments) {
+      setComments(
+        data.data.postComments.map(thread => [thread.main, thread.replies ?? []]),
+      );
     }
     setShowComments(true);
     console.log(comments);
@@ -264,22 +353,46 @@ const HomePage = () => {
 
   const sendReply = async commentId => {
     const res = await fetch(
-      `${import.meta.env.VITE_SERVER_URL}/home/userpost_reply`,
+      `${import.meta.env.VITE_SERVER_URL}/graphql`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          commentId,
-          reply: replyText,
-          postID: activePostId,
+          query: `
+            mutation AddCommentReply(
+              $commentId: String!
+              $postId: String!
+              $replyText: String!
+            ) {
+              addCommentReply(
+                commentId: $commentId
+                postId: $postId
+                replyText: $replyText
+              ) {
+                success
+                reply {
+                  _id
+                  text
+                  username
+                  avatarUrl
+                }
+              }
+            }
+          `,
+          variables: {
+            commentId,
+            postId: activePostId,
+            replyText,
+          },
         }),
       },
     );
 
     const data = await res.json();
+    const result = data?.data?.addCommentReply;
 
-    if (data.success) {
+    if (result?.success) {
       // ⭐ UPDATE UI IMMEDIATELY (REAL-TIME REPLY)
       setComments(prev =>
         prev.map(commentPair => {
@@ -291,7 +404,7 @@ const HomePage = () => {
               main,
               [
                 ...replies,
-                data.reply, // backend response of the new reply
+                result.reply,
               ],
             ];
           }
@@ -310,70 +423,97 @@ const HomePage = () => {
 
   const sendComment = async () => {
     console.log(activePostId);
-    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/comment`, {
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/graphql`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ postID: activePostId, commentText: commentText }),
+      body: JSON.stringify({
+        query: `
+          mutation AddPostComment($postId: String!, $commentText: String!) {
+            addPostComment(postId: $postId, commentText: $commentText) {
+              success
+              message
+              commentCount
+              comment {
+                _id
+                text
+                username
+                avatarUrl
+              }
+            }
+          }
+        `,
+        variables: {
+          postId: activePostId,
+          commentText,
+        },
+      }),
     });
     const data = await res.json();
-    if (data.success) {
+    const result = data?.data?.addPostComment;
+
+    if (result?.success) {
       setComments(prev => [
         ...prev,
         [
           {
-            _id: data.comment._id,
-            text: commentText,
-            username: userData.username,
-            avatarUrl: userData.profileUrl, // if needed
+            _id: result.comment._id,
+            text: result.comment.text,
+            username: result.comment.username,
+            avatarUrl: result.comment.avatarUrl,
           },
           [], // empty replies
         ],
       ]);
+      setAllPosts(prev =>
+        prev.map(post =>
+          post.id === activePostId
+            ? {
+                ...post,
+                commentCount: result.commentCount ?? (post.commentCount ?? 0) + 1,
+              }
+            : post,
+        ),
+      );
     } else {
-      alert(data.message);
+      alert(data?.errors?.[0]?.message || result?.message || 'Unable to add comment');
     }
     // console.log('Posting new comment:', commentText);
 
     setCommentText('');
   };
 
-  const fetchChannels = async () => {
-    const res = await fetch(
-      `${import.meta.env.VITE_SERVER_URL}/home/getChannels`,
-      {
-        method: 'GET',
-        credentials: 'include',
-      },
-    );
-    const data = await res.json();
-    if (data.success) {
-      setChannels(data.channels);
-    }
-  };
-  useEffect(() => {
-    fetchChannels();
-  }, []);
   const [channels, setChannels] = useState([]);
 
   console.log(channels);
 
   const reportComment = async commentId => {
     // 🔥 Your API fetch
-    const res = await fetch(
-      `${import.meta.env.VITE_SERVER_URL}/home/comment_report`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ commentId }),
-      },
-    );
+    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/graphql`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        query: `
+          mutation ReportComment($commentId: String!) {
+            reportComment(commentId: $commentId) {
+              success
+              message
+              reportId
+            }
+          }
+        `,
+        variables: { commentId },
+      }),
+    });
     const data = await res.json();
-    if (data.success) {
-      alert(`${data.message} with id: ${data.reportId}`);
+    const result = data?.data?.reportComment;
+    if (result?.success) {
+      alert(`${result.message} with id: ${result.reportId}`);
     } else {
-      alert(`${data.message}`);
+      alert(
+        data?.errors?.[0]?.message || result?.message || 'Something went wrong',
+      );
     }
     // console.log(data);
     // alert(`Reported comment ID: ${commentId}`);
@@ -387,23 +527,6 @@ const HomePage = () => {
   //     <div className="skeleton-text"></div>
   //   </div>
   // );
-
-  const fetchStories = async () => {
-    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/stories`, {
-      method: 'GET',
-      credentials: 'include',
-    });
-    const data = await res.json();
-    if (data.success) {
-      console.log(`Stories: ${data.allStories}`);
-      setStories(data.allStories);
-      console.log(data.allStories[0]);
-    }
-  };
-
-  useEffect(() => {
-    fetchStories();
-  }, []);
 
   useEffect(() => {
     if (storiesRef.current) {
@@ -539,6 +662,7 @@ const HomePage = () => {
                       <MessageCircle
                         style={{ width: '16px', height: '16px' }}
                       />
+                      <span>{post.commentCount ?? 0}</span>
                     </div>
 
                     <div
