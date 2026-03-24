@@ -1,4 +1,5 @@
 import express from "express";
+import { graphqlHTTP } from "express-graphql";
 import router from "./routes/user.js";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
@@ -21,6 +22,8 @@ import { clearSession, setSession } from "./controllers/timout.js";
 import { errorhandler } from "./middleware/handlerError.js";
 import { Logger } from "./middleware/applicationMiddleware.js"
 import { rewardChatParticipantsIfEligible } from "./services/coinRewards.js";
+import { isAuthuser } from "./middleware/isAuthuser.js";
+import homeSchema from "./graphql/homeSchema.js";
 // import { fakeRoute } from "./controllers/userPost.js";
 
 dotenv.config();
@@ -62,6 +65,16 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use(
+  "/graphql",
+  isAuthuser,
+  graphqlHTTP(req => ({
+    schema: homeSchema,
+    graphiql: process.env.NODE_ENV !== "production",
+    context: { req },
+  }))
+);
 
 // Application level middleware
 app.use(Logger);
