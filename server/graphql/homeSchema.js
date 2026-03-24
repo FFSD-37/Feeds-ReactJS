@@ -16,6 +16,8 @@ import Story from "../models/storiesSchema.js";
 import Comment from "../models/comment_schema.js";
 import Report from "../models/reports.js";
 import ActivityLog from "../models/activityLogSchema.js";
+import Notification from "../models/notification_schema.js";
+import { rewardUserByUsername } from "../services/coinRewards.js";
 
 const adType = new GraphQLObjectType({
   name: "HomeAd",
@@ -353,7 +355,7 @@ const mutationType = new GraphQLObjectType({
         postId: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve: async (_, { postId }, { req }) => {
-        const { actor } = await getActor(req);
+        const { actor, type, identifier } = await getActor(req);
         const post = await Post.findOne({ id: postId });
 
         if (!post) {
@@ -361,6 +363,7 @@ const mutationType = new GraphQLObjectType({
         }
 
         const hasLiked = actor.likedPostsIds?.includes(postId);
+        let shouldRewardEngagement = false;
 
         if (hasLiked) {
           actor.likedPostsIds = actor.likedPostsIds.filter(id => id !== postId);
@@ -368,10 +371,31 @@ const mutationType = new GraphQLObjectType({
         } else {
           actor.likedPostsIds = [...(actor.likedPostsIds || []), postId];
           post.likes = (post.likes || 0) + 1;
+          shouldRewardEngagement = type !== "Kids";
+
+          if (post.author && post.author !== identifier) {
+            await Notification.create({
+              mainUser: post.author,
+              mainUserType: "Normal",
+              msgSerial: 3,
+              userInvolved: identifier,
+            });
+
+            await User.findOneAndUpdate(
+              { username: post.author },
+              { $inc: { coins: 1 } },
+            );
+          }
         }
 
         await actor.save();
         await post.save();
+
+        if (shouldRewardEngagement) {
+          await rewardUserByUsername(identifier, {
+            activity: "engagement",
+          });
+        }
 
         return {
           success: true,
@@ -388,7 +412,7 @@ const mutationType = new GraphQLObjectType({
         postId: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve: async (_, { postId }, { req }) => {
-        const { actor } = await getActor(req);
+        const { actor, type, identifier } = await getActor(req);
         const post = await Post.findOne({ id: postId }).select("id likes");
 
         if (!post) {
@@ -402,6 +426,12 @@ const mutationType = new GraphQLObjectType({
           : [...(actor.savedPostsIds || []), postId];
 
         await actor.save();
+
+        if (!hasSaved && type !== "Kids") {
+          await rewardUserByUsername(identifier, {
+            activity: "engagement",
+          });
+        }
 
         return {
           success: true,
@@ -431,6 +461,8 @@ const mutationType = new GraphQLObjectType({
           throw new Error("Post not found");
         }
 
+        const actionId = `#${Date.now()}`;
+
         const comment = await Comment.create({
           text,
           username: identifier,
@@ -444,6 +476,27 @@ const mutationType = new GraphQLObjectType({
 
         post.comments = [...(post.comments || []), comment._id];
         await post.save();
+
+        await ActivityLog.create({
+          username: identifier,
+          id: actionId,
+          message: `You commented on a post by #${post.author}!`,
+        });
+
+        if (identifier !== post.author) {
+          await Notification.create({
+            mainUser: post.author,
+            mainUserType: "Normal",
+            msgSerial: 8,
+            userInvolved: identifier,
+          });
+        }
+
+        if (type !== "Kids") {
+          await rewardUserByUsername(identifier, {
+            activity: "engagement",
+          });
+        }
 
         return {
           success: true,
