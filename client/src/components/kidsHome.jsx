@@ -2,6 +2,20 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/kidsHome.css';
 
+const graphqlRequest = async (query, variables = {}) => {
+  const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/graphql`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ query, variables }),
+  });
+  const data = await res.json();
+  if (data.errors?.length) {
+    throw new Error(data.errors[0].message || 'GraphQL request failed');
+  }
+  return data.data;
+};
+
 function KidsHome() {
   const navigate = useNavigate();
 
@@ -19,43 +33,61 @@ function KidsHome() {
   const dropdownRef = useRef();
   const modalRef = useRef();
 
-  // Fetch Kids Posts
   const fetchKidsPosts = useCallback(async () => {
     if (loading || !hasMore) return;
     setLoading(true);
 
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SERVER_URL}/kidshome?skip=${skip}&limit=6`,
-        { credentials: 'include' },
+      const data = await graphqlRequest(
+        `
+          query KidsHomeFeed($skip: Int, $limit: Int) {
+            kidsHomeFeed(skip: $skip, limit: $limit) {
+              posts {
+                _id
+                id
+                type
+                url
+                content
+                channel
+                likes
+                liked
+                saved
+                commentCount
+                createdAt
+              }
+              totalCount
+              hasMore
+            }
+          }
+        `,
+        { skip, limit: 6 },
       );
-      const data = await res.json();
 
-      if (data.success && data.posts.length > 0) {
+      const feed = data?.kidsHomeFeed;
+
+      if (feed?.posts?.length > 0) {
         setPosts(prev => {
           const existing = new Set(prev.map(p => p.id));
-          const newOnes = data.posts.filter(p => !existing.has(p.id));
+          const newOnes = feed.posts.filter(p => !existing.has(p.id));
           return [...prev, ...newOnes];
         });
 
-        setSkip(prev => prev + data.posts.length);
-        setHasMore(data.hasMore);
+        setSkip(prev => prev + feed.posts.length);
+        setHasMore(Boolean(feed.hasMore));
       } else {
         setHasMore(false);
       }
     } catch (err) {
-      console.error('❌ Error fetching kids posts:', err);
+      console.error('Error fetching kids home feed:', err);
     } finally {
       setLoading(false);
     }
   }, [skip, hasMore, loading]);
 
-  // Initial load
   useEffect(() => {
     fetchKidsPosts();
   }, []);
 
-  // Infinite Scroll
   useEffect(() => {
     if (loading || !hasMore) return;
 
@@ -72,7 +104,6 @@ function KidsHome() {
     return () => observer.disconnect();
   }, [fetchKidsPosts, loading, hasMore]);
 
-  // Time ago helper
   const timeAgo = dateString => {
     const date = new Date(dateString);
     const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -93,7 +124,6 @@ function KidsHome() {
     return 'just now';
   };
 
-  // Play / Pause Video
   const handleVideoClick = id => {
     const video = document.getElementById(`kids_video-${id}`);
     if (!video) return;
@@ -107,60 +137,81 @@ function KidsHome() {
     }
   };
 
-  // Like Post
   const handleLike = async postId => {
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SERVER_URL}/channel/like`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ postId }),
-        },
+      const data = await graphqlRequest(
+        `
+          mutation ToggleLikeChannelPost($postId: String!) {
+            toggleLikeChannelPost(postId: $postId) {
+              success
+              id
+              liked
+              saved
+              likes
+            }
+          }
+        `,
+        { postId },
       );
 
-      const data = await res.json();
+      const result = data?.toggleLikeChannelPost;
 
-      if (data.success) {
+      if (result?.success) {
         setPosts(prev =>
           prev.map(p =>
             p._id === postId
-              ? { ...p, likes: data.likes, liked: data.liked }
+              ? {
+                  ...p,
+                  likes: result.likes ?? p.likes,
+                  liked: result.liked,
+                  saved: result.saved ?? p.saved,
+                }
               : p,
           ),
         );
       }
     } catch (err) {
-      console.error('❌ Error liking post:', err);
+      console.error('Error liking post:', err);
     }
   };
 
-  // Save Post
   const handleSave = async postId => {
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SERVER_URL}/channel/save`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ postId }),
-        },
+      const data = await graphqlRequest(
+        `
+          mutation ToggleSaveChannelPost($postId: String!) {
+            toggleSaveChannelPost(postId: $postId) {
+              success
+              id
+              liked
+              saved
+              likes
+            }
+          }
+        `,
+        { postId },
       );
 
-      const data = await res.json();
-      if (data.success) {
+      const result = data?.toggleSaveChannelPost;
+      if (result?.success) {
         setPosts(prev =>
-          prev.map(p => (p._id === postId ? { ...p, saved: data.saved } : p)),
+          prev.map(p =>
+            p._id === postId
+              ? {
+                  ...p,
+                  saved: result.saved,
+                  liked: result.liked ?? p.liked,
+                  likes: result.likes ?? p.likes,
+                }
+              : p,
+          ),
         );
       }
     } catch (err) {
-      console.error('❌ Error saving post:', err);
+      console.error('Error saving post:', err);
     }
   };
 
-  // Report option
   const handleDropdownToggle = id =>
     setDropdownPost(p => (p === id ? null : id));
 
@@ -178,17 +229,23 @@ function KidsHome() {
   const handleReasonSelect = async reason => {
     if (!reportPostId) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/report_post`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ reason, post_id: reportPostId }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert(`Post reported - id: ${data.reportId}`);
+      const data = await graphqlRequest(
+        `
+          mutation ReportPost($postId: String!, $reason: String!) {
+            reportPost(postId: $postId, reason: $reason) {
+              success
+              message
+              reportId
+            }
+          }
+        `,
+        { postId: reportPostId, reason },
+      );
+      const result = data?.reportPost;
+      if (result?.success) {
+        alert(`Post reported - id: ${result.reportId}`);
       } else {
-        alert(data.message || 'Failed to report post');
+        alert(result?.message || 'Failed to report post');
       }
     } catch (err) {
       console.error('Error reporting post:', err);
@@ -200,7 +257,6 @@ function KidsHome() {
 
   return (
     <div className="kids_home_main">
-      {/* Left Sidebar */}
       <div className="kids_home_left_section">
         <div
           className="kids_home_logo_class"
@@ -228,7 +284,6 @@ function KidsHome() {
         </div>
       </div>
 
-      {/* Feed Section */}
       <div className="kids_home_feed_section">
         <h1 className="kids_home_title">Kids Feeds</h1>
         <div className="kids_home_divider"></div>
@@ -238,7 +293,6 @@ function KidsHome() {
         ) : (
           posts.map(post => (
             <div key={post.id} className="kids_home_post_card">
-              {/* Header */}
               <div className="kids_home_post_header">
                 <span
                   className="kids_home_post_channel"
@@ -272,7 +326,6 @@ function KidsHome() {
                 )}
               </div>
 
-              {/* Media */}
               {post.type === 'Img' ? (
                 <img
                   className="kids_home_post_media"
@@ -298,12 +351,10 @@ function KidsHome() {
                 </div>
               )}
 
-              {/* Caption */}
               {post.content && (
                 <p className="kids_home_post_caption">{post.content}</p>
               )}
 
-              {/* Actions */}
               <div className="kids_home_post_actions">
                 <div
                   className="kids_home_action_item"
@@ -335,7 +386,6 @@ function KidsHome() {
         <div ref={observerRef}></div>
       </div>
 
-      {/* Report Modal */}
       {showReportModal && (
         <div className="kids_home_report_overlay">
           <div className="kids_home_report_modal" ref={modalRef}>

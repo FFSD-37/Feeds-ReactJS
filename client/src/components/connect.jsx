@@ -18,22 +18,26 @@ import {
   FaBullhorn,
   FaDumbbell,
   FaHeart,
-  FaPlane,
-  FaFlask,
-  FaUtensils,
-  FaTools,
-  FaPaintBrush,
-  FaCamera,
-  FaBriefcase,
-  FaDollarSign,
-  FaPaw,
-  FaCar,
 } from 'react-icons/fa';
 
 /*
 ISSUES/Improvements:
 1. Add pagination or infinite scroll for large result sets.
 */
+
+const graphqlRequest = async (query, variables = {}) => {
+  const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/graphql`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ query, variables }),
+  });
+  const data = await res.json();
+  if (data.errors?.length) {
+    throw new Error(data.errors[0].message || 'GraphQL request failed');
+  }
+  return data.data;
+};
 
 const Connect = () => {
   const { userData } = useUserData();
@@ -46,72 +50,70 @@ const Connect = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-const categoryIcons = {
-  All: <FaGlobe color="#9e9e9e" />,
-  Entertainment: <FaTv color="#ffd740" />,
-  Comedy: <FaLaugh color="#ff9800" />,
-  Education: <FaBook color="#3f51b5" />,
-  Science: <FaBook color="#4caf50" />,
-  Tech: <FaLaptopCode color="#8e24aa" />,
-  Gaming: <FaGamepad color="#00ff99" />,
-  Animations: <FaFilm color="#ff9800" />,
-  Memes: <FaLaugh color="#ff4081" />,
-  Music: <FaMusic color="#00b0ff" />,
-  Sports: <FaFutbol color="#4caf50" />,
-  Fitness: <FaDumbbell color="#f44336" />,
-  Lifestyle: <FaHeart color="#e91e63" />,
-  Fashion: <FaHeart color="#ff80ab" />,
-  Beauty: <FaHeart color="#ffb3c6" />,
-  Food: <FaHeart color="#ffa726" />,
-  Travel: <FaVideo color="#ff5722" />,
-  Vlog: <FaVideo color="#ff7043" />,
-  Nature: <FaLeaf color="#43a047" />,
-  DIY: <FaBook color="#8d6e63" />,
-  Art: <FaBook color="#ba68c8" />,
-  Photography: <FaVideo color="#64b5f6" />,
-  Business: <FaBullhorn color="#cddc39" />,
-  Finance: <FaBullhorn color="#9ccc65" />,
-  Marketing: <FaBullhorn color="#cddc39" />,
-  News: <FaNewspaper color="#00bcd4" />,
-  Movies: <FaFilm color="#ff7043" />,
-  Pets: <FaHeart color="#ffcc80" />,
-  Automotive: <FaBullhorn color="#90a4ae" />
-};
+  const categoryIcons = {
+    All: <FaGlobe color="#9e9e9e" />,
+    Entertainment: <FaTv color="#ffd740" />,
+    Comedy: <FaLaugh color="#ff9800" />,
+    Education: <FaBook color="#3f51b5" />,
+    Science: <FaBook color="#4caf50" />,
+    Tech: <FaLaptopCode color="#8e24aa" />,
+    Gaming: <FaGamepad color="#00ff99" />,
+    Animations: <FaFilm color="#ff9800" />,
+    Memes: <FaLaugh color="#ff4081" />,
+    Music: <FaMusic color="#00b0ff" />,
+    Sports: <FaFutbol color="#4caf50" />,
+    Fitness: <FaDumbbell color="#f44336" />,
+    Lifestyle: <FaHeart color="#e91e63" />,
+    Fashion: <FaHeart color="#ff80ab" />,
+    Beauty: <FaHeart color="#ffb3c6" />,
+    Food: <FaHeart color="#ffa726" />,
+    Travel: <FaVideo color="#ff5722" />,
+    Vlog: <FaVideo color="#ff7043" />,
+    Nature: <FaLeaf color="#43a047" />,
+    DIY: <FaBook color="#8d6e63" />,
+    Art: <FaBook color="#ba68c8" />,
+    Photography: <FaVideo color="#64b5f6" />,
+    Business: <FaBullhorn color="#cddc39" />,
+    Finance: <FaBullhorn color="#9ccc65" />,
+    Marketing: <FaBullhorn color="#cddc39" />,
+    News: <FaNewspaper color="#00bcd4" />,
+    Movies: <FaFilm color="#ff7043" />,
+    Pets: <FaHeart color="#ffcc80" />,
+    Automotive: <FaBullhorn color="#90a4ae" />,
+  };
 
-// final ordered category list
-const categories = [
-  "All",
-  "Entertainment",
-  "Comedy",
-  "Education",
-  "Science",
-  "Tech",
-  "Gaming",
-  "Animations",
-  "Memes",
-  "Music",
-  "Sports",
-  "Fitness",
-  "Lifestyle",
-  "Fashion",
-  "Beauty",
-  "Food",
-  "Travel",
-  "Vlog",
-  "Nature",
-  "DIY",
-  "Art",
-  "Photography",
-  "Business",
-  "Finance",
-  "Marketing",
-  "News",
-  "Movies",
-  "Pets",
-  "Automotive"
-];
+  const categories = [
+    'All',
+    'Entertainment',
+    'Comedy',
+    'Education',
+    'Science',
+    'Tech',
+    'Gaming',
+    'Animations',
+    'Memes',
+    'Music',
+    'Sports',
+    'Fitness',
+    'Lifestyle',
+    'Fashion',
+    'Beauty',
+    'Food',
+    'Travel',
+    'Vlog',
+    'Nature',
+    'DIY',
+    'Art',
+    'Photography',
+    'Business',
+    'Finance',
+    'Marketing',
+    'News',
+    'Movies',
+    'Pets',
+    'Automotive',
+  ];
 
-  // INITIALIZE MODE
   useEffect(() => {
     if (userData && userData.type) {
       setMode(userData.type === 'Normal' ? 'users' : 'channels');
@@ -119,103 +121,152 @@ const categories = [
     }
   }, [userData]);
 
-  // DEFAULT LOAD
   const loadDefault = async () => {
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SERVER_URL}/connect?mode=${mode}`,
-        { credentials: 'include' },
+      const data = await graphqlRequest(
+        `
+          query ConnectFeed($mode: String) {
+            connectFeed(mode: $mode) {
+              mode
+              items {
+                type
+                username
+                name
+                avatarUrl
+                logo
+                display_name
+                category
+                members
+                followers
+                following
+                visibility
+                isFollowing
+                requested
+              }
+            }
+          }
+        `,
+        { mode },
       );
-      const data = await res.json();
-      if (data.success) setItems(data.items);
+      const result = data?.connectFeed;
+      setItems(result?.items || []);
     } catch (e) {
-      console.error('❌ loadDefault error:', e);
+      console.error('loadDefault error:', e);
     } finally {
       setLoading(false);
     }
   };
 
-useEffect(() => {
-  if (!initialized || !mode) return;
+  useEffect(() => {
+    if (!initialized || !mode) return;
 
-  const run = async () => {
-    const queryValue = searchTerm.trim();
+    const run = async () => {
+      const queryValue = searchTerm.trim();
 
-    if (mode === "users" && queryValue === "") {
-      setLoading(true);
-      await loadDefault();
-      setLoading(false);
-      return;
-    }
+      if (mode === 'users' && queryValue === '') {
+        setLoading(true);
+        await loadDefault();
+        setLoading(false);
+        return;
+      }
 
-    const params = new URLSearchParams({
-      query: queryValue, 
-      type: mode === "channels" ? "channel" : "user",
-      category: filter,
-    });
+      try {
+        setLoading(true);
+        const data = await graphqlRequest(
+          `
+            query SearchConnect($query: String, $type: String, $category: String) {
+              searchConnect(query: $query, type: $type, category: $category) {
+                mode
+                message
+                items {
+                  type
+                  username
+                  name
+                  avatarUrl
+                  logo
+                  display_name
+                  category
+                  members
+                  followers
+                  following
+                  visibility
+                  isFollowing
+                  requested
+                }
+              }
+            }
+          `,
+          {
+            query: queryValue,
+            type: mode === 'channels' ? 'channel' : 'user',
+            category: filter,
+          },
+        );
 
-    try {
-      setLoading(true);
+        setItems(data?.searchConnect?.items || []);
+      } catch (err) {
+        console.error('Search failed:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      const res = await fetch(
-        `${import.meta.env.VITE_SERVER_URL}/connect/search?${params.toString()}`,
-        { credentials: "include" }
-      );
+    const delay = setTimeout(run, 300);
+    return () => clearTimeout(delay);
+  }, [searchTerm, filter, mode, initialized]);
 
-      const data = await res.json();
-      setItems(data.items || []);
-    } catch (err) {
-      console.error("❌ Search failed:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const delay = setTimeout(run, 300);
-  return () => clearTimeout(delay);
-
-}, [searchTerm, filter, mode, initialized]);
-
-  // FOLLOW LOGIC
   const handleFollowToggle = async (target, targetType, state) => {
     try {
-      const isFollowing =
-        state === 'following' || state === true || state === 'requested';
+      const data = await graphqlRequest(
+        `
+          mutation ToggleFollowEntity(
+            $target: String!
+            $targetType: String!
+            $currentState: String
+          ) {
+            toggleFollowEntity(
+              target: $target
+              targetType: $targetType
+              currentState: $currentState
+            ) {
+              success
+              status
+              message
+              target
+              targetType
+            }
+          }
+        `,
+        {
+          target,
+          targetType,
+          currentState: state,
+        },
+      );
 
-      const endpoint = isFollowing
-        ? `${import.meta.env.VITE_SERVER_URL}/connect/unfollow`
-        : `${import.meta.env.VITE_SERVER_URL}/connect/follow`;
-
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ target, targetType }),
-      });
-
-      const data = await res.json();
+      const result = data?.toggleFollowEntity;
 
       setItems(prev =>
         prev.map(i => {
           if (i.username === target || i.name === target) {
             const updated = { ...i };
 
-            if (data.status === 'requested') {
+            if (result?.status === 'requested') {
               updated.requested = true;
               updated.isFollowing = false;
             }
 
-            if (data.status === 'request_canceled') {
+            if (result?.status === 'request_canceled') {
               updated.requested = false;
               updated.isFollowing = false;
             }
 
-            if (data.status === 'following') {
+            if (result?.status === 'following') {
               updated.isFollowing = true;
               updated.requested = false;
             }
 
-            if (data.status === 'unfollowed') {
+            if (result?.status === 'unfollowed') {
               updated.isFollowing = false;
               updated.requested = false;
             }
@@ -226,7 +277,7 @@ useEffect(() => {
         }),
       );
     } catch (err) {
-      console.error('❌ Follow toggle failed:', err);
+      console.error('Follow toggle failed:', err);
     }
   };
 
@@ -240,12 +291,13 @@ useEffect(() => {
         ? 'connect-btn-following'
         : 'connect-btn-default';
 
-  if (!initialized)
+  if (!initialized) {
     return (
       <div className="connect-loading">
         <p>Loading...</p>
       </div>
     );
+  }
 
   const handleCardClick = item => {
     if (item.type === 'Channel') navigate(`/channel/${item.name}`);
@@ -267,18 +319,14 @@ useEffect(() => {
           {userData?.type === 'Normal' && (
             <div className="connect-toggle">
               <button
-                className={`connect-toggle-btn ${
-                  mode === 'users' ? 'active' : ''
-                }`}
+                className={`connect-toggle-btn ${mode === 'users' ? 'active' : ''}`}
                 onClick={() => setMode('users')}
               >
                 People
               </button>
 
               <button
-                className={`connect-toggle-btn ${
-                  mode === 'channels' ? 'active' : ''
-                }`}
+                className={`connect-toggle-btn ${mode === 'channels' ? 'active' : ''}`}
                 onClick={() => setMode('channels')}
               >
                 Channels
@@ -287,7 +335,6 @@ useEffect(() => {
           )}
         </div>
 
-        {/* SEARCH + FILTER */}
         <div className="connect-searchbar">
           <input
             type="text"
@@ -316,10 +363,7 @@ useEffect(() => {
           )}
         </div>
 
-        {/* RESULTS */}
-        <div
-          className={`connect-results ${loading ? '' : 'connect-fade show'}`}
-        >
+        <div className={`connect-results ${loading ? '' : 'connect-fade show'}`}>
           {loading ? (
             <div className="connect-loading">Loading...</div>
           ) : items.length === 0 ? (
@@ -366,8 +410,7 @@ useEffect(() => {
                     </div>
                   </div>
 
-                  {(userData?.type === 'Normal' ||
-                    userData?.type === 'Kids') && (
+                  {(userData?.type === 'Normal' || userData?.type === 'Kids') && (
                     <button
                       className={`connect-follow-btn ${getButtonClass(item)}`}
                       onClick={e => {

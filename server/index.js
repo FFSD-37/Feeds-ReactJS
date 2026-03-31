@@ -135,7 +135,7 @@ io.use((socket, next) => {
 
 // ✅ Socket Events
 io.on("connection", async (socket) => {
-  console.log(`✅ ${socket.userId} connected`);
+  // console.log(`✅ ${socket.userId} connected`);
 
   try {
     if (socket.userType === "Channel") {
