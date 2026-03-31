@@ -16,16 +16,16 @@ const handlegetUserPost = async (req, res) => {
 const handlegetBlcokedUsers = async (req, res) => {
   const { data } = req.userDetails;
   const user = await User.findOne({ username: data[0] });
-  console.log(user.blockedUsers);
+  // console.log(user.blockedUsers);
   return res.json({success: true, list: user.blockedUsers});
 }
 
 const handleCheckParentalPass = async (req, res) => {
     const { data } = req.userDetails;
     const { password } = req.body;
-    console.log("password" , password);
+    // console.log("password" , password);
     const user = await User.findOne({ username: data[0] });
-    console.log("user" , user);
+    // console.log("user" , user);
     if (user.parentPassword === password) {
       return res.json({ success: true, message: "Password is correct" });
       } else {
@@ -410,7 +410,7 @@ const handlegetkidsTime = async (req, res) => {
 const handlesetkidsTime = async (req, res) => {
   const {data} = req.userDetails;
   const {dailyLimitMinutes} = req.body;
-  console.log(dailyLimitMinutes);
+  // console.log(dailyLimitMinutes);
   await User.updateOne({username: data[0]}, {timeLimit: dailyLimitMinutes});
   return res.json({success: true});
 }

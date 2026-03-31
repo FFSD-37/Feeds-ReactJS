@@ -11,8 +11,22 @@ ISSUES/Improvements:
 3. Make the posts smaller.
 */
 
+const graphqlRequest = async (query, variables = {}) => {
+  const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/graphql`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ query, variables }),
+  });
+  const data = await res.json();
+  if (data.errors?.length) {
+    throw new Error(data.errors[0].message || 'GraphQL request failed');
+  }
+  return data.data;
+};
+
 function ChannelHome() {
-  const { userData } = useUserData();
+  useUserData();
   const navigate = useNavigate();
 
   const [posts, setPosts] = useState([]);
@@ -33,26 +47,47 @@ function ChannelHome() {
     if (loading || !hasMore) return;
     setLoading(true);
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SERVER_URL}/getAllChannelPosts?skip=${skip}&limit=5`,
-        { credentials: 'include' },
+      const data = await graphqlRequest(
+        `
+          query ChannelHomeFeed($skip: Int, $limit: Int) {
+            channelHomeFeed(skip: $skip, limit: $limit) {
+              posts {
+                _id
+                id
+                type
+                url
+                content
+                channel
+                likes
+                liked
+                saved
+                commentCount
+                createdAt
+              }
+              totalCount
+              hasMore
+            }
+          }
+        `,
+        { skip, limit: 5 },
       );
-      const data = await res.json();
 
-      if (data.success && data.posts.length > 0) {
+      const feed = data?.channelHomeFeed;
+
+      if (feed?.posts?.length > 0) {
         setPosts(prev => {
           const existingIds = new Set(prev.map(p => p.id));
-          const newPosts = data.posts.filter(p => !existingIds.has(p.id));
+          const newPosts = feed.posts.filter(p => !existingIds.has(p.id));
           return [...prev, ...newPosts];
         });
 
-        setSkip(prev => prev + data.posts.length);
-        setHasMore(data.hasMore && data.posts.length > 0);
+        setSkip(prev => prev + feed.posts.length);
+        setHasMore(Boolean(feed.hasMore));
       } else {
         setHasMore(false);
       }
     } catch (err) {
-      console.error('❌ Error fetching posts:', err);
+      console.error('Error fetching channel home feed:', err);
     } finally {
       setLoading(false);
     }
@@ -131,17 +166,23 @@ function ChannelHome() {
   const handleReasonSelect = async reason => {
     if (!reportPostId) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/report_post`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ reason, post_id: reportPostId }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert(`Post reported - id: ${data.reportId}`);
+      const data = await graphqlRequest(
+        `
+          mutation ReportPost($postId: String!, $reason: String!) {
+            reportPost(postId: $postId, reason: $reason) {
+              success
+              message
+              reportId
+            }
+          }
+        `,
+        { postId: reportPostId, reason },
+      );
+      const result = data?.reportPost;
+      if (result?.success) {
+        alert(`Post reported - id: ${result.reportId}`);
       } else {
-        alert(data.message || 'Failed to report post');
+        alert(result?.message || 'Failed to report post');
       }
     } catch (err) {
       console.error('Error reporting post:', err);
@@ -163,61 +204,83 @@ function ChannelHome() {
   };
 
   const handleOpenPost = post => {
-    // Open overlay locally
     setActivePostId(post.id);
   };
 
   const handleLike = async postId => {
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SERVER_URL}/channel/like`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ postId }),
-        },
+      const data = await graphqlRequest(
+        `
+          mutation ToggleLikeChannelPost($postId: String!) {
+            toggleLikeChannelPost(postId: $postId) {
+              success
+              id
+              liked
+              saved
+              likes
+            }
+          }
+        `,
+        { postId },
       );
-      const data = await res.json();
-      if (data.success) {
+      const result = data?.toggleLikeChannelPost;
+      if (result?.success) {
         setPosts(prev =>
           prev.map(p =>
             p._id === postId
-              ? { ...p, likes: data.likes, liked: data.liked }
+              ? {
+                  ...p,
+                  likes: result.likes ?? p.likes,
+                  liked: result.liked,
+                  saved: result.saved ?? p.saved,
+                }
               : p,
           ),
         );
       }
     } catch (err) {
-      console.error('❌ Error liking post:', err);
+      console.error('Error liking post:', err);
     }
   };
 
   const handleSave = async postId => {
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SERVER_URL}/channel/save`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ postId }),
-        },
+      const data = await graphqlRequest(
+        `
+          mutation ToggleSaveChannelPost($postId: String!) {
+            toggleSaveChannelPost(postId: $postId) {
+              success
+              id
+              liked
+              saved
+              likes
+            }
+          }
+        `,
+        { postId },
       );
-      const data = await res.json();
-      if (data.success) {
+      const result = data?.toggleSaveChannelPost;
+      if (result?.success) {
         setPosts(prev =>
-          prev.map(p => (p._id === postId ? { ...p, saved: data.saved } : p)),
+          prev.map(p =>
+            p._id === postId
+              ? {
+                  ...p,
+                  saved: result.saved,
+                  liked: result.liked ?? p.liked,
+                  likes: result.likes ?? p.likes,
+                }
+              : p,
+          ),
         );
       }
     } catch (err) {
-      console.error('❌ Error saving post:', err);
+      console.error('Error saving post:', err);
     }
   };
 
   return (
     <div className="channel_home_main">
-      {/* Left Sidebar */}
       <div className="channel_home_left_section">
         <div
           className="channel_home_logo_class"
@@ -244,7 +307,6 @@ function ChannelHome() {
         </div>
       </div>
 
-      {/* Feed Section */}
       <div className="channel_home_feed_section">
         <h1 className="channel_home_title">
           Feeds : The Personalized Social Platform
@@ -280,7 +342,7 @@ function ChannelHome() {
                     </div>
                     <div
                       className="channel_home_dropdown_item normal"
-                      onClick={() => handleOpenPost(post)} // ✅ open overlay
+                      onClick={() => handleOpenPost(post)}
                     >
                       Go to post
                     </div>
@@ -360,7 +422,7 @@ function ChannelHome() {
                   className="channel_home_action_item"
                   onClick={() => handleOpenPost(post)}
                 >
-                  💬 {post.comments?.length || 0}
+                  💬 {post.commentCount ?? 0}
                 </div>
               </div>
 
@@ -380,7 +442,6 @@ function ChannelHome() {
         <div ref={observerRef}></div>
       </div>
 
-      {/* Overlay Component */}
       {activePostId && (
         <ChannelPostOverlay
           id={activePostId}
@@ -388,7 +449,6 @@ function ChannelHome() {
         />
       )}
 
-      {/* Report Modal */}
       {showReportModal && (
         <div className="channel_home_report_overlay">
           <div className="channel_home_report_modal" ref={modalRef}>

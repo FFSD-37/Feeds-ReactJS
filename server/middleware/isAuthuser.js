@@ -7,7 +7,7 @@ const isAuthuser = async (req, res, next) => {
       req.cookies.uuid || req.cookies.cuid,
       process.env.USER_SECRET
     );
-    console.log(isAuth);
+    // console.log(isAuth);
     const { data } = isAuth;
     if (data[3] === 'Kids'){
       const user = await User.findOne({username: data[0]});

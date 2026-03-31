@@ -77,6 +77,25 @@ const postType = new GraphQLObjectType({
   },
 });
 
+const channelHomePostType = new GraphQLObjectType({
+  name: "ChannelHomePost",
+  fields: {
+    _id: { type: GraphQLString },
+    id: { type: GraphQLString },
+    type: { type: GraphQLString },
+    url: { type: GraphQLString },
+    content: { type: GraphQLString },
+    channel: { type: GraphQLString },
+    category: { type: GraphQLString },
+    likes: { type: GraphQLInt },
+    commentCount: { type: GraphQLInt },
+    liked: { type: GraphQLBoolean },
+    saved: { type: GraphQLBoolean },
+    createdAt: { type: GraphQLString },
+    updatedAt: { type: GraphQLString },
+  },
+});
+
 const homeFeedType = new GraphQLObjectType({
   name: "HomeFeed",
   fields: {
@@ -85,6 +104,15 @@ const homeFeedType = new GraphQLObjectType({
     ads: { type: new GraphQLList(adType) },
     channels: { type: new GraphQLList(channelType) },
     stories: { type: new GraphQLList(storyType) },
+  },
+});
+
+const channelHomeFeedType = new GraphQLObjectType({
+  name: "ChannelHomeFeed",
+  fields: {
+    posts: { type: new GraphQLList(channelHomePostType) },
+    totalCount: { type: GraphQLInt },
+    hasMore: { type: GraphQLBoolean },
   },
 });
 
@@ -135,6 +163,34 @@ const addReplyPayloadType = new GraphQLObjectType({
   },
 });
 
+const connectItemType = new GraphQLObjectType({
+  name: "ConnectItem",
+  fields: {
+    type: { type: GraphQLString },
+    username: { type: GraphQLString },
+    name: { type: GraphQLString },
+    avatarUrl: { type: GraphQLString },
+    logo: { type: GraphQLString },
+    display_name: { type: GraphQLString },
+    category: { type: GraphQLString },
+    members: { type: GraphQLInt },
+    followers: { type: GraphQLInt },
+    following: { type: GraphQLInt },
+    visibility: { type: GraphQLString },
+    isFollowing: { type: GraphQLBoolean },
+    requested: { type: GraphQLBoolean },
+  },
+});
+
+const connectFeedType = new GraphQLObjectType({
+  name: "ConnectFeed",
+  fields: {
+    mode: { type: GraphQLString },
+    items: { type: new GraphQLList(connectItemType) },
+    message: { type: GraphQLString },
+  },
+});
+
 async function getCurrentUser(req) {
   const username = req.userDetails?.data?.[0];
   if (!username) {
@@ -147,6 +203,31 @@ async function getCurrentUser(req) {
   }
 
   return user;
+}
+
+async function getViewerForChannelPosts(req) {
+  const identifier = req.userDetails?.data?.[0];
+  const type = req.userDetails?.data?.[3];
+
+  if (!identifier || !type) {
+    throw new Error("Unauthorized");
+  }
+
+  if (type === "Channel") {
+    const viewer = await Channel.findOne({ channelName: identifier }).lean();
+    if (!viewer) {
+      throw new Error("Channel not found");
+    }
+
+    return { identifier, type, viewer };
+  }
+
+  const viewer = await User.findOne({ username: identifier }).lean();
+  if (!viewer) {
+    throw new Error("User not found");
+  }
+
+  return { identifier, type, viewer };
 }
 
 async function getActor(req) {
@@ -256,6 +337,49 @@ async function getPostsForUser(user, req) {
   }));
 }
 
+async function getChannelPostsFeed(req, { skip = 0, limit = 5, kidsOnly = false } = {}) {
+  const parsedSkip = Math.max(0, Number.parseInt(skip, 10) || 0);
+  const parsedLimit = Math.max(1, Math.min(20, Number.parseInt(limit, 10) || 5));
+  const { identifier, type, viewer } = await getViewerForChannelPosts(req);
+
+  if (kidsOnly && type !== "Kids") {
+    throw new Error("Only Kids can access Kids Home");
+  }
+
+  const baseQuery = { isArchived: false };
+
+  if (kidsOnly) {
+    const categories = viewer.kidPreferredCategories || [];
+
+    if (!categories.length) {
+      return { posts: [], totalCount: 0, hasMore: false };
+    }
+
+    baseQuery.category = { $in: categories };
+  } else {
+    baseQuery.channel = { $ne: identifier };
+  }
+
+  const [posts, totalCount] = await Promise.all([
+    channelPost.find(baseQuery).sort({ createdAt: -1 }).skip(parsedSkip).limit(parsedLimit).lean(),
+    channelPost.countDocuments(baseQuery),
+  ]);
+
+  const likedPosts = viewer.likedPostsIds || [];
+  const savedPosts = viewer.savedPostsIds || [];
+
+  return {
+    posts: posts.map(post => ({
+      ...post,
+      commentCount: Array.isArray(post.comments) ? post.comments.length : 0,
+      liked: likedPosts.includes(post._id.toString()),
+      saved: savedPosts.includes(post._id.toString()),
+    })),
+    totalCount,
+    hasMore: parsedSkip + posts.length < totalCount,
+  };
+}
+
 async function getCommentThreads(postId) {
   const post = await Post.findOne({ id: postId }).lean();
 
@@ -308,6 +432,185 @@ async function getChannelsForUser(user) {
     .lean();
 }
 
+async function getConnectContext(req) {
+  const { data } = req.userDetails || {};
+  if (!data?.length) {
+    throw new Error("Unauthorized access");
+  }
+
+  const [identifier, , , userType] = data;
+  const current =
+    userType === "Channel"
+      ? await Channel.findOne({ channelName: identifier }).lean()
+      : await User.findOne({ username: identifier }).lean();
+
+  if (!current) {
+    throw new Error(`${userType === "Channel" ? "Channel" : "User"} not found`);
+  }
+
+  return { identifier, userType, current };
+}
+
+async function buildDefaultConnectFeed(req, mode) {
+  const { identifier, userType, current } = await getConnectContext(req);
+  const followingUsernames = (current.followings || []).map(f => f.username);
+  const requestedUsernames = (current.requested || []).map(r => r.username);
+  const followedChannelNames = (current.channelFollowings || []).map(
+    f => f.channelName,
+  );
+
+  if (userType === "Kids") {
+    const allChannels = await Channel.find({}).lean();
+    return {
+      mode: "channels",
+      items: allChannels.map(c => ({
+        type: "Channel",
+        name: c.channelName,
+        logo: c.channelLogo,
+        category: Array.isArray(c.channelCategory)
+          ? c.channelCategory[0]
+          : c.channelCategory,
+        members: (c.channelMembers || []).length,
+        isFollowing: followedChannelNames.includes(c.channelName),
+      })),
+    };
+  }
+
+  if (userType === "Channel") {
+    const allChannels = await Channel.find({
+      channelName: { $ne: identifier },
+    }).lean();
+
+    return {
+      mode: "channels",
+      items: allChannels.map(c => ({
+        type: "Channel",
+        name: c.channelName,
+        logo: c.channelLogo,
+        category: Array.isArray(c.channelCategory)
+          ? c.channelCategory[0]
+          : c.channelCategory,
+        members: (c.channelMembers || []).length,
+        isFollowing: followedChannelNames.includes(c.channelName),
+      })),
+    };
+  }
+
+  if (mode === "channels") {
+    const followedChannels = await Channel.find({
+      channelName: { $in: followedChannelNames },
+    }).lean();
+
+    return {
+      mode: "channels",
+      items: followedChannels.map(c => ({
+        type: "Channel",
+        name: c.channelName,
+        logo: c.channelLogo,
+        category: Array.isArray(c.channelCategory)
+          ? c.channelCategory[0]
+          : c.channelCategory,
+        members: (c.channelMembers || []).length,
+        isFollowing: true,
+      })),
+    };
+  }
+
+  const followings = current.followings || [];
+  const mutualFollowersArrays = await Promise.all(
+    followings.map(async f => {
+      const followedUser = await User.findOne({ username: f.username }).lean();
+      return followedUser?.followers?.filter(x => x.username !== identifier) || [];
+    }),
+  );
+
+  const mutualUsernames = [
+    ...new Set(mutualFollowersArrays.flat().map(u => u.username)),
+  ];
+  const users = await User.find({ username: { $in: mutualUsernames } }).lean();
+
+  return {
+    mode: "users",
+    items: users.map(u => ({
+      type: "User",
+      username: u.username,
+      avatarUrl: u.profilePicture,
+      display_name: u.display_name,
+      followers: (u.followers || []).length,
+      following: (u.followings || []).length,
+      visibility: u.visibility,
+      isFollowing: followingUsernames.includes(u.username),
+      requested: requestedUsernames.includes(u.username),
+    })),
+  };
+}
+
+async function searchConnectFeed(req, { query = "", type, category = "All" }) {
+  const { identifier, userType, current } = await getConnectContext(req);
+  const followings = current.followings || [];
+  const requested = current.requested || [];
+  const channelFollowings = current.channelFollowings || [];
+  const regex =
+    query && query.trim().length > 0 ? new RegExp(query, "i") : /.*/;
+
+  if (type === "channel") {
+    const filter = { channelName: regex };
+    if (category && category !== "All") {
+      filter.channelCategory = category;
+    }
+
+    const channels = await Channel.find(filter).limit(50).lean();
+    const followedChannelNames = channelFollowings.map(c => c.channelName);
+
+    return {
+      mode: "channels",
+      items: channels.map(c => ({
+        type: "Channel",
+        name: c.channelName,
+        logo: c.channelLogo,
+        category: Array.isArray(c.channelCategory)
+          ? c.channelCategory[0]
+          : c.channelCategory,
+        members: Array.isArray(c.channelMembers) ? c.channelMembers.length : 0,
+        isFollowing: followedChannelNames.includes(c.channelName),
+      })),
+    };
+  }
+
+  if (userType === "Channel") {
+    return {
+      mode: "users",
+      items: [],
+      message: "Channel accounts cannot search for users.",
+    };
+  }
+
+  const found = await User.find({
+    username: { $ne: identifier },
+    $or: [{ username: regex }, { display_name: regex }],
+  })
+    .limit(50)
+    .lean();
+
+  const followingUsernames = followings.map(f => f.username);
+  const requestedUsernames = requested.map(r => r.username);
+
+  return {
+    mode: "users",
+    items: found.map(u => ({
+      type: "User",
+      username: u.username,
+      avatarUrl: u.profilePicture,
+      display_name: u.display_name,
+      followers: Array.isArray(u.followers) ? u.followers.length : 0,
+      following: Array.isArray(u.followings) ? u.followings.length : 0,
+      visibility: u.visibility,
+      isFollowing: followingUsernames.includes(u.username),
+      requested: requestedUsernames.includes(u.username),
+    })),
+  };
+}
+
 const queryType = new GraphQLObjectType({
   name: "Query",
   fields: {
@@ -343,6 +646,51 @@ const queryType = new GraphQLObjectType({
         return getCommentThreads(postId);
       },
     },
+    channelHomeFeed: {
+      type: channelHomeFeedType,
+      args: {
+        skip: { type: GraphQLInt },
+        limit: { type: GraphQLInt },
+      },
+      resolve: async (_, { skip, limit }, { req }) =>
+        getChannelPostsFeed(req, { skip, limit, kidsOnly: false }),
+    },
+    kidsHomeFeed: {
+      type: channelHomeFeedType,
+      args: {
+        skip: { type: GraphQLInt },
+        limit: { type: GraphQLInt },
+      },
+      resolve: async (_, { skip, limit }, { req }) =>
+        getChannelPostsFeed(req, { skip, limit, kidsOnly: true }),
+    },
+    connectFeed: {
+      type: connectFeedType,
+      args: {
+        mode: { type: GraphQLString },
+      },
+      resolve: async (_, { mode }, { req }) => buildDefaultConnectFeed(req, mode),
+    },
+    searchConnect: {
+      type: connectFeedType,
+      args: {
+        query: { type: GraphQLString },
+        type: { type: GraphQLString },
+        category: { type: GraphQLString },
+      },
+      resolve: async (_, args, { req }) => searchConnectFeed(req, args),
+    },
+  },
+});
+
+const toggleFollowPayloadType = new GraphQLObjectType({
+  name: "ToggleFollowPayload",
+  fields: {
+    success: { type: GraphQLBoolean },
+    status: { type: GraphQLString },
+    message: { type: GraphQLString },
+    target: { type: GraphQLString },
+    targetType: { type: GraphQLString },
   },
 });
 
@@ -439,6 +787,303 @@ const mutationType = new GraphQLObjectType({
           liked: actor.likedPostsIds?.includes(postId) || false,
           saved: !hasSaved,
           likes: post.likes || 0,
+        };
+      },
+    },
+    toggleLikeChannelPost: {
+      type: togglePostPayloadType,
+      args: {
+        postId: { type: new GraphQLNonNull(GraphQLString) },
+      },
+      resolve: async (_, { postId }, { req }) => {
+        const { actor, type, identifier } = await getActor(req);
+        const post = await channelPost.findById(postId);
+
+        if (!post) {
+          throw new Error("Post not found");
+        }
+
+        const hasLiked = actor.likedPostsIds?.includes(postId);
+        const postChannel = post.channel;
+
+        if (hasLiked) {
+          post.likes = Math.max(0, (post.likes || 0) - 1);
+          actor.likedPostsIds = (actor.likedPostsIds || []).filter(id => id !== postId);
+
+          if (postChannel && postChannel !== identifier) {
+            await Notification.create({
+              mainUser: postChannel,
+              mainUserType: "Channel",
+              msgSerial: type === "Channel" ? 14 : 12,
+              userInvolved: identifier,
+            });
+          }
+        } else {
+          post.likes = (post.likes || 0) + 1;
+          actor.likedPostsIds = [...(actor.likedPostsIds || []), postId];
+
+          if (type !== "Kids") {
+            await rewardUserByUsername(identifier, {
+              activity: "engagement",
+            });
+          }
+
+          if (postChannel && postChannel !== identifier) {
+            await Notification.create({
+              mainUser: postChannel,
+              mainUserType: "Channel",
+              msgSerial: type === "Channel" ? 13 : 11,
+              userInvolved: identifier,
+            });
+          }
+        }
+
+        await actor.save();
+        await post.save();
+
+        return {
+          success: true,
+          id: post._id.toString(),
+          liked: !hasLiked,
+          saved: actor.savedPostsIds?.includes(postId) || false,
+          likes: post.likes || 0,
+        };
+      },
+    },
+    toggleSaveChannelPost: {
+      type: togglePostPayloadType,
+      args: {
+        postId: { type: new GraphQLNonNull(GraphQLString) },
+      },
+      resolve: async (_, { postId }, { req }) => {
+        const { actor, type, identifier } = await getActor(req);
+        const post = await channelPost.findById(postId).select("_id likes");
+
+        if (!post) {
+          throw new Error("Post not found");
+        }
+
+        const hasSaved = actor.savedPostsIds?.includes(postId);
+        actor.savedPostsIds = hasSaved
+          ? (actor.savedPostsIds || []).filter(id => id !== postId)
+          : [...(actor.savedPostsIds || []), postId];
+
+        await actor.save();
+
+        if (!hasSaved && type !== "Kids") {
+          await rewardUserByUsername(identifier, {
+            activity: "engagement",
+          });
+        }
+
+        return {
+          success: true,
+          id: post._id.toString(),
+          liked: actor.likedPostsIds?.includes(postId) || false,
+          saved: !hasSaved,
+          likes: post.likes || 0,
+        };
+      },
+    },
+    toggleFollowEntity: {
+      type: toggleFollowPayloadType,
+      args: {
+        target: { type: new GraphQLNonNull(GraphQLString) },
+        targetType: { type: new GraphQLNonNull(GraphQLString) },
+        currentState: { type: GraphQLString },
+      },
+      resolve: async (_, { target, targetType, currentState }, { req }) => {
+        const { data } = req.userDetails;
+        const [username] = data;
+        const isFollowing =
+          currentState === "following" || currentState === "requested";
+
+        if (!isFollowing) {
+          if (targetType === "Channel") {
+            const channel = await Channel.findOne({ channelName: target });
+            if (!channel) throw new Error("Channel not found");
+
+            const targetUser = await User.findOne({ username });
+
+            await Promise.all([
+              User.updateOne(
+                { username },
+                { $addToSet: { channelFollowings: { channelName: target } } },
+              ),
+              Channel.updateOne(
+                { channelName: target },
+                { $addToSet: { channelMembers: targetUser._id } },
+              ),
+            ]);
+
+            await ActivityLog.create({
+              username,
+              id: `#${Date.now()}`,
+              message: `You started following #${target}!!`,
+            });
+
+            await Notification.create({
+              mainUser: target,
+              mainUserType: "Channel",
+              msgSerial: 9,
+              userInvolved: username,
+            });
+
+            return { success: true, status: "following", target, targetType };
+          }
+
+          const other = await User.findOne({ username: target });
+          if (!other) throw new Error("User not found");
+
+          if (other.visibility === "Private") {
+            await User.updateOne(
+              { username: target },
+              { $addToSet: { requested: { username } } },
+            );
+
+            await Notification.create({
+              mainUser: target,
+              mainUserType: "Normal",
+              msgSerial: 4,
+              userInvolved: username,
+            });
+
+            await ActivityLog.create({
+              username,
+              id: `#${Date.now()}`,
+              message: `You requested to follow #${target}!!`,
+            });
+
+            return { success: true, status: "requested", target, targetType };
+          }
+
+          await Promise.all([
+            User.updateOne(
+              { username },
+              { $addToSet: { followings: { username: target } } },
+            ),
+            User.updateOne(
+              { username: target },
+              { $addToSet: { followers: { username } } },
+            ),
+          ]);
+
+          await Notification.create({
+            mainUser: target,
+            mainUserType: "Normal",
+            msgSerial: 1,
+            userInvolved: username,
+          });
+
+          await ActivityLog.create({
+            username,
+            id: `#${Date.now()}`,
+            message: `You started following #${target}!!`,
+          });
+
+          return { success: true, status: "following", target, targetType };
+        }
+
+        if (targetType === "Channel") {
+          const channel = await Channel.findOne({ channelName: target });
+          if (!channel) throw new Error("Channel not found");
+
+          const targetUser = await User.findOne({ username });
+
+          await Promise.all([
+            User.updateOne(
+              { username },
+              { $pull: { channelFollowings: { channelName: target } } },
+            ),
+            Channel.updateOne(
+              { channelName: target },
+              { $pull: { channelMembers: targetUser._id } },
+            ),
+          ]);
+
+          await Notification.create({
+            mainUser: target,
+            mainUserType: "Channel",
+            msgSerial: 10,
+            userInvolved: username,
+          });
+
+          await ActivityLog.create({
+            username,
+            id: `#${Date.now()}`,
+            message: `You have unfollowed #${target}!!`,
+          });
+
+          return {
+            success: true,
+            status: "unfollowed",
+            message: `Unfollowed ${target}`,
+            target,
+            targetType,
+          };
+        }
+
+        const targetUser = await User.findOne({ username: target });
+        if (!targetUser) throw new Error("User not found");
+
+        const requestedByMe = targetUser.requested.some(r =>
+          typeof r === "string" ? r === username : r.username === username,
+        );
+
+        if (requestedByMe) {
+          await User.updateOne(
+            { username: target },
+            { $pull: { requested: { username } } },
+          );
+          await User.updateOne(
+            { username: target },
+            { $pull: { requested: username } },
+          );
+          await Notification.deleteMany({
+            mainUser: target,
+            userInvolved: username,
+            msgSerial: 4,
+          });
+
+          return {
+            success: true,
+            status: "request_canceled",
+            message: "Follow request canceled",
+            target,
+            targetType,
+          };
+        }
+
+        await Promise.all([
+          User.updateOne(
+            { username },
+            { $pull: { followings: { username: target } } },
+          ),
+          User.updateOne(
+            { username: target },
+            { $pull: { followers: { username } } },
+          ),
+        ]);
+
+        await Notification.create({
+          mainUser: target,
+          mainUserType: "Normal",
+          msgSerial: 7,
+          userInvolved: username,
+        });
+
+        await ActivityLog.create({
+          username,
+          id: `#${Date.now()}`,
+          message: `You have unfollowed #${target}!!`,
+        });
+
+        return {
+          success: true,
+          status: "unfollowed",
+          message: `Unfollowed @${target}`,
+          target,
+          targetType,
         };
       },
     },
