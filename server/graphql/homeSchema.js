@@ -545,39 +545,46 @@ async function buildDefaultConnectFeed(req, mode) {
   };
 }
 
-async function searchConnectFeed(req, { query = "", type, category = "All" }) {
+async function searchConnectFeed(req, { query = "", type = "all", category = "All" }) {
   const { identifier, userType, current } = await getConnectContext(req);
+
   const followings = current.followings || [];
   const requested = current.requested || [];
   const channelFollowings = current.channelFollowings || [];
+
   const regex =
     query && query.trim().length > 0 ? new RegExp(query, "i") : /.*/;
 
-  if (type === "channel") {
+  const followingUsernames = followings.map(f => f.username);
+  const requestedUsernames = requested.map(r => r.username);
+  const followedChannelNames = channelFollowings.map(c => c.channelName);
+
+  let users = [];
+  let channels = [];
+
+  // 🔹 CHANNEL SEARCH
+  if (type === "channel" || type === "all") {
     const filter = { channelName: regex };
+
     if (category && category !== "All") {
       filter.channelCategory = category;
     }
 
-    const channels = await Channel.find(filter).limit(50).lean();
-    const followedChannelNames = channelFollowings.map(c => c.channelName);
-
-    return {
-      mode: "channels",
-      items: channels.map(c => ({
-        type: "Channel",
-        name: c.channelName,
-        logo: c.channelLogo,
-        category: Array.isArray(c.channelCategory)
-          ? c.channelCategory[0]
-          : c.channelCategory,
-        members: Array.isArray(c.channelMembers) ? c.channelMembers.length : 0,
-        isFollowing: followedChannelNames.includes(c.channelName),
-      })),
-    };
+    channels = await Channel.find(filter).limit(50).lean();
   }
 
-  if (userType === "Channel") {
+  // 🔹 USER SEARCH (restrict for Channel accounts)
+  if ((type === "user" || type === "all") && userType !== "Channel") {
+    users = await User.find({
+      username: { $ne: identifier },
+      $or: [{ username: regex }, { display_name: regex }],
+    })
+      .limit(50)
+      .lean();
+  }
+
+  // ❌ Channel accounts cannot search users
+  if (userType === "Channel" && type === "user") {
     return {
       mode: "users",
       items: [],
@@ -585,29 +592,61 @@ async function searchConnectFeed(req, { query = "", type, category = "All" }) {
     };
   }
 
-  const found = await User.find({
-    username: { $ne: identifier },
-    $or: [{ username: regex }, { display_name: regex }],
-  })
-    .limit(50)
-    .lean();
+  // 🔥 Kids restriction (optional improvement)
+  if (userType === "Kids") {
+    // Only allow safe categories
+    const allowedCategories = current.kidPreferredCategories || [];
 
-  const followingUsernames = followings.map(f => f.username);
-  const requestedUsernames = requested.map(r => r.username);
+    channels = channels.filter(c =>
+      allowedCategories.length === 0 ||
+      allowedCategories.includes(
+        Array.isArray(c.channelCategory)
+          ? c.channelCategory[0]
+          : c.channelCategory
+      )
+    );
+  }
 
+  // 🔹 FORMAT USERS
+  const userItems = users.map(u => ({
+    type: "User",
+    username: u.username,
+    avatarUrl: u.profilePicture,
+    display_name: u.display_name,
+    followers: Array.isArray(u.followers) ? u.followers.length : 0,
+    following: Array.isArray(u.followings) ? u.followings.length : 0,
+    visibility: u.visibility,
+    isFollowing: followingUsernames.includes(u.username),
+    requested: requestedUsernames.includes(u.username),
+  }));
+
+  // 🔹 FORMAT CHANNELS
+  const channelItems = channels.map(c => ({
+    type: "Channel",
+    name: c.channelName,
+    logo: c.channelLogo,
+    category: Array.isArray(c.channelCategory)
+      ? c.channelCategory[0]
+      : c.channelCategory,
+    members: Array.isArray(c.channelMembers)
+      ? c.channelMembers.length
+      : 0,
+    isFollowing: followedChannelNames.includes(c.channelName),
+  }));
+
+  // 🔥 RETURN BASED ON TYPE
+  if (type === "user") {
+    return { mode: "users", items: userItems };
+  }
+
+  if (type === "channel") {
+    return { mode: "channels", items: channelItems };
+  }
+
+  // 🔥 NEW: MIXED SEARCH
   return {
-    mode: "users",
-    items: found.map(u => ({
-      type: "User",
-      username: u.username,
-      avatarUrl: u.profilePicture,
-      display_name: u.display_name,
-      followers: Array.isArray(u.followers) ? u.followers.length : 0,
-      following: Array.isArray(u.followings) ? u.followings.length : 0,
-      visibility: u.visibility,
-      isFollowing: followingUsernames.includes(u.username),
-      requested: requestedUsernames.includes(u.username),
-    })),
+    mode: "all",
+    items: [...userItems, ...channelItems],
   };
 }
 
