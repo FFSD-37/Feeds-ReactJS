@@ -286,8 +286,20 @@ const HomePage = () => {
     }
   };
 
-  function timeAgo(date) {
-    const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+  function timeAgo(value) {
+    if (!value) {
+      return 'just now';
+    }
+
+    const normalizedValue =
+      typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value;
+    const date = normalizedValue instanceof Date ? normalizedValue : new Date(normalizedValue);
+
+    if (Number.isNaN(date.getTime())) {
+      return 'just now';
+    }
+
+    const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
     const intervals = {
       year: 31536000,
       mon: 2592000,
@@ -298,7 +310,7 @@ const HomePage = () => {
     };
     for (const [unit, sec] of Object.entries(intervals)) {
       const count = Math.floor(seconds / sec);
-      if (count >= 1) return `${count} ${unit}`;
+      if (count >= 1) return `${count} ${unit}${count > 1 ? 's' : ''} ago`;
     }
     return 'just now';
   }
@@ -619,7 +631,7 @@ const HomePage = () => {
                         {post.author}
                       </h3>
                       <p className="post-timestamp">
-                        {timeAgo(new Date(post.createdAt))}
+                        {timeAgo(post.createdAt)}
                       </p>
                     </div>
 

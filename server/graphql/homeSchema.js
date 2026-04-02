@@ -19,6 +19,32 @@ import ActivityLog from "../models/activityLogSchema.js";
 import Notification from "../models/notification_schema.js";
 import { rewardUserByUsername } from "../services/coinRewards.js";
 
+function serializeTimestamp(value) {
+  if (!value) {
+    return null;
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toISOString();
+}
+
+function withSerializedTimestamps(document) {
+  if (!document) {
+    return document;
+  }
+
+  return {
+    ...document,
+    createdAt: serializeTimestamp(document.createdAt),
+    updatedAt: serializeTimestamp(document.updatedAt),
+  };
+}
+
 const adType = new GraphQLObjectType({
   name: "HomeAd",
   fields: {
@@ -287,7 +313,7 @@ async function getStoriesForUser(friends) {
     .lean();
 
   return stories.map(story => ({
-    ...story,
+    ...withSerializedTimestamps(story),
     avatarUrl:
       friends.find(friend => friend.username === story.username)?.avatarUrl || "",
   }));
@@ -307,7 +333,7 @@ async function getPostsForUser(user, req) {
 
   if (userType === "Kids") {
     return posts.map(post => ({
-      ...post,
+      ...withSerializedTimestamps(post),
       id: post.id || post._id?.toString(),
       author: post.author || post.channel,
       authorAvatar: post.channelLogo || "",
@@ -329,7 +355,7 @@ async function getPostsForUser(user, req) {
   );
 
   return posts.map(post => ({
-    ...post,
+    ...withSerializedTimestamps(post),
     commentCount: Array.isArray(post.comments) ? post.comments.length : 0,
     liked: user.likedPostsIds?.includes(post.id?.toString()) || false,
     saved: user.savedPostsIds?.includes(post.id?.toString()) || false,
@@ -370,7 +396,7 @@ async function getChannelPostsFeed(req, { skip = 0, limit = 5, kidsOnly = false 
 
   return {
     posts: posts.map(post => ({
-      ...post,
+      ...withSerializedTimestamps(post),
       commentCount: Array.isArray(post.comments) ? post.comments.length : 0,
       liked: likedPosts.includes(post._id.toString()),
       saved: savedPosts.includes(post._id.toString()),
@@ -403,7 +429,10 @@ async function getCommentThreads(postId) {
       }
     }
 
-    threads.push({ main, replies });
+    threads.push({
+      main: withSerializedTimestamps(main),
+      replies: replies.map(reply => withSerializedTimestamps(reply)),
+    });
   }
 
   return threads;
