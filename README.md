@@ -251,7 +251,7 @@ git push origin branchname
 ### Custom Middleware(s)
 
 - 404 route handler  
-  Handles all unmatched routes by forwarding a 404 error to the global error handler.
+  Handles all unmatched routes by forwarding a 404 error to the global error handlers.
 
 - Global error handler  
   Centralized error-handling middleware that captures and formats application errors consistently.
