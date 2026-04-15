@@ -1,6 +1,11 @@
 import Chat from "../models/chatSchema.js";
 import User from "../models/users_schema.js";
 import Channel from "../models/channelSchema.js";
+import {
+  getChatThread,
+  invalidateChatThreadCache,
+  syncSeenStateToChatCache,
+} from "../services/chatCache.js";
 
 const getAuthIdentity = (req) => {
   const { data } = req.userDetails || {};
@@ -26,6 +31,12 @@ const markConversationAsSeen = async ({ meName, meType, target, targetType }) =>
     },
     { $set: { seen: true } }
   );
+
+  try {
+    await syncSeenStateToChatCache({ meName, meType, target, targetType });
+  } catch (error) {
+    console.error("Failed to sync seen state to Redis cache:", error.message);
+  }
 };
 
 const getFriendList = async (req, res) => {
@@ -163,14 +174,14 @@ const getChat = async (req, res) => {
       targetType,
     });
 
-    const chats = await Chat.find({
-      $or: [
-        { from: me.name, fromType: me.type, to: target, toType: targetType },
-        { from: target, fromType: targetType, to: me.name, toType: me.type },
-      ],
-    }).sort({ createdAt: 1 });
+    const thread = await getChatThread({
+      meName: me.name,
+      meType: me.type,
+      target,
+      targetType,
+    });
 
-    return res.json({ chats });
+    return res.json(thread);
   } catch (err) {
     return res.status(500).json({ err: err.message });
   }
@@ -191,6 +202,17 @@ const deleteChat = async (req, res) => {
         { from: target, fromType: targetType, to: me.name, toType: me.type },
       ],
     });
+
+    try {
+      await invalidateChatThreadCache({
+        meName: me.name,
+        meType: me.type,
+        target,
+        targetType,
+      });
+    } catch (error) {
+      console.error("Failed to invalidate Redis chat cache:", error.message);
+    }
 
     return res.json({ success: true, message: "Chat deleted successfully" });
   } catch (err) {

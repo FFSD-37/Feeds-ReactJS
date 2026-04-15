@@ -9,6 +9,8 @@
   transition: width 0.3s ease;
   overflow-x: hidden;
   overflow-y: auto;
+  position: relative;
+  z-index: 1;
 }
 .chat-me {
   padding: 20px 16px;
@@ -91,6 +93,7 @@
   flex-direction: column;
   background: #020617;
   position: relative;
+  z-index: 2;
 }
 
 .chat-header {
@@ -284,6 +287,8 @@
   background: rgba(255, 255, 255, 0.88);
   color: #020617;
   border-bottom-left-radius: 6px;
+  padding-right: 42px;
+  min-height: 42px;
 }
 
 .received .chat-bubble:hover {
@@ -321,6 +326,7 @@
   position: absolute;
   right: 8px;
   top: 8px;
+  z-index: 5;
 }
 
 .chat-message-menu-btn {
@@ -349,6 +355,11 @@
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
   z-index: 200;
   overflow: hidden;
+}
+
+.received .chat-message-menu {
+  left: 0;
+  right: auto;
 }
 
 .chat-message-menu-item {
