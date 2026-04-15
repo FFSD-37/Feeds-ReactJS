@@ -9,10 +9,42 @@ import { HexColorPicker } from 'react-colorful';
 const normalizeType = type =>
   type === 'Channel' ? 'Channel' : type === 'Kids' ? 'Kids' : 'Normal';
 
+const parseChatTimestamp = value => {
+  if (value instanceof Date) return value;
+  if (typeof value === 'number') return new Date(value);
+
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+
+  if (/^\d+$/.test(raw)) {
+    const parsed = new Date(Number(raw));
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const sortMessagesChronologically = msgs =>
+  [...msgs].sort((left, right) => {
+    const leftDate = parseChatTimestamp(left?.dateTime || left?.createdAt);
+    const rightDate = parseChatTimestamp(right?.dateTime || right?.createdAt);
+
+    const leftTime = leftDate?.getTime?.() ?? 0;
+    const rightTime = rightDate?.getTime?.() ?? 0;
+
+    if (leftTime !== rightTime) return leftTime - rightTime;
+
+    const leftId = String(left?._id || '');
+    const rightId = String(right?._id || '');
+    return leftId.localeCompare(rightId);
+  });
+
 export default function ChatPage() {
   const { userData } = useUserData();
   const [searchParams] = useSearchParams();
   const [activeChat, setActiveChat] = useState(null);
+  const [chatCacheStatus, setChatCacheStatus] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [friends, setFriends] = useState([]);
@@ -74,7 +106,7 @@ export default function ChatPage() {
       }
       if (!activeChat) return;
       if (msg.from === activeChat.username && normalizeType(msg.fromType) === activeChat.type) {
-        setMessages(prev => [...prev, msg]);
+        setMessages(prev => sortMessagesChronologically([...prev, msg]));
         markConversationSeen(activeChat);
         setTimeout(scrollBottom, 30);
       }
@@ -84,6 +116,7 @@ export default function ChatPage() {
       if (!activeChat) return;
       if (data.withUser === activeChat.username && normalizeType(data.withType) === activeChat.type) {
         setMessages([]);
+        setChatCacheStatus(null);
       }
     };
 
@@ -115,6 +148,7 @@ export default function ChatPage() {
   const loadMessages = async friend => {
     if (!friend?.username) return;
     setActiveChat(friend);
+    setChatCacheStatus(null);
 
     try {
       const res = await fetch(
@@ -125,11 +159,13 @@ export default function ChatPage() {
         },
       );
       const data = await res.json();
-      setMessages(data.chats || []);
+      setMessages(sortMessagesChronologically(data.chats || []));
+      setChatCacheStatus(data.cache || null);
       markConversationSeen(friend);
       setTimeout(scrollBottom, 50);
     } catch (err) {
       console.error('Failed to fetch chat history', err);
+      setChatCacheStatus(null);
     }
   };
 
@@ -204,7 +240,7 @@ export default function ChatPage() {
       dateTime,
     });
 
-    setMessages(prev => [...prev, newMsg]);
+    setMessages(prev => sortMessagesChronologically([...prev, newMsg]));
     setInput('');
     setTimeout(scrollBottom, 30);
   };
@@ -231,6 +267,7 @@ export default function ChatPage() {
       });
 
       setMessages([]);
+      setChatCacheStatus(null);
     } catch (err) {
       alert(err.message || 'Failed to delete chat');
     }
@@ -274,10 +311,11 @@ export default function ChatPage() {
   };
 
   const groupByDate = msgs => {
+    const sortedMessages = sortMessagesChronologically(msgs);
     const map = {};
-    msgs.forEach(m => {
-      const raw = m.dateTime || m.createdAt;
-      const d = new Date(raw).toDateString();
+    sortedMessages.forEach(m => {
+      const parsed = parseChatTimestamp(m.dateTime || m.createdAt);
+      const d = parsed ? parsed.toDateString() : 'Unknown Date';
       if (!map[d]) map[d] = [];
       map[d].push(m);
     });
@@ -340,6 +378,16 @@ export default function ChatPage() {
     return <Navigate to="/home" />;
   }
 
+  const cacheStatusLabel = activeChat && chatCacheStatus
+    ? chatCacheStatus.source === 'redis'
+      ? `Showing cached chat from Redis${chatCacheStatus.verified ? ' (validated)' : ''}`
+      : chatCacheStatus.source === 'mongodb'
+        ? chatCacheStatus.stored
+          ? `Loaded from MongoDB and refreshed Redis${chatCacheStatus.verified ? ' (validated)' : ''}`
+          : `Loaded from MongoDB${chatCacheStatus.reason ? `, Redis ${chatCacheStatus.reason}` : ''}`
+        : null
+    : null;
+
   return (
     <div style={{ display: 'flex', height: '100vh', width: '90vw' }}>
       <div className="chat-list">
@@ -379,7 +427,14 @@ export default function ChatPage() {
             <button className="chat-toggle" onClick={() => setShowSidebarMobile(true)}>
               ☰
             </button>
-            <span>{activeChat ? `${activeChat.username} (${activeChat.type})` : 'Chat'}</span>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span>{activeChat ? `${activeChat.username} (${activeChat.type})` : 'Chat'}</span>
+              {cacheStatusLabel && (
+                <small style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12 }}>
+                  {cacheStatusLabel}
+                </small>
+              )}
+            </div>
           </div>
           <div className="chat-bg-controls">
             {activeChat && (

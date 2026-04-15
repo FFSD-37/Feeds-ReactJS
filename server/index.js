@@ -22,6 +22,10 @@ import { clearSession, setSession } from "./controllers/timout.js";
 import { errorhandler } from "./middleware/handlerError.js";
 import { Logger } from "./middleware/applicationMiddleware.js"
 import { rewardChatParticipantsIfEligible } from "./services/coinRewards.js";
+import {
+  invalidateChatThreadCache,
+  refreshChatThreadCache,
+} from "./services/chatCache.js";
 import { isAuthuser } from "./middleware/isAuthuser.js";
 import homeSchema from "./graphql/homeSchema.js";
 // import { fakeRoute } from "./controllers/userPost.js";
@@ -178,6 +182,17 @@ io.on("connection", async (socket) => {
         toType: normalizedToType,
       });
 
+      try {
+        await refreshChatThreadCache({
+          meName: socket.userId,
+          meType: fromType,
+          target: to,
+          targetType: normalizedToType,
+        });
+      } catch (error) {
+        console.log("Failed to refresh Redis chat cache:", error.message);
+      }
+
       let receiver = null;
       if (normalizedToType === "Channel") {
         receiver = await Channel.findOne({ channelName: to }).select("socketId");
@@ -235,6 +250,17 @@ io.on("connection", async (socket) => {
           },
         ],
       });
+
+      try {
+        await invalidateChatThreadCache({
+          meName: socket.userId,
+          meType,
+          target: withUser,
+          targetType,
+        });
+      } catch (error) {
+        console.log("Failed to invalidate Redis chat cache:", error.message);
+      }
 
       let target = null;
       if (targetType === "Channel") {
