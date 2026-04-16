@@ -1,0 +1,23 @@
+services:
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: feeds-backend
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: feeds-frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+    restart: unless-stopped
