@@ -38,6 +38,10 @@ const chatSchema = new mongoose.Schema(
   }
 );
 
+chatSchema.index({ from: 1, fromType: 1, to: 1, toType: 1, createdAt: 1 });
+chatSchema.index({ to: 1, toType: 1, from: 1, fromType: 1, createdAt: 1 });
+chatSchema.index({ to: 1, toType: 1, seen: 1 });
+
 const Chat = mongoose.model('Chat', chatSchema);
 
 export default Chat;

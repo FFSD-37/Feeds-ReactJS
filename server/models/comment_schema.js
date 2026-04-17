@@ -39,6 +39,8 @@ const commentSchema = new mongoose.Schema({
     
 }, { timestamps: true });
 
+commentSchema.index({ username: 1 });
+
 const Comment = mongoose.model("Comment", commentSchema);
 
 export default Comment;

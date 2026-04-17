@@ -55,6 +55,8 @@ const channelCommentSchema = new mongoose.Schema(
 );
 
 // ✅ Prevent circular reference depth issues
+channelCommentSchema.index({ postId: 1, parentCommentId: 1, createdAt: -1 });
+
 channelCommentSchema.pre("remove", async function (next) {
   await this.model("ChannelComment").deleteMany({
     parentCommentId: this._id,

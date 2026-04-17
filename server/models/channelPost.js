@@ -49,6 +49,10 @@ const channelPostschema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+channelPostschema.index({ channel: 1, createdAt: -1 });
+channelPostschema.index({ category: 1, isArchived: 1, createdAt: -1 });
+channelPostschema.index({ isArchived: 1, createdAt: -1 });
+
 const channelPost = mongoose.model('channelPost', channelPostschema);
 
 export default channelPost;

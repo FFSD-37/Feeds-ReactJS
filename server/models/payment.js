@@ -27,6 +27,9 @@ const paymentSchema = new mongoose.Schema({
   }
 }, {timestamps: true});
 
+paymentSchema.index({ reference_id: 1 }, { unique: true });
+paymentSchema.index({ username: 1, createdAt: -1 });
+
 const Payment = mongoose.model('Payment', paymentSchema);
 
 export default Payment;

@@ -28,6 +28,8 @@ const activityLogSchema = new mongoose.Schema(
   }
 );
 
+activityLogSchema.index({ username: 1, createdAt: -1 });
+
 const ActivityLog = mongoose.model('Message', activityLogSchema);
 
 export default ActivityLog;
