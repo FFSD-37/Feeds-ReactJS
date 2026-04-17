@@ -19,6 +19,8 @@ const resetPasswordSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+resetPasswordSchema.index({ email: 1 }, { unique: true });
+
 const ResetPassword = mongoose.model("ResetPassword", resetPasswordSchema);
 
 export default ResetPassword;

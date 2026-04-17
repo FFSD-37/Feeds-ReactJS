@@ -126,6 +126,8 @@ const channelSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+channelSchema.index({ channelCategory: 1, isDeactivated: 1 });
+
 const Channel = mongoose.model("Channel", channelSchema);
 
 export default Channel;

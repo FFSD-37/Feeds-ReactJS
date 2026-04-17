@@ -20,6 +20,7 @@ const storySchema = new mongoose.Schema({
 });
 
 storySchema.index({ createdAt: 1 }, { expireAfterSeconds: 86400 });
+storySchema.index({ username: 1, createdAt: -1 });
 
 const Story = mongoose.model('stories', storySchema);
 export default Story;
