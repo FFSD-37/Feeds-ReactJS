@@ -18,6 +18,7 @@ import Report from "../models/reports.js";
 import ActivityLog from "../models/activityLogSchema.js";
 import Notification from "../models/notification_schema.js";
 import { rewardUserByUsername } from "../services/coinRewards.js";
+import { searchUsersWithFallback } from "../services/userSearch.js";
 
 function serializeTimestamp(value) {
   if (!value) {
@@ -604,12 +605,11 @@ async function searchConnectFeed(req, { query = "", type = "all", category = "Al
 
   // 🔹 USER SEARCH (restrict for Channel accounts)
   if ((type === "user" || type === "all") && userType !== "Channel") {
-    users = await User.find({
-      username: { $ne: identifier },
-      $or: [{ username: regex }, { display_name: regex }],
-    })
-      .limit(50)
-      .lean();
+    users = await searchUsersWithFallback({
+      query,
+      excludeUsername: identifier,
+      limit: 50,
+    });
   }
 
   // ❌ Channel accounts cannot search users

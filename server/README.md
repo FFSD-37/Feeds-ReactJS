@@ -8,6 +8,7 @@ It explains architecture, data flow, notification `msgSerial` values, and how to
 - Node.js
 - Express
 - MongoDB + Mongoose
+- Apache Solr (optional search index for user discovery)
 - Socket.IO (realtime chat)
 - JWT + cookie-based auth
 
@@ -20,6 +21,7 @@ It explains architecture, data flow, notification `msgSerial` values, and how to
 - Middleware: `middleware/`
 - DB connection: `Db/connection.js`
 - Utility/service integrations: `services/`
+- Solr integration: `services/solr.js`, `services/userSearch.js`
 
 ## Notification `msgSerial` Mapping
 
@@ -194,9 +196,18 @@ Prefer this pattern for new work:
 
 Important env vars are defined in `.env` / `.env-example` (DB URI, JWT secret, defaults).
 
+Optional search env vars:
+
+- `SOLR_BASE_URL` (example: `http://localhost:8983/solr`)
+- `SOLR_CORE` (example: `feeds_users`)
+- `SOLR_TIMEOUT_MS` (optional request timeout override)
+- `SOLR_USERNAME` and `SOLR_PASSWORD` for Basic Auth protected Solr
+- `SOLR_BEARER_TOKEN` or `SOLR_API_KEY` for token-protected Solr
+
 Typical commands:
 
 - install: `npm install`
+- reindex existing users into Solr: `npm run reindex:users`
 - start (depends on scripts in `package.json`): `npm start` or `npm run dev`
 
 ## Contributor Checklist for New Features

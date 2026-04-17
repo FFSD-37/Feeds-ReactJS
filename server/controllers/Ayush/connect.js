@@ -2,6 +2,7 @@ import User from "../../models/users_schema.js";
 import Channel from "../../models/channelSchema.js";
 import Notification from "../../models/notification_schema.js";
 import ActivityLog from "../../models/activityLogSchema.js";
+import { searchUsersWithFallback } from "../../services/userSearch.js";
 
 // ======================
 // GET /connect
@@ -195,12 +196,11 @@ const getSearch = async (req, res) => {
       });
     }
 
-    const found = await User.find({
-      username: { $ne: username },
-      $or: [{ username: regex }, { display_name: regex }],
-    })
-      .limit(50)
-      .lean();
+    const found = await searchUsersWithFallback({
+      query,
+      excludeUsername: username,
+      limit: 50,
+    });
 
     const followingUsernames = followings.map((f) => f.username);
     const requestedUsernames = requested.map((r) => r.username);

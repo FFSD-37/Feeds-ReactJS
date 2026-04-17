@@ -4,6 +4,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "reindex:users": "node scripts/reindexUsersToSolr.js",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand",
     "test:watch": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --watch",
     "start": "nodemon index.js"
@@ -29,6 +30,7 @@
     "razorpay": "^2.9.6",
     "redis": "^4.7.1",
     "socket.io": "^4.8.1",
+    "solr-client": "^0.10.0-rc10",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
     "swagger-ui-express": "^4.6.3",
@@ -36,8 +38,8 @@
   },
   "devDependencies": {
     "jest": "^30.0.5",
-    "supertest": "^7.1.1",
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "supertest": "^7.1.1"
   },
   "jest": {
     "testEnvironment": "node",
