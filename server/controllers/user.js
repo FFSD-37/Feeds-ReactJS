@@ -19,6 +19,10 @@ import Story from "../models/storiesSchema.js";
 import Comment from "../models/comment_schema.js";
 import { rewardUserByUsername } from "../services/coinRewards.js";
 import resetTimeIfNewDay from "../services/resetTime.js";
+import {
+  removeUserFromSolr,
+  upsertUserInSolr,
+} from "../services/solr.js";
 // import Adpost from "../models/ad_schema.js";
 
 async function storeOtp(email, otp) {
@@ -85,6 +89,7 @@ const handleSignup = async (req, res) => {
 
     const newUser = new User(userData);
     await newUser.save();
+    await upsertUserInSolr(newUser.toObject());
 
     res.status(201).json({
       success: true,
@@ -163,6 +168,7 @@ const handledelacc = async (req, res) => {
 
     // 6️⃣ Delete the actual user
     await User.deleteOne({ _id: user._id });
+    await removeUserFromSolr(user.username);
 
     // 7️⃣ Send confirmation email
     const transporter = nodemailer.createTransport({
@@ -953,6 +959,8 @@ const updateUserProfile = async (req, res) => {
       });
     }
 
+    await upsertUserInSolr(updatedUser);
+
     const newToken = create_JWTtoken(
       [
         username,
@@ -1648,6 +1656,7 @@ const togglePP = async (req, res) => {
     const newVisibility = user.visibility === "Public" ? "Private" : "Public";
     user.visibility = newVisibility;
     await user.save();
+    await upsertUserInSolr(user.toObject());
 
     // Reflect visibility on user's posts
     const isPublicValue = newVisibility === "Public";
